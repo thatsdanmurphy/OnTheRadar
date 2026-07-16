@@ -11,16 +11,21 @@ Direct. Unfussy. Low-key excited.
 Always leads with who's in — the overlap is the headline, not the artist bio.
 Never manufactures urgency (no countdown timers, no "X people are viewing this show" pressure tactics). The excitement is real friends, not dark patterns.
 
+## Reference points
+CBGB. A shitty old bar with one working light. Joe Strummer, Kurt Cobain, Elliott Smith — different sounds, same refusal to dress anything up. What they share isn't a genre, it's a rule: nothing on the record that isn't earning its place. That rule is the brand, not the aesthetic of grime itself. The room doesn't care what's playing — hardcore, folk, pop, whatever your friends are actually into. The container is the dive bar; the shows are anything.
+
+**Guardrail:** the feeling should come from restraint — contrast, silence, absence of ornament — not from literal objects standing in for a bar. No staples, no pushpins, no torn-paper edges, no fake photocopier grain, no distressed textures. The second you're rendering a graphic of a staple, you've made a theme park version of a dive bar instead of the real thing. Punk isn't a costume on the interface. It's the interface having nothing to hide behind.
+
 ## Typography
-- Display / Marquee: bold condensed sans (poster/marquee feel) — used for show titles and headline numbers
-- Data / Ticket-stub: monospace or semi-condensed — used for dates, times, overlap counts
-- Body / Program: clean system sans — used for venue details, opener names, response states
+- Display: bold condensed sans, no flourish — used for show titles and headline numbers
+- Data: monospace or typewriter-adjacent — used for dates, times, overlap counts. Feels hammered out, not designed.
+- Body: plain system sans — used for venue details, opener names, response states
 
 ## Color
-- Background: off-white / paper — evokes a ticket stub or printed show flyer, not a glowing screen
-- Primary accent: single warm accent (used sparingly) — marks overlap and "curious" states only
-- Text: near-black — high contrast, no gray-on-gray
-- Rule: flat only. No gradients, no glow, no pulse/animation. Thin shadows at most — the identity is paper, not glass.
+- Background: true white or near-black — pick one and commit, no "paper" tint
+- Primary accent: one ink color (blood red or rust), used only to mark overlap — never decorative
+- Text: pure black or pure white depending on background — max contrast, no gray-on-gray
+- Rule: flat, full stop. No gradients, no glow, no pulse, no drop shadows standing in for depth. Nothing in the UI should look like it's imitating a physical object.
 
 ## The Metaphor
-A ticket stub / marquee board. Every show is a stub; overlap is what makes a stub worth pinning. The UI should feel like something you'd tack to a corkboard, not a dashboard you monitor.
+A flyer wall, but only in spirit — every show is one flyer among many, and overlap is the one two people noticed. It shows up in how things are named and how sparse the layout is, not in how things are drawn. If you can point at a UI element and say "that's supposed to look like tape," it's wrong.
