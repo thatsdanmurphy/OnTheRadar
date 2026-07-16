@@ -48,6 +48,43 @@
      Supabase. Curious/going/out buttons write to the responses table
      immediately on click. Overlap count only counts curious + going. -->
 <main class="container show-list">
+  <div class="show-list-header">
+    <button type="button" id="add-show-btn" class="btn-solid" style="display:none;">+ Add show</button>
+  </div>
+
+  <form id="add-show-form" class="add-show-form" style="display:none;">
+    <div class="form-row">
+      <label for="show-title">Show</label>
+      <input type="text" id="show-title" required placeholder="Artist / show title">
+    </div>
+    <div class="form-row-split">
+      <div class="form-row">
+        <label for="show-date-input">Date</label>
+        <input type="date" id="show-date-input" required>
+      </div>
+      <div class="form-row">
+        <label for="show-time-input">Time</label>
+        <input type="time" id="show-time-input">
+      </div>
+    </div>
+    <div class="form-row">
+      <label for="show-venue-name">Venue</label>
+      <input type="text" id="show-venue-name" placeholder="Venue name">
+    </div>
+    <div class="form-row">
+      <label for="show-venue-url">Venue link</label>
+      <input type="url" id="show-venue-url" placeholder="https://…">
+    </div>
+    <div class="form-row">
+      <label for="show-openers">Openers</label>
+      <input type="text" id="show-openers" placeholder="Opener A, Opener B">
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn-solid">Add show</button>
+      <button type="button" id="cancel-add-show" class="btn-outline">Cancel</button>
+    </div>
+  </form>
+
   <div id="show-list-content" class="show-list-empty">Loading…</div>
 </main>
 
@@ -61,12 +98,17 @@
 <script src="scripts/shows.js"></script>
 <script>
   const { getOrCreatePerson, getMyGroups, getGroupMembers, createGroup } = OTR;
-  const { getShowsForGroup, getResponsesForShows, overlapCount, setResponse } = OTR;
+  const { getShowsForGroup, getResponsesForShows, overlapCount, setResponse, createShow } = OTR;
 
   const switchBtn = document.getElementById('group-switch-btn');
   const groupMenu = document.getElementById('group-menu');
   const avatarDots = document.getElementById('avatar-dots');
   const avatarList = document.getElementById('avatar-list');
+  const addShowBtn = document.getElementById('add-show-btn');
+  const addShowForm = document.getElementById('add-show-form');
+  const cancelAddShow = document.getElementById('cancel-add-show');
+
+  let currentGroupId = null;
 
   function initials(name) {
     return name.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
@@ -141,6 +183,8 @@
   async function selectGroup(group) {
     switchBtn.textContent = `${group.name} ▾`;
     groupMenu.classList.remove('open');
+    currentGroupId = group.id;
+    addShowBtn.style.display = 'inline-block';
     await renderAvatars(group.id);
     await renderShowList(group.id);
   }
@@ -281,6 +325,41 @@
   document.addEventListener('click', () => {
     groupMenu.classList.remove('open');
     document.querySelectorAll('.avatar-list.open').forEach((el) => el.classList.remove('open'));
+  });
+
+  // Add show
+  addShowBtn.addEventListener('click', () => {
+    addShowForm.style.display = 'block';
+    addShowBtn.style.display = 'none';
+  });
+
+  cancelAddShow.addEventListener('click', () => {
+    addShowForm.reset();
+    addShowForm.style.display = 'none';
+    addShowBtn.style.display = 'inline-block';
+  });
+
+  addShowForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!currentGroupId) return;
+
+    const fields = {
+      title: document.getElementById('show-title').value.trim(),
+      show_date: document.getElementById('show-date-input').value,
+      show_time: document.getElementById('show-time-input').value,
+      venue_name: document.getElementById('show-venue-name').value.trim(),
+      venue_url: document.getElementById('show-venue-url').value.trim(),
+      openers: document.getElementById('show-openers').value.trim(),
+    };
+    if (!fields.title || !fields.show_date) return;
+
+    const show = await createShow(currentGroupId, person.id, fields);
+    if (show) {
+      addShowForm.reset();
+      addShowForm.style.display = 'none';
+      addShowBtn.style.display = 'inline-block';
+      await renderShowList(currentGroupId);
+    }
   });
 </script>
 

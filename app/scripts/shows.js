@@ -48,6 +48,29 @@ window.OTR = window.OTR || {};
     return responses.filter((r) => r.status === 'curious' || r.status === 'going').length;
   };
 
+  OTR.createShow = async function (groupId, personId, fields) {
+    const { data, error } = await OTR.db
+      .from('shows')
+      .insert({
+        group_id: groupId,
+        created_by: personId,
+        title: fields.title,
+        show_date: fields.show_date,
+        show_time: fields.show_time || null,
+        venue_name: fields.venue_name || null,
+        venue_url: fields.venue_url || null,
+        openers: fields.openers || null,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Failed to create show:', error);
+      return null;
+    }
+    return data;
+  };
+
   OTR.setResponse = async function (showId, personId, status) {
     const { error } = await OTR.db
       .from('responses')

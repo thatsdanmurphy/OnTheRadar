@@ -42,14 +42,16 @@ Because column count itself changes per breakpoint, spans are semantic classes, 
   - **Card state:** when the current person's own response is "out," the whole card drops to 50% opacity (`.is-out`) rather than styling the button differently — the dimming itself is the "you've deprioritized this" signal.
   - Overlap badge: filled block (accent bg, not just colored text) so it reads as a marker, not a label. Only shows when 2+ people are curious or going (`overlapCount` — out never counts), per the response-states decision.
   - Who's-in avatar stack: reuses the same click-to-expand pattern as the header's crew avatars, built via a shared `buildAvatarStack(people)` helper — one closure-scoped instance per card, so multiple stacks on the page don't collide. Only shows people marked curious or going; hidden entirely if nobody's in yet.
-  - Not yet built: editing/deleting a show, and any UI to add one — right now shows have to be inserted directly in Supabase's Table Editor.
+  - Not yet built: editing/deleting a show.
+- **Add show form** (`app/index.html`, logic in `app/scripts/shows.js` — `createShow`) — manual entry form: title + date (required), time/venue name/venue URL/openers (optional). "+ Add show" button toggles the form open; submitting inserts a `shows` row via `createShow(groupId, personId, fields)` and re-renders the list.
+  - Only shown once a group is selected (`currentGroupId` set in `selectGroup`) — no way to add a show without a group to add it to.
+  - Plain bordered inputs, no styling framework — first real form in the app, so `.form-row`/`.form-row-split`/`.btn-solid`/`.btn-outline` are now reusable primitives in `components.css`, not one-offs.
+  - Not yet built: editing/deleting a show, and link autofill (see below) — this is manual entry only.
 - Calendar grid — month view, fixed-height uniform cells, overflow collapses to "+N more."
   - Renders inside: Calendar view — not yet built
   - Key props: month/year, shows-by-date map
 - Avatar stack (click-to-expand) — dots that expand to a plain name list. One shared implementation (`buildAvatarStack`) used in both the header (whole crew) and every show card (who's interested) — built in both places now.
-- Link autofill input (mocked) — paste a link, fields populate. Currently simulated for two sample URLs; a real version needs a backend fetch + Open Graph/JSON-LD parse (CORS blocks this from a static page).
-  - Renders inside: Add show flow — not yet built
-  - Key props: URL string, autofill result
+- Link autofill (mocked in the original prototype) — paste a link, fields populate automatically. Not built here yet; the manual Add Show form above is the baseline it would enhance. A real version needs a backend fetch + Open Graph/JSON-LD parse (CORS blocks this from a static page) — Supabase could host this as an Edge Function when it's built.
 
 ## Data Flow
 Real data end to end now. `renderShowList(groupId)` fetches shows for the current group, then all responses for those shows in one query (`getResponsesForShows`), grouped client-side by `show_id`. Clicking a response button writes to Supabase and re-fetches the whole list rather than patching state locally — simplest thing that works at this scale, revisit if the group's show count grows enough that a full re-fetch per click feels slow.
