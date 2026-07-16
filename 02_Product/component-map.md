@@ -1,5 +1,28 @@
 # Component Map
 
+## Layout & Grid
+Source: `app/styles/tokens.css`, `app/styles/grid.css`. Preview/vet at `app/frame.html`.
+
+**Spacing scale** (also drives type line-height): 0, 4, 8, 16, 24, 32, 40, 48, 56, 64, 72. 4px is the only fine-adjustment step; everything above it moves in 8s.
+
+**Grid:** 12 columns at every breakpoint — column count never changes, only margin and gutter do.
+- Mobile (< 600px): margin 16px, gutter 16px
+- Tablet (600–1023px): margin 24px, gutter 16px
+- Desktop (≥ 1024px): margin 32px, gutter 24px, content capped at 1200px max-width (centers on larger screens)
+
+**Type scale:** five sizes, three faces (display / data / body), line-heights pulled from the spacing scale so type rhythm and layout rhythm are the same rhythm.
+| Size | Line-height | Face | Use |
+|---|---|---|---|
+| 12 | 16 | data | timestamps, counts, meta labels |
+| 16 | 24 | body | default reading size |
+| 20 | 24 | body (semibold) | card titles |
+| 24 | 32 | display | section headings |
+| 40 | 48 | display | hero numbers, page title |
+
+**Measure rule:** body copy targets 60–75 characters per line. On desktop that's a 6–7 column span, not full-width — use the `.prose` utility (max-width: 65ch) on any real paragraph rather than letting it span all 12 columns.
+
+**Discipline:** every color, spacing, and type value in a component should reference a token from `tokens.css` (`var(--...)`). If a value doesn't exist as a token and needs to be reusable, add it to `tokens.css` first rather than hardcoding — flag it here when that happens so the scale stays intentional, not sprawling.
+
 ## Pages
 - On the Radar (single page, `on-the-radar.html`) — holds all show data, all per-person response states, and the current view mode (Upcoming / Most overlap / Calendar) in local state.
 

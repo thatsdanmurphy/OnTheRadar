@@ -1,0 +1,72 @@
+/* ============================================================
+   On the Radar — 12-Column Grid
+   Container caps measure. Row lays out columns. Col spans them.
+   Every number here is a token from tokens.css — nothing local.
+   ============================================================ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-lh);
+}
+
+.container {
+  width: 100%;
+  max-width: calc(var(--grid-max-width) + (var(--grid-margin) * 2));
+  margin-inline: auto;
+  padding-inline: var(--grid-margin);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(var(--grid-columns), minmax(0, 1fr));
+  gap: var(--grid-gutter);
+}
+
+/* Column spans, 1–12. Components override per breakpoint with
+   their own media queries when they're built — the grid doesn't
+   guess a component's responsive behavior for it. */
+.col-1  { grid-column: span 1; }
+.col-2  { grid-column: span 2; }
+.col-3  { grid-column: span 3; }
+.col-4  { grid-column: span 4; }
+.col-5  { grid-column: span 5; }
+.col-6  { grid-column: span 6; }
+.col-7  { grid-column: span 7; }
+.col-8  { grid-column: span 8; }
+.col-9  { grid-column: span 9; }
+.col-10 { grid-column: span 10; }
+.col-11 { grid-column: span 11; }
+.col-12 { grid-column: span 12; }
+
+/* Caps body copy at a readable measure regardless of the column
+   span it's sitting in. Use on any text block, not just full-width ones. */
+.prose {
+  max-width: 65ch;
+}
+
+/* Grid overlay — debug only, toggled on the frame preview page.
+   Never ships in a real component. */
+.grid-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  pointer-events: none;
+}
+
+.grid-overlay .row {
+  height: 100%;
+}
+
+.grid-overlay .col-1 {
+  grid-column: span 1;
+  background: rgba(179, 18, 27, 0.08);
+  outline: 1px dashed rgba(179, 18, 27, 0.35);
+}

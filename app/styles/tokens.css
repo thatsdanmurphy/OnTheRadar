@@ -1,0 +1,81 @@
+/* ============================================================
+   On the Radar — Design Tokens
+   Source of truth. Every value elsewhere (grid, components)
+   should reference one of these — nothing hardcoded outside it.
+   ============================================================ */
+
+:root {
+  /* --- Spacing scale ---------------------------------------
+     4px is the only fine-adjustment step. Everything above it
+     moves in 8s. One rhythm, used for spacing AND type line-height,
+     so nothing on the page fights the vertical grid. */
+  --space-0: 0;
+  --space-4: 4px;
+  --space-8: 8px;
+  --space-16: 16px;
+  --space-24: 24px;
+  --space-32: 32px;
+  --space-40: 40px;
+  --space-48: 48px;
+  --space-56: 56px;
+  --space-64: 64px;
+  --space-72: 72px;
+
+  /* --- Color ---------------------------------------------
+     True black / true white. One ink color, and it only ever
+     means one thing: overlap. Never used decoratively. */
+  --color-bg: #ffffff;
+  --color-bg-inverse: #0a0a0a;
+  --color-text: #0a0a0a;
+  --color-text-inverse: #ffffff;
+  --color-accent: #b3121b;   /* overlap marker — nowhere else */
+  --color-border: #0a0a0a;
+
+  /* --- Type families ---------------------------------------
+     Three roles, three faces. Body stays a system stack on
+     purpose — no webfont weight for the thing people read most. */
+  --font-display: 'Oswald', 'Arial Narrow', sans-serif;      /* titles, headline numbers */
+  --font-data: 'Space Mono', 'Courier New', monospace;       /* dates, times, counts */
+  --font-body: -apple-system, BlinkMacSystemFont,
+               'Helvetica Neue', Arial, sans-serif;           /* everything you read */
+
+  /* --- Type scale --------------------------------------------
+     Five sizes. Line-heights are spacing tokens, not new values —
+     the type rhythm and the layout rhythm are the same rhythm.
+     size / line-height / ratio
+     12  / 16 / 1.33  — meta (data face): timestamps, counts, labels
+     16  / 24 / 1.5   — body (body face): the default reading size
+     20  / 24 / 1.2   — sub (body or display face): card titles
+     24  / 32 / 1.33  — head (display face): section headings
+     40  / 48 / 1.2   — display (display face): hero numbers, page title */
+  --text-meta-size: 12px;     --text-meta-lh: var(--space-16);
+  --text-body-size: 16px;     --text-body-lh: var(--space-24);
+  --text-sub-size: 20px;      --text-sub-lh: var(--space-24);
+  --text-head-size: 24px;     --text-head-lh: var(--space-32);
+  --text-display-size: 40px;  --text-display-lh: var(--space-48);
+
+  /* --- Grid --------------------------------------------------
+     12 columns at every breakpoint — margin and gutter change,
+     the column count never does. Max-width keeps body text from
+     sprawling past a readable measure on big screens. */
+  --grid-columns: 12;
+  --grid-margin: var(--space-16);
+  --grid-gutter: var(--space-16);
+  --grid-max-width: 1200px;
+}
+
+/* Tablet: 600px+ */
+@media (min-width: 600px) {
+  :root {
+    --grid-margin: var(--space-24);
+    --grid-gutter: var(--space-16);
+  }
+}
+
+/* Desktop: 1024px+ */
+@media (min-width: 1024px) {
+  :root {
+    --grid-margin: var(--space-32);
+    --grid-gutter: var(--space-24);
+  }
+}

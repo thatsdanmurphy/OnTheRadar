@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>On the Radar — Frame</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles/tokens.css">
+<link rel="stylesheet" href="styles/grid.css">
+<style>
+  /* Page-local styles for THIS preview only — not part of the token system. */
+
+  header.frame-header {
+    border-bottom: 1px solid var(--color-border);
+    padding-block: var(--space-24);
+    margin-bottom: var(--space-48);
+  }
+
+  header.frame-header h1 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--text-display-size);
+    line-height: var(--text-display-lh);
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+    margin: 0;
+  }
+
+  header.frame-header p {
+    font-family: var(--font-data);
+    font-size: var(--text-meta-size);
+    line-height: var(--text-meta-lh);
+    margin: var(--space-8) 0 0;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text);
+  }
+
+  section.frame-section {
+    margin-bottom: var(--space-72);
+  }
+
+  section.frame-section > h2 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--text-head-size);
+    line-height: var(--text-head-lh);
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: var(--space-8);
+    margin: 0 0 var(--space-24);
+  }
+
+  section.frame-section > p.note {
+    font-family: var(--font-body);
+    font-size: var(--text-body-size);
+    line-height: var(--text-body-lh);
+    max-width: 65ch;
+    margin: 0 0 var(--space-24);
+  }
+
+  /* --- Grid toggle button --- */
+  .grid-toggle {
+    position: fixed;
+    bottom: var(--space-24);
+    right: var(--space-24);
+    z-index: 1000;
+    font-family: var(--font-data);
+    font-size: var(--text-meta-size);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: var(--color-bg-inverse);
+    color: var(--color-text-inverse);
+    border: none;
+    padding: var(--space-8) var(--space-16);
+    cursor: pointer;
+  }
+
+  .grid-toggle:hover {
+    background: var(--color-accent);
+  }
+
+  #grid-overlay {
+    display: none;
+  }
+
+  body.show-grid #grid-overlay {
+    display: block;
+  }
+
+  /* --- Spacing scale swatches --- */
+  .space-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-16);
+    margin-bottom: var(--space-8);
+    font-family: var(--font-data);
+    font-size: var(--text-meta-size);
+  }
+
+  .space-label {
+    width: 64px;
+    flex-shrink: 0;
+  }
+
+  .space-swatch {
+    height: var(--space-16);
+    background: var(--color-accent);
+  }
+
+  /* --- Type specimens --- */
+  .type-specimen {
+    border-bottom: 1px solid var(--color-border);
+    padding-block: var(--space-16);
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    gap: var(--space-16);
+    align-items: baseline;
+  }
+
+  .type-specimen:last-child {
+    border-bottom: none;
+  }
+
+  .type-meta {
+    font-family: var(--font-data);
+    font-size: var(--text-meta-size);
+    line-height: var(--text-meta-lh);
+    color: var(--color-text);
+  }
+
+  .type-sample.meta   { font-family: var(--font-data); font-size: var(--text-meta-size); line-height: var(--text-meta-lh); text-transform: uppercase; letter-spacing: 0.04em; }
+  .type-sample.body   { font-family: var(--font-body); font-size: var(--text-body-size); line-height: var(--text-body-lh); }
+  .type-sample.sub    { font-family: var(--font-body); font-weight: 600; font-size: var(--text-sub-size); line-height: var(--text-sub-lh); }
+  .type-sample.head   { font-family: var(--font-display); font-weight: 700; font-size: var(--text-head-size); line-height: var(--text-head-lh); text-transform: uppercase; }
+  .type-sample.display{ font-family: var(--font-display); font-weight: 700; font-size: var(--text-display-size); line-height: var(--text-display-lh); text-transform: uppercase; }
+
+  /* --- Grid demo columns --- */
+  .demo-col {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    padding: var(--space-16);
+    font-family: var(--font-data);
+    font-size: var(--text-meta-size);
+    text-align: center;
+  }
+
+  /* --- Measure demo --- */
+  .measure-demo {
+    border: 1px solid var(--color-border);
+    padding: var(--space-16);
+  }
+</style>
+</head>
+<body>
+
+<div id="grid-overlay" class="grid-overlay">
+  <div class="container" style="height:100%;">
+    <div class="row">
+      <div class="col-1"></div><div class="col-1"></div><div class="col-1"></div><div class="col-1"></div>
+      <div class="col-1"></div><div class="col-1"></div><div class="col-1"></div><div class="col-1"></div>
+      <div class="col-1"></div><div class="col-1"></div><div class="col-1"></div><div class="col-1"></div>
+    </div>
+  </div>
+</div>
+
+<button class="grid-toggle" onclick="document.body.classList.toggle('show-grid')">Toggle grid</button>
+
+<header class="frame-header">
+  <div class="container">
+    <h1>On the Radar — Frame</h1>
+    <p>Spacing, type, and grid tokens. No components yet — this is the baseline everything else builds on.</p>
+  </div>
+</header>
+
+<main class="container">
+
+  <section class="frame-section">
+    <h2>Spacing scale</h2>
+    <p class="note">4px is the only fine step. Everything above it moves in 8s: 0, 4, 8, 16, 24, 32, 40, 48, 56, 64, 72. Type line-heights below are pulled from this same scale — one rhythm for layout and type.</p>
+    <div id="space-scale"></div>
+  </section>
+
+  <section class="frame-section">
+    <h2>Type scale</h2>
+    <p class="note">Five sizes, three faces. Line-heights land on spacing tokens (16 / 24 / 24 / 32 / 48) so text stacks cleanly against everything else on the page.</p>
+
+    <div class="type-specimen">
+      <div class="type-meta">12 / 16<br>data face</div>
+      <div class="type-sample meta">JUL 16 — 8:00 PM — 3 CURIOUS</div>
+    </div>
+    <div class="type-specimen">
+      <div class="type-meta">16 / 24<br>body face</div>
+      <div class="type-sample body">The Sinclair, Cambridge. Doors at 7, openers TBA. This is the default reading size — venue details, response labels, anything you're actually reading.</div>
+    </div>
+    <div class="type-specimen">
+      <div class="type-meta">20 / 24<br>body face, semibold</div>
+      <div class="type-sample sub">Show card title sits here</div>
+    </div>
+    <div class="type-specimen">
+      <div class="type-meta">24 / 32<br>display face</div>
+      <div class="type-sample head">Section heading</div>
+    </div>
+    <div class="type-specimen">
+      <div class="type-meta">40 / 48<br>display face</div>
+      <div class="type-sample display">3 overlap</div>
+    </div>
+  </section>
+
+  <section class="frame-section">
+    <h2>12-column grid</h2>
+    <p class="note">Same 12 columns at every breakpoint — margin and gutter change, column count doesn't. Resize the window to see margin/gutter shift at 600px and 1024px. Toggle the grid button (bottom right) to see it overlaid on this page.</p>
+    <div class="row" style="margin-bottom: var(--space-16);">
+      <div class="demo-col col-3">3 / 12</div>
+      <div class="demo-col col-3">3 / 12</div>
+      <div class="demo-col col-3">3 / 12</div>
+      <div class="demo-col col-3">3 / 12</div>
+    </div>
+    <div class="row" style="margin-bottom: var(--space-16);">
+      <div class="demo-col col-6">6 / 12</div>
+      <div class="demo-col col-6">6 / 12</div>
+    </div>
+    <div class="row">
+      <div class="demo-col col-12">12 / 12 — full width</div>
+    </div>
+  </section>
+
+  <section class="frame-section">
+    <h2>Measure check</h2>
+    <p class="note">Body text at 16px targets a 60–75 character line. On desktop that's roughly a 6–7 column span, not the full 12 — full-width body copy runs too long to read comfortably. Use <code>.prose</code> or a narrower span for any real paragraph.</p>
+    <div class="row">
+      <div class="col-7">
+        <div class="measure-demo prose type-sample body">
+          This paragraph is capped with .prose so it stays around a 65-character measure regardless of how wide its column gets. It should read comfortably at every breakpoint without needing a media query to fix it.
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+  const scale = [0, 4, 8, 16, 24, 32, 40, 48, 56, 64, 72];
+  const container = document.getElementById('space-scale');
+  scale.forEach(v => {
+    const row = document.createElement('div');
+    row.className = 'space-row';
+    row.innerHTML = `<span class="space-label">${v}px</span><span class="space-swatch" style="width:${v}px"></span>`;
+    container.appendChild(row);
+  });
+</script>
+
+</body>
+</html>
