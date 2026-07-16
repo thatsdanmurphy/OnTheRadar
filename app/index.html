@@ -10,6 +10,9 @@
 <link rel="stylesheet" href="styles/tokens.css">
 <link rel="stylesheet" href="styles/grid.css">
 <link rel="stylesheet" href="styles/components.css">
+<!-- Supabase UMD build — plain global script, not a module, so this
+     keeps working when the file is opened directly (file://). -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -50,9 +53,15 @@
 
 <!-- ===== Footer — next up ===== -->
 
-<script type="module">
-  import { getOrCreatePerson, getMyGroups, getGroupMembers, createGroup } from './scripts/identity.js';
-  import { getShowsForGroup, getResponsesForShows, overlapCount, setResponse } from './scripts/shows.js';
+<!-- Plain scripts, not modules — see supabase/client.js for why.
+     Load order matters: client.js defines OTR.db before identity.js
+     and shows.js use it. -->
+<script src="supabase/client.js"></script>
+<script src="scripts/identity.js"></script>
+<script src="scripts/shows.js"></script>
+<script>
+  const { getOrCreatePerson, getMyGroups, getGroupMembers, createGroup } = OTR;
+  const { getShowsForGroup, getResponsesForShows, overlapCount, setResponse } = OTR;
 
   const switchBtn = document.getElementById('group-switch-btn');
   const groupMenu = document.getElementById('group-menu');
