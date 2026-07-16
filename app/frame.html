@@ -6,7 +6,7 @@
 <title>On the Radar — Frame</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles/tokens.css">
 <link rel="stylesheet" href="styles/grid.css">
 <style>
@@ -159,11 +159,7 @@
 
 <div id="grid-overlay" class="grid-overlay">
   <div class="container" style="height:100%;">
-    <div class="row">
-      <div class="col-1"></div><div class="col-1"></div><div class="col-1"></div><div class="col-1"></div>
-      <div class="col-1"></div><div class="col-1"></div><div class="col-1"></div><div class="col-1"></div>
-      <div class="col-1"></div><div class="col-1"></div><div class="col-1"></div><div class="col-1"></div>
-    </div>
+    <div class="row" id="grid-overlay-row"></div>
   </div>
 </div>
 
@@ -172,7 +168,7 @@
 <header class="frame-header">
   <div class="container">
     <h1>On the Radar — Frame</h1>
-    <p>Spacing, type, and grid tokens. No components yet — this is the baseline everything else builds on.</p>
+    <p>Spacing, type, and grid tokens — 4/8/12 columns, mobile to desktop. No components yet — this is the baseline everything else builds on.</p>
   </div>
 </header>
 
@@ -189,52 +185,57 @@
     <p class="note">Five sizes, three faces. Line-heights land on spacing tokens (16 / 24 / 24 / 32 / 48) so text stacks cleanly against everything else on the page.</p>
 
     <div class="type-specimen">
-      <div class="type-meta">12 / 16<br>data face</div>
+      <div class="type-meta">12 / 16<br>Space Mono</div>
       <div class="type-sample meta">JUL 16 — 8:00 PM — 3 CURIOUS</div>
     </div>
     <div class="type-specimen">
-      <div class="type-meta">16 / 24<br>body face</div>
+      <div class="type-meta">16 / 24<br>System sans</div>
       <div class="type-sample body">The Sinclair, Cambridge. Doors at 7, openers TBA. This is the default reading size — venue details, response labels, anything you're actually reading.</div>
     </div>
     <div class="type-specimen">
-      <div class="type-meta">20 / 24<br>body face, semibold</div>
+      <div class="type-meta">20 / 24<br>System sans, semibold</div>
       <div class="type-sample sub">Show card title sits here</div>
     </div>
     <div class="type-specimen">
-      <div class="type-meta">24 / 32<br>display face</div>
+      <div class="type-meta">24 / 32<br>Anton</div>
       <div class="type-sample head">Section heading</div>
     </div>
     <div class="type-specimen">
-      <div class="type-meta">40 / 48<br>display face</div>
+      <div class="type-meta">40 / 48<br>Anton</div>
       <div class="type-sample display">3 overlap</div>
     </div>
   </section>
 
   <section class="frame-section">
-    <h2>12-column grid</h2>
-    <p class="note">Same 12 columns at every breakpoint — margin and gutter change, column count doesn't. Resize the window to see margin/gutter shift at 600px and 1024px. Toggle the grid button (bottom right) to see it overlaid on this page.</p>
+    <h2>Grid: 4 / 8 / 12</h2>
+    <p class="note">4 columns mobile, 8 tablet, 12 desktop — the column count itself changes, not just margin and gutter. That means "half" and "quarter" are semantic classes, not fixed span numbers: <code>.col-half</code> is 2 of 4 on mobile, 4 of 8 on tablet, 6 of 12 on desktop — always exactly half. Resize the window to watch the columns, margin, and gutter all shift together at 600px and 1024px. Toggle the grid button (bottom right) to overlay it on this page.</p>
     <div class="row" style="margin-bottom: var(--space-16);">
-      <div class="demo-col col-3">3 / 12</div>
-      <div class="demo-col col-3">3 / 12</div>
-      <div class="demo-col col-3">3 / 12</div>
-      <div class="demo-col col-3">3 / 12</div>
+      <div class="demo-col col-quarter">quarter</div>
+      <div class="demo-col col-quarter">quarter</div>
+      <div class="demo-col col-quarter">quarter</div>
+      <div class="demo-col col-quarter">quarter</div>
     </div>
     <div class="row" style="margin-bottom: var(--space-16);">
-      <div class="demo-col col-6">6 / 12</div>
-      <div class="demo-col col-6">6 / 12</div>
+      <div class="demo-col col-half">half</div>
+      <div class="demo-col col-half">half</div>
+    </div>
+    <div class="row" style="margin-bottom: var(--space-16);">
+      <div class="demo-col col-third">third (desktop only — falls back to full width below 1024px)</div>
+      <div class="demo-col col-third">third</div>
+      <div class="demo-col col-third">third</div>
     </div>
     <div class="row">
-      <div class="demo-col col-12">12 / 12 — full width</div>
+      <div class="demo-col col-full">full width</div>
     </div>
   </section>
 
   <section class="frame-section">
     <h2>Measure check</h2>
-    <p class="note">Body text at 16px targets a 60–75 character line. On desktop that's roughly a 6–7 column span, not the full 12 — full-width body copy runs too long to read comfortably. Use <code>.prose</code> or a narrower span for any real paragraph.</p>
+    <p class="note">Body text at 16px targets a 60–75 character line. On desktop, full-width (12 columns) runs too long to read comfortably — <code>.col-half</code> lands closer to the right measure. Use <code>.prose</code> alongside it for any real paragraph so the cap holds even if the column gets wider.</p>
     <div class="row">
-      <div class="col-7">
+      <div class="col-half">
         <div class="measure-demo prose type-sample body">
-          This paragraph is capped with .prose so it stays around a 65-character measure regardless of how wide its column gets. It should read comfortably at every breakpoint without needing a media query to fix it.
+          This paragraph sits in .col-half and is capped with .prose so it stays around a 65-character measure regardless of how wide its column gets. It should read comfortably at every breakpoint without needing a media query to fix it.
         </div>
       </div>
     </div>
@@ -251,6 +252,24 @@
     row.innerHTML = `<span class="space-label">${v}px</span><span class="space-swatch" style="width:${v}px"></span>`;
     container.appendChild(row);
   });
+
+  // Grid overlay: rebuild cells to match the live column count (4/8/12)
+  // so the overlay is always honest about the current breakpoint.
+  function renderGridOverlay() {
+    const columns = parseInt(
+      getComputedStyle(document.documentElement).getPropertyValue('--grid-columns'),
+      10
+    ) || 12;
+    const row = document.getElementById('grid-overlay-row');
+    row.innerHTML = '';
+    for (let i = 0; i < columns; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      row.appendChild(cell);
+    }
+  }
+  renderGridOverlay();
+  window.addEventListener('resize', renderGridOverlay);
 </script>
 
 </body>

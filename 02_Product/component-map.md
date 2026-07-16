@@ -5,21 +5,23 @@ Source: `app/styles/tokens.css`, `app/styles/grid.css`. Preview/vet at `app/fram
 
 **Spacing scale** (also drives type line-height): 0, 4, 8, 16, 24, 32, 40, 48, 56, 64, 72. 4px is the only fine-adjustment step; everything above it moves in 8s.
 
-**Grid:** 12 columns at every breakpoint — column count never changes, only margin and gutter do.
-- Mobile (< 600px): margin 16px, gutter 16px
-- Tablet (600–1023px): margin 24px, gutter 16px
-- Desktop (≥ 1024px): margin 32px, gutter 24px, content capped at 1200px max-width (centers on larger screens)
+**Grid:** 4 columns mobile, 8 tablet, 12 desktop (Material's standard layout-grid split — these three counts share clean factors, so half/quarter spans divide evenly everywhere; thirds only divide evenly at 12, so treat thirds as desktop-only).
+- Mobile (< 600px): 4 columns, margin 16px, gutter 16px
+- Tablet (600–1023px): 8 columns, margin 24px, gutter 16px
+- Desktop (≥ 1024px): 12 columns, margin 32px, gutter 24px, content capped at 1200px max-width (centers on larger screens)
 
-**Type scale:** five sizes, three faces (display / data / body), line-heights pulled from the spacing scale so type rhythm and layout rhythm are the same rhythm.
-| Size | Line-height | Face | Use |
+Because column count itself changes per breakpoint, spans are semantic classes, not fixed numbers: `.col-full`, `.col-half`, `.col-quarter`, `.col-third` (desktop-only, falls back to full width below 1024px). Each carries its own correct span at every breakpoint — e.g. `.col-half` is 2/4 → 4/8 → 6/12.
+
+**Type scale:** five sizes, three faces, line-heights pulled from the spacing scale so type rhythm and layout rhythm are the same rhythm.
+| Size | Line-height | Font | Use |
 |---|---|---|---|
-| 12 | 16 | data | timestamps, counts, meta labels |
-| 16 | 24 | body | default reading size |
-| 20 | 24 | body (semibold) | card titles |
-| 24 | 32 | display | section headings |
-| 40 | 48 | display | hero numbers, page title |
+| 12 | 16 | Space Mono (data) | timestamps, counts, meta labels |
+| 16 | 24 | System sans (body) | default reading size |
+| 20 | 24 | System sans, semibold (body) | card titles |
+| 24 | 32 | Anton (display) | section headings |
+| 40 | 48 | Anton (display) | hero numbers, page title |
 
-**Measure rule:** body copy targets 60–75 characters per line. On desktop that's a 6–7 column span, not full-width — use the `.prose` utility (max-width: 65ch) on any real paragraph rather than letting it span all 12 columns.
+**Measure rule:** body copy targets 60–75 characters per line. On desktop, full-width (12 columns) runs too long — `.col-half` lands closer to the right measure. Use `.prose` (max-width: 65ch) alongside it for any real paragraph so the cap holds regardless of column width.
 
 **Discipline:** every color, spacing, and type value in a component should reference a token from `tokens.css` (`var(--...)`). If a value doesn't exist as a token and needs to be reusable, add it to `tokens.css` first rather than hardcoding — flag it here when that happens so the scale stays intentional, not sprawling.
 

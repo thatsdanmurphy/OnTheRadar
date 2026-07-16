@@ -33,21 +33,23 @@
 
   /* --- Type families ---------------------------------------
      Three roles, three faces. Body stays a system stack on
-     purpose — no webfont weight for the thing people read most. */
-  --font-display: 'Oswald', 'Arial Narrow', sans-serif;      /* titles, headline numbers */
-  --font-data: 'Space Mono', 'Courier New', monospace;       /* dates, times, counts */
+     purpose — no webfont weight for the thing people read most.
+     Display is Anton: bolder and blunter than Oswald, closer to
+     gig-poster lettering than athletic/highway-sign condensed. */
+  --font-display: 'Anton', 'Arial Narrow', sans-serif;        /* titles, headline numbers */
+  --font-data: 'Space Mono', 'Courier New', monospace;        /* dates, times, counts */
   --font-body: -apple-system, BlinkMacSystemFont,
                'Helvetica Neue', Arial, sans-serif;           /* everything you read */
 
   /* --- Type scale --------------------------------------------
      Five sizes. Line-heights are spacing tokens, not new values —
      the type rhythm and the layout rhythm are the same rhythm.
-     size / line-height / ratio
-     12  / 16 / 1.33  — meta (data face): timestamps, counts, labels
-     16  / 24 / 1.5   — body (body face): the default reading size
-     20  / 24 / 1.2   — sub (body or display face): card titles
-     24  / 32 / 1.33  — head (display face): section headings
-     40  / 48 / 1.2   — display (display face): hero numbers, page title */
+     size / line-height / ratio / font / role
+     12  / 16 / 1.33  — Space Mono          — meta: timestamps, counts, labels
+     16  / 24 / 1.5   — system sans (body)  — default reading size
+     20  / 24 / 1.2   — system sans (body, semibold) — card titles
+     24  / 32 / 1.33  — Anton (display)     — section headings
+     40  / 48 / 1.2   — Anton (display)     — hero numbers, page title */
   --text-meta-size: 12px;     --text-meta-lh: var(--space-16);
   --text-body-size: 16px;     --text-body-lh: var(--space-24);
   --text-sub-size: 20px;      --text-sub-lh: var(--space-24);
@@ -55,10 +57,13 @@
   --text-display-size: 40px;  --text-display-lh: var(--space-48);
 
   /* --- Grid --------------------------------------------------
-     12 columns at every breakpoint — margin and gutter change,
-     the column count never does. Max-width keeps body text from
-     sprawling past a readable measure on big screens. */
-  --grid-columns: 12;
+     4 columns mobile, 8 tablet, 12 desktop (the standard Material
+     layout-grid split — these three counts share clean factors,
+     so half/quarter spans divide evenly at every breakpoint; thirds
+     only divide evenly at 12, so treat thirds as a desktop-only
+     pattern). Max-width keeps body text from sprawling past a
+     readable measure on big screens. */
+  --grid-columns: 4;
   --grid-margin: var(--space-16);
   --grid-gutter: var(--space-16);
   --grid-max-width: 1200px;
@@ -67,6 +72,7 @@
 /* Tablet: 600px+ */
 @media (min-width: 600px) {
   :root {
+    --grid-columns: 8;
     --grid-margin: var(--space-24);
     --grid-gutter: var(--space-16);
   }
@@ -75,6 +81,7 @@
 /* Desktop: 1024px+ */
 @media (min-width: 1024px) {
   :root {
+    --grid-columns: 12;
     --grid-margin: var(--space-32);
     --grid-gutter: var(--space-24);
   }
