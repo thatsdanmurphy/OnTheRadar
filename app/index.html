@@ -14,9 +14,9 @@
 <body>
 
 <!-- ===== Header nav ===== -->
-<!-- Group switcher and avatar list are mocked with static data below —
-     no backend yet. This is the first of three components (header,
-     body container, footer) building up on the frame. -->
+<!-- Wired to Supabase — real people/groups/memberships, no more mock
+     data. This is the first of three components (header, body
+     container, footer) building up on the frame. -->
 <header class="site-header">
   <div class="container">
     <div class="row">
@@ -26,28 +26,13 @@
       <div class="col-half header-controls" style="justify-content: flex-end;">
 
         <div class="group-switch-wrap">
-          <button class="group-switch" id="group-switch-btn">Boston Crew ▾</button>
-          <div class="group-menu" id="group-menu">
-            <button type="button">Boston Crew</button>
-            <button type="button">Hockey Group Chat</button>
-            <button type="button">+ New group</button>
-          </div>
+          <button class="group-switch" id="group-switch-btn">Loading…</button>
+          <div class="group-menu" id="group-menu"></div>
         </div>
 
         <div class="avatar-stack">
-          <div class="avatar-dots" id="avatar-dots">
-            <div class="avatar-dot">DM</div>
-            <div class="avatar-dot">JK</div>
-            <div class="avatar-dot">SL</div>
-            <div class="avatar-dot">+2</div>
-          </div>
-          <div class="avatar-list" id="avatar-list">
-            <div>Dan M.</div>
-            <div>Jenny K.</div>
-            <div>Sam L.</div>
-            <div>Marcus T.</div>
-            <div>Priya R.</div>
-          </div>
+          <div class="avatar-dots" id="avatar-dots"></div>
+          <div class="avatar-list" id="avatar-list"></div>
         </div>
 
       </div>
@@ -58,24 +43,102 @@
 <!-- ===== Body container — next up ===== -->
 <!-- ===== Footer — after that ===== -->
 
-<script>
-  function toggleMenu(btnId, menuId) {
-    document.getElementById(btnId).addEventListener('click', (e) => {
-      e.stopPropagation();
-      document.getElementById(menuId).classList.toggle('open');
+<script type="module">
+  import { getOrCreatePerson, getMyGroups, getGroupMembers, createGroup } from './scripts/identity.js';
+
+  const switchBtn = document.getElementById('group-switch-btn');
+  const groupMenu = document.getElementById('group-menu');
+  const avatarDots = document.getElementById('avatar-dots');
+  const avatarList = document.getElementById('avatar-list');
+
+  function initials(name) {
+    return name.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  }
+
+  function renderGroupMenu(groups, currentGroup) {
+    groupMenu.innerHTML = '';
+    groups.forEach(g => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = g.name;
+      btn.addEventListener('click', () => selectGroup(g));
+      groupMenu.appendChild(btn);
+    });
+    const newBtn = document.createElement('button');
+    newBtn.type = 'button';
+    newBtn.textContent = '+ New group';
+    newBtn.addEventListener('click', handleNewGroup);
+    groupMenu.appendChild(newBtn);
+  }
+
+  async function renderAvatars(groupId) {
+    const members = await getGroupMembers(groupId);
+    avatarDots.innerHTML = '';
+    avatarList.innerHTML = '';
+    members.forEach(p => {
+      const dot = document.createElement('div');
+      dot.className = 'avatar-dot';
+      dot.textContent = initials(p.display_name);
+      avatarDots.appendChild(dot);
+
+      const item = document.createElement('div');
+      item.textContent = p.display_name;
+      avatarList.appendChild(item);
     });
   }
-  toggleMenu('group-switch-btn', 'group-menu');
 
-  document.getElementById('avatar-dots').addEventListener('click', (e) => {
+  async function selectGroup(group) {
+    switchBtn.textContent = `${group.name} ▾`;
+    groupMenu.classList.remove('open');
+    await renderAvatars(group.id);
+  }
+
+  let person = null;
+
+  async function handleNewGroup() {
+    groupMenu.classList.remove('open');
+    const name = window.prompt('Name this group:', '')?.trim();
+    if (!name) return;
+    const group = await createGroup(person.id, name);
+    if (!group) return;
+    const groups = await getMyGroups(person.id);
+    renderGroupMenu(groups, group);
+    await selectGroup(group);
+  }
+
+  async function init() {
+    person = await getOrCreatePerson();
+    if (!person) {
+      switchBtn.textContent = 'Connection error';
+      return;
+    }
+
+    const groups = await getMyGroups(person.id);
+
+    if (groups.length === 0) {
+      switchBtn.textContent = 'No groups yet ▾';
+      renderGroupMenu([], null);
+      return;
+    }
+
+    renderGroupMenu(groups, groups[0]);
+    await selectGroup(groups[0]);
+  }
+
+  init();
+
+  // Menu toggling
+  switchBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    document.getElementById('avatar-list').classList.toggle('open');
+    groupMenu.classList.toggle('open');
   });
-
-  // Click anywhere else closes any open menu
+  avatarDots.addEventListener('click', (e) => {
+    e.stopPropagation();
+    avatarList.classList.toggle('open');
+  });
   document.addEventListener('click', () => {
-    document.getElementById('group-menu').classList.remove('open');
-    document.getElementById('avatar-list').classList.remove('open');
+    groupMenu.classList.remove('open');
+    avatarList.classList.remove('open');
   });
 </script>
 
