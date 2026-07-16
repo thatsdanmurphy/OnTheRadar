@@ -33,7 +33,7 @@
   flex-wrap: wrap;
 }
 
-/* Group switcher — mocked for now, no backend behind it yet */
+/* Group switcher — wired to Supabase (memberships/groups) */
 .group-switch {
   font-family: var(--font-data);
   font-size: var(--text-meta-size);
@@ -152,4 +152,110 @@
 
 .avatar-list div:last-child {
   border-bottom: none;
+}
+
+/* ---------- Show list / show card ---------- */
+
+.show-list {
+  padding-block: var(--space-32);
+}
+
+.show-list-empty {
+  font-family: var(--font-body);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-lh);
+  color: var(--color-text);
+  padding-block: var(--space-16);
+}
+
+.show-card {
+  border: 1px solid var(--color-border);
+  padding: var(--space-16);
+  margin-bottom: var(--space-16);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-16);
+  flex-wrap: wrap;
+}
+
+.show-card-main {
+  flex: 1;
+  min-width: 200px;
+}
+
+.show-date {
+  font-family: var(--font-data);
+  font-size: var(--text-meta-size);
+  line-height: var(--text-meta-lh);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: var(--space-8);
+}
+
+.show-title {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--text-sub-size);
+  line-height: var(--text-sub-lh);
+  margin-bottom: var(--space-4);
+}
+
+.show-venue a {
+  font-family: var(--font-body);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-lh);
+  color: var(--color-text);
+}
+
+.show-openers {
+  font-family: var(--font-body);
+  font-size: var(--text-meta-size);
+  color: var(--color-text);
+  opacity: 0.7;
+  margin-top: var(--space-4);
+}
+
+.show-overlap {
+  font-family: var(--font-data);
+  font-size: var(--text-meta-size);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-accent);
+  white-space: nowrap;
+}
+
+.show-responses {
+  display: flex;
+  gap: var(--space-8);
+  flex-wrap: wrap;
+}
+
+.resp-btn {
+  font-family: var(--font-data);
+  font-size: var(--text-meta-size);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: none;
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  padding: var(--space-8) var(--space-16);
+  cursor: pointer;
+}
+
+.resp-btn:hover {
+  background: rgba(10, 10, 10, 0.08);
+}
+
+.resp-btn.active {
+  background: var(--color-bg-inverse);
+  color: var(--color-text-inverse);
+  border-color: var(--color-bg-inverse);
+}
+
+.resp-btn.active[data-status="out"] {
+  background: var(--color-bg);
+  color: var(--color-text);
+  text-decoration: line-through;
+  opacity: 0.6;
 }
