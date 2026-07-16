@@ -1,0 +1,155 @@
+/* ============================================================
+   On the Radar — Components
+   Built one at a time on top of tokens.css + grid.css. Every
+   value here should be a var(--token) — nothing hardcoded.
+   ============================================================ */
+
+/* ---------- Header nav ---------- */
+
+.site-header {
+  border-bottom: 1px solid var(--color-border);
+  padding-block: var(--space-16);
+}
+
+.site-header .row {
+  align-items: center;
+  justify-content: space-between;
+}
+
+.wordmark {
+  font-family: var(--font-display);
+  font-size: var(--text-head-size);
+  line-height: var(--text-head-lh);
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-16);
+  flex-wrap: wrap;
+}
+
+/* Group switcher — mocked for now, no backend behind it yet */
+.group-switch {
+  font-family: var(--font-data);
+  font-size: var(--text-meta-size);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: none;
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  padding: var(--space-8) var(--space-16);
+  cursor: pointer;
+}
+
+.group-switch:hover {
+  background: var(--color-text);
+  color: var(--color-text-inverse);
+}
+
+.group-menu {
+  position: absolute;
+  top: calc(100% + var(--space-8));
+  right: 0;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  min-width: 180px;
+  z-index: 20;
+  display: none;
+}
+
+.group-menu.open {
+  display: block;
+}
+
+.group-menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-family: var(--font-body);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-lh);
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--color-border);
+  padding: var(--space-8) var(--space-16);
+  cursor: pointer;
+  color: var(--color-text);
+}
+
+.group-menu button:last-child {
+  border-bottom: none;
+  font-family: var(--font-data);
+  font-size: var(--text-meta-size);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.group-menu button:hover {
+  background: var(--color-bg-inverse);
+  color: var(--color-text-inverse);
+}
+
+.group-switch-wrap {
+  position: relative;
+}
+
+/* Avatar stack — click to expand into a plain name list */
+.avatar-stack {
+  position: relative;
+}
+
+.avatar-dots {
+  display: flex;
+  cursor: pointer;
+}
+
+.avatar-dot {
+  width: var(--space-32);
+  height: var(--space-32);
+  border-radius: 50%;
+  background: var(--color-bg-inverse);
+  color: var(--color-text-inverse);
+  border: 2px solid var(--color-bg);
+  font-family: var(--font-data);
+  font-size: var(--text-meta-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: calc(var(--space-8) * -1);
+}
+
+.avatar-dot:first-child {
+  margin-left: 0;
+}
+
+.avatar-list {
+  position: absolute;
+  top: calc(100% + var(--space-8));
+  right: 0;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  min-width: 160px;
+  z-index: 20;
+  display: none;
+}
+
+.avatar-list.open {
+  display: block;
+}
+
+.avatar-list div {
+  font-family: var(--font-body);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-lh);
+  padding: var(--space-8) var(--space-16);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.avatar-list div:last-child {
+  border-bottom: none;
+}

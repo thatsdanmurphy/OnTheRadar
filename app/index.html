@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>On the Radar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles/tokens.css">
+<link rel="stylesheet" href="styles/grid.css">
+<link rel="stylesheet" href="styles/components.css">
+</head>
+<body>
+
+<!-- ===== Header nav ===== -->
+<!-- Group switcher and avatar list are mocked with static data below —
+     no backend yet. This is the first of three components (header,
+     body container, footer) building up on the frame. -->
+<header class="site-header">
+  <div class="container">
+    <div class="row">
+      <div class="col-half">
+        <a href="index.html" class="wordmark">On the Radar</a>
+      </div>
+      <div class="col-half header-controls" style="justify-content: flex-end;">
+
+        <div class="group-switch-wrap">
+          <button class="group-switch" id="group-switch-btn">Boston Crew ▾</button>
+          <div class="group-menu" id="group-menu">
+            <button type="button">Boston Crew</button>
+            <button type="button">Hockey Group Chat</button>
+            <button type="button">+ New group</button>
+          </div>
+        </div>
+
+        <div class="avatar-stack">
+          <div class="avatar-dots" id="avatar-dots">
+            <div class="avatar-dot">DM</div>
+            <div class="avatar-dot">JK</div>
+            <div class="avatar-dot">SL</div>
+            <div class="avatar-dot">+2</div>
+          </div>
+          <div class="avatar-list" id="avatar-list">
+            <div>Dan M.</div>
+            <div>Jenny K.</div>
+            <div>Sam L.</div>
+            <div>Marcus T.</div>
+            <div>Priya R.</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ===== Body container — next up ===== -->
+<!-- ===== Footer — after that ===== -->
+
+<script>
+  function toggleMenu(btnId, menuId) {
+    document.getElementById(btnId).addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.getElementById(menuId).classList.toggle('open');
+    });
+  }
+  toggleMenu('group-switch-btn', 'group-menu');
+
+  document.getElementById('avatar-dots').addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.getElementById('avatar-list').classList.toggle('open');
+  });
+
+  // Click anywhere else closes any open menu
+  document.addEventListener('click', () => {
+    document.getElementById('group-menu').classList.remove('open');
+    document.getElementById('avatar-list').classList.remove('open');
+  });
+</script>
+
+</body>
+</html>
