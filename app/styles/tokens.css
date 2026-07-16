@@ -34,9 +34,10 @@
   /* --- Type families ---------------------------------------
      Three roles, three faces. Body stays a system stack on
      purpose — no webfont weight for the thing people read most.
-     Display is Anton: bolder and blunter than Oswald, closer to
-     gig-poster lettering than athletic/highway-sign condensed. */
-  --font-display: 'Anton', 'Arial Narrow', sans-serif;        /* titles, headline numbers */
+     Display is Archivo Black: heaviest free weight available,
+     blunt and block-like rather than condensed/athletic — reads
+     as loud without leaning on a specific "gig poster" cliché. */
+  --font-display: 'Archivo Black', 'Arial Black', sans-serif;  /* titles, headline numbers */
   --font-data: 'Space Mono', 'Courier New', monospace;        /* dates, times, counts */
   --font-body: -apple-system, BlinkMacSystemFont,
                'Helvetica Neue', Arial, sans-serif;           /* everything you read */
@@ -48,8 +49,8 @@
      12  / 16 / 1.33  — Space Mono          — meta: timestamps, counts, labels
      16  / 24 / 1.5   — system sans (body)  — default reading size
      20  / 24 / 1.2   — system sans (body, semibold) — card titles
-     24  / 32 / 1.33  — Anton (display)     — section headings
-     40  / 48 / 1.2   — Anton (display)     — hero numbers, page title */
+     24  / 32 / 1.33  — Archivo Black (display) — section headings
+     40  / 48 / 1.2   — Archivo Black (display) — hero numbers, page title */
   --text-meta-size: 12px;     --text-meta-lh: var(--space-16);
   --text-body-size: 16px;     --text-body-lh: var(--space-24);
   --text-sub-size: 20px;      --text-sub-lh: var(--space-24);

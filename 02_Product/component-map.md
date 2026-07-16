@@ -18,8 +18,8 @@ Because column count itself changes per breakpoint, spans are semantic classes, 
 | 12 | 16 | Space Mono (data) | timestamps, counts, meta labels |
 | 16 | 24 | System sans (body) | default reading size |
 | 20 | 24 | System sans, semibold (body) | card titles |
-| 24 | 32 | Anton (display) | section headings |
-| 40 | 48 | Anton (display) | hero numbers, page title |
+| 24 | 32 | Archivo Black (display) | section headings |
+| 40 | 48 | Archivo Black (display) | hero numbers, page title |
 
 **Measure rule:** body copy targets 60–75 characters per line. On desktop, full-width (12 columns) runs too long — `.col-half` lands closer to the right measure. Use `.prose` (max-width: 65ch) alongside it for any real paragraph so the cap holds regardless of column width.
 
