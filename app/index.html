@@ -72,6 +72,40 @@
     return name.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
   }
 
+  // Self-contained avatar stack: dots that expand to a plain name list.
+  // Used in the header (whole crew) and on each show card (who's in).
+  // Each instance manages its own open/closed state via closure, so
+  // multiple stacks on the page don't collide.
+  function buildAvatarStack(people) {
+    const wrap = document.createElement('div');
+    wrap.className = 'avatar-stack';
+
+    const dots = document.createElement('div');
+    dots.className = 'avatar-dots';
+    const list = document.createElement('div');
+    list.className = 'avatar-list';
+
+    people.forEach((p) => {
+      const dot = document.createElement('div');
+      dot.className = 'avatar-dot';
+      dot.textContent = initials(p.display_name);
+      dots.appendChild(dot);
+
+      const item = document.createElement('div');
+      item.textContent = p.display_name;
+      list.appendChild(item);
+    });
+
+    dots.addEventListener('click', (e) => {
+      e.stopPropagation();
+      list.classList.toggle('open');
+    });
+
+    wrap.appendChild(dots);
+    wrap.appendChild(list);
+    return wrap;
+  }
+
   function renderGroupMenu(groups, currentGroup) {
     groupMenu.innerHTML = '';
     groups.forEach(g => {
@@ -143,31 +177,39 @@
       const responses = responsesByShow[show.id] || [];
       const mine = responses.find((r) => r.person_id === person.id);
       const overlap = overlapCount(responses);
+      const interested = responses.filter((r) => r.status === 'curious' || r.status === 'going');
 
       const card = document.createElement('div');
       card.className = 'show-card';
+      if (mine && mine.status === 'out') card.classList.add('is-out');
 
-      const main = document.createElement('div');
-      main.className = 'show-card-main';
-      main.innerHTML = `
-        <div class="show-date">${formatDate(show.show_date, show.show_time)}</div>
-        <div class="show-title">${show.title}</div>
-        ${show.venue_name ? `<div class="show-venue">${show.venue_url ? `<a href="${show.venue_url}" target="_blank" rel="noopener">${show.venue_name}</a>` : show.venue_name}</div>` : ''}
-        ${show.openers ? `<div class="show-openers">with ${show.openers}</div>` : ''}
-      `;
-      card.appendChild(main);
-
-      const side = document.createElement('div');
-      side.style.display = 'flex';
-      side.style.flexDirection = 'column';
-      side.style.alignItems = 'flex-end';
-      side.style.gap = 'var(--space-8)';
-
+      const top = document.createElement('div');
+      top.className = 'show-card-top';
+      const dateEl = document.createElement('div');
+      dateEl.className = 'show-date';
+      dateEl.textContent = formatDate(show.show_date, show.show_time);
+      top.appendChild(dateEl);
       if (overlap >= 2) {
         const badge = document.createElement('div');
         badge.className = 'show-overlap';
         badge.textContent = `${overlap} overlap`;
-        side.appendChild(badge);
+        top.appendChild(badge);
+      }
+      card.appendChild(top);
+
+      const body = document.createElement('div');
+      body.innerHTML = `
+        <div class="show-title">${show.title}</div>
+        ${show.venue_name ? `<div class="show-venue">${show.venue_url ? `<a href="${show.venue_url}" target="_blank" rel="noopener">${show.venue_name}</a>` : show.venue_name}</div>` : ''}
+        ${show.openers ? `<div class="show-openers">with ${show.openers}</div>` : ''}
+      `;
+      card.appendChild(body);
+
+      if (interested.length > 0) {
+        const avatarRow = document.createElement('div');
+        avatarRow.className = 'show-card-avatars';
+        avatarRow.appendChild(buildAvatarStack(interested.map((r) => r.people)));
+        card.appendChild(avatarRow);
       }
 
       const responseRow = document.createElement('div');
@@ -187,8 +229,7 @@
         responseRow.appendChild(btn);
       });
 
-      side.appendChild(responseRow);
-      card.appendChild(side);
+      card.appendChild(responseRow);
       content.appendChild(card);
     });
   }
@@ -235,9 +276,11 @@
     e.stopPropagation();
     avatarList.classList.toggle('open');
   });
+  // Closes every open menu/avatar-list on the page, not just the
+  // header's — show cards each have their own avatar stack now.
   document.addEventListener('click', () => {
     groupMenu.classList.remove('open');
-    avatarList.classList.remove('open');
+    document.querySelectorAll('.avatar-list.open').forEach((el) => el.classList.remove('open'));
   });
 </script>
 

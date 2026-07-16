@@ -172,16 +172,22 @@
   border: 1px solid var(--color-border);
   padding: var(--space-16);
   margin-bottom: var(--space-16);
+  transition: opacity 0.15s;
+}
+
+/* Person has marked themselves out — deprioritize visually without
+   hiding it. Whole-card dimming carries this signal, so the response
+   buttons themselves don't need a special "out" treatment. */
+.show-card.is-out {
+  opacity: 0.5;
+}
+
+.show-card-top {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: var(--space-16);
-  flex-wrap: wrap;
-}
-
-.show-card-main {
-  flex: 1;
-  min-width: 200px;
+  margin-bottom: var(--space-8);
 }
 
 .show-date {
@@ -190,7 +196,6 @@
   line-height: var(--text-meta-lh);
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  margin-bottom: var(--space-8);
 }
 
 .show-title {
@@ -216,19 +221,36 @@
   margin-top: var(--space-4);
 }
 
+/* Filled, not just colored text — overlap should read as a marker,
+   not a label. Still the only place the accent color appears. */
 .show-overlap {
   font-family: var(--font-data);
   font-size: var(--text-meta-size);
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-text-inverse);
+  padding: var(--space-4) var(--space-8);
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
+.show-card-avatars {
+  margin: var(--space-8) 0;
+}
+
+.show-card-avatars .avatar-dot {
+  width: var(--space-24);
+  height: var(--space-24);
+  font-size: 10px;
+}
+
+/* Segmented control — one bordered group, not three floating
+   buttons. Reads as a single considered control. */
 .show-responses {
-  display: flex;
-  gap: var(--space-8);
-  flex-wrap: wrap;
+  display: inline-flex;
+  border: 1px solid var(--color-border);
+  margin-top: var(--space-8);
 }
 
 .resp-btn {
@@ -237,10 +259,15 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   background: none;
-  border: 1px solid var(--color-border);
+  border: none;
+  border-right: 1px solid var(--color-border);
   color: var(--color-text);
   padding: var(--space-8) var(--space-16);
   cursor: pointer;
+}
+
+.resp-btn:last-child {
+  border-right: none;
 }
 
 .resp-btn:hover {
@@ -250,12 +277,4 @@
 .resp-btn.active {
   background: var(--color-bg-inverse);
   color: var(--color-text-inverse);
-  border-color: var(--color-bg-inverse);
-}
-
-.resp-btn.active[data-status="out"] {
-  background: var(--color-bg);
-  color: var(--color-text);
-  text-decoration: line-through;
-  opacity: 0.6;
 }

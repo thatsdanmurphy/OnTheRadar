@@ -36,17 +36,17 @@ Because column count itself changes per breakpoint, spans are semantic classes, 
   - Group switcher: shows the person's current group, click opens a menu listing all their groups (`getMyGroups`) + "New group" (`createGroup`, inserts a group + membership). Empty state: "No groups yet" when the person has none.
   - Avatar stack: overlapping initials dots for the current group's members (`getGroupMembers`), click-to-expand into a plain name list. Same pattern reused from the original prototype's header avatar stack.
   - Not yet built: switching which group is "current" doesn't persist (always defaults to the first group returned); joining an existing group via invite link isn't wired yet, only creating a new one.
-- **Show card** (`app/index.html`, logic in `app/scripts/shows.js`, styles in `app/styles/components.css`) — renders a single show: date/time, title, venue (linked out), openers, curious/going/out buttons, overlap badge. Built and wired to Supabase.
+- **Show card** (`app/index.html`, logic in `app/scripts/shows.js`, styles in `app/styles/components.css`) — vertical card: date + overlap badge, title, venue (linked out), openers, who's-in avatar stack, response segmented control. Built and wired to Supabase.
   - Renders inside: show list (built) — Calendar view and "Most overlap" sort not yet built, this is the "Upcoming" list only, sorted by `show_date` ascending.
-  - Response buttons: click writes straight to `responses` via `setResponse` (upsert on `show_id, person_id`), then the whole list re-renders. Active button reflects the current person's own response.
-  - Overlap badge: only shows when 2+ people are curious or going (`overlapCount` — out never counts), per the response-states decision.
+  - Response control: three buttons (Curious / Got tickets / I'm out) in one bordered segmented group, not floating pills. Click writes straight to `responses` via `setResponse` (upsert on `show_id, person_id`), then the whole list re-renders. Active button (filled black) reflects the current person's own response — all three states look the same when active, no special-casing "out."
+  - **Card state:** when the current person's own response is "out," the whole card drops to 50% opacity (`.is-out`) rather than styling the button differently — the dimming itself is the "you've deprioritized this" signal.
+  - Overlap badge: filled block (accent bg, not just colored text) so it reads as a marker, not a label. Only shows when 2+ people are curious or going (`overlapCount` — out never counts), per the response-states decision.
+  - Who's-in avatar stack: reuses the same click-to-expand pattern as the header's crew avatars, built via a shared `buildAvatarStack(people)` helper — one closure-scoped instance per card, so multiple stacks on the page don't collide. Only shows people marked curious or going; hidden entirely if nobody's in yet.
   - Not yet built: editing/deleting a show, and any UI to add one — right now shows have to be inserted directly in Supabase's Table Editor.
 - Calendar grid — month view, fixed-height uniform cells, overflow collapses to "+N more."
   - Renders inside: Calendar view — not yet built
   - Key props: month/year, shows-by-date map
-- Avatar stack (click-to-expand) — dots that expand to a plain name list. Implemented once, in the header; show-card usage (who's interested per show) would reuse the same component, not yet added to the card itself.
-  - Renders inside: header (built), show card (not yet built)
-  - Key props: list of people, expanded/collapsed state
+- Avatar stack (click-to-expand) — dots that expand to a plain name list. One shared implementation (`buildAvatarStack`) used in both the header (whole crew) and every show card (who's interested) — built in both places now.
 - Link autofill input (mocked) — paste a link, fields populate. Currently simulated for two sample URLs; a real version needs a backend fetch + Open Graph/JSON-LD parse (CORS blocks this from a static page).
   - Renders inside: Add show flow — not yet built
   - Key props: URL string, autofill result
