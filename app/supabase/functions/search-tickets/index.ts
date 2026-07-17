@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
         show_date: e.dates?.start?.localDate || null,
         show_time: e.dates?.start?.localTime || null,
         venue_name: venue?.name || null,
-        venue_url: e.url || null,
+        venue_url: venue?.url || null,
         source_url: e.url || null,
         image: e.images?.[0]?.url || null,
       };

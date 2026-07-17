@@ -147,6 +147,7 @@
 
   let currentGroupId = null;
   let selectedVenueUrl = null;
+  let selectedSourceUrl = null;
   let venueSearchTimer = null;
 
   function initials(name) {
@@ -282,7 +283,7 @@
 
       const body = document.createElement('div');
       body.innerHTML = `
-        <div class="show-title">${show.title}</div>
+        <div class="show-title">${show.source_url ? `<a href="${show.source_url}" target="_blank" rel="noopener">${show.title}</a>` : show.title}</div>
         ${show.venue_name ? `<div class="show-venue">${show.venue_url ? `<a href="${show.venue_url}" target="_blank" rel="noopener">${show.venue_name}</a>` : show.venue_name}</div>` : ''}
         ${show.openers ? `<div class="show-openers">with ${show.openers}</div>` : ''}
       `;
@@ -385,6 +386,7 @@
     venueSearchResults.innerHTML = '';
     venueSearchResults.style.display = 'none';
     selectedVenueUrl = null;
+    selectedSourceUrl = null;
 
     document.getElementById('search-method-row').style.display = 'block';
 
@@ -397,6 +399,7 @@
     document.getElementById('show-date-input').value = prefill?.show_date || '';
     venueNameInput.value = prefill?.venue_name || '';
     selectedVenueUrl = prefill?.venue_url || null;
+    selectedSourceUrl = prefill?.source_url || null;
     addShowForm.style.display = 'block';
     addShowForm.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
@@ -475,7 +478,11 @@
 
     linkAutofillStatus.textContent = 'Reading link…';
     const result = await parseShowLink(url);
-    const fields = { ...result, venue_url: result.venue_url || url };
+    // source_url (the show's own ticket page) is always the pasted
+    // link itself; venue_url stays whatever the page's own structured
+    // data said (a real venue site), or nothing — the two aren't the
+    // same thing, so don't collapse one into the other.
+    const fields = { ...result, source_url: result.source_url || url };
 
     if (fields.title && fields.show_date) {
       await submitShowDirectly(fields);
@@ -539,6 +546,7 @@
       show_date: document.getElementById('show-date-input').value,
       venue_name: venueNameInput.value.trim(),
       venue_url: selectedVenueUrl,
+      source_url: selectedSourceUrl,
     };
     await submitShowDirectly(fields);
   });

@@ -59,6 +59,7 @@ window.OTR = window.OTR || {};
         show_time: fields.show_time || null,
         venue_name: fields.venue_name || null,
         venue_url: fields.venue_url || null,
+        source_url: fields.source_url || null,
         openers: fields.openers || null,
       })
       .select()

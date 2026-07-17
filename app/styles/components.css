@@ -206,6 +206,14 @@
   margin-bottom: var(--space-4);
 }
 
+.show-title a {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--text-sub-size);
+  line-height: var(--text-sub-lh);
+  color: var(--color-text);
+}
+
 .show-venue a {
   font-family: var(--font-body);
   font-size: var(--text-body-size);
