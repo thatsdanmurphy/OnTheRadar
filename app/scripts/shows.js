@@ -71,6 +71,33 @@ window.OTR = window.OTR || {};
     return data;
   };
 
+  // Link autofill — fetches a show URL server-side (Edge Function
+  // avoids the browser CORS wall) and parses JSON-LD/Open Graph data.
+  // Returns {} on failure so the caller can fall back to manual entry.
+  OTR.parseShowLink = async function (url) {
+    const { data, error } = await OTR.db.functions.invoke('parse-show-link', {
+      body: { url },
+    });
+    if (error) {
+      console.error('Link autofill failed:', error);
+      return {};
+    }
+    return data || {};
+  };
+
+  // Artist/show name search via Ticketmaster's Discovery API, scoped
+  // to New England. Returns a list of candidate shows to pick from.
+  OTR.searchShows = async function (keyword) {
+    const { data, error } = await OTR.db.functions.invoke('search-tickets', {
+      body: { keyword },
+    });
+    if (error) {
+      console.error('Show search failed:', error);
+      return [];
+    }
+    return data?.shows || [];
+  };
+
   OTR.setResponse = async function (showId, personId, status) {
     const { error } = await OTR.db
       .from('responses')

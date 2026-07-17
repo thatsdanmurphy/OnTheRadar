@@ -52,38 +52,69 @@
     <button type="button" id="add-show-btn" class="btn-solid" style="display:none;">+ Add show</button>
   </div>
 
-  <form id="add-show-form" class="add-show-form" style="display:none;">
-    <div class="form-row">
-      <label for="show-title">Show</label>
-      <input type="text" id="show-title" required placeholder="Artist / show title">
+  <div id="add-show-panel" class="add-show-form" style="display:none;">
+
+    <!-- Method 1: search by artist name (Ticketmaster, New England) -->
+    <div class="form-row" id="search-method-row">
+      <label for="artist-search-input">Search artist</label>
+      <div class="inline-input-row">
+        <input type="text" id="artist-search-input" placeholder="Artist or show name">
+        <button type="button" id="artist-search-btn" class="btn-solid">Search</button>
+      </div>
+      <div id="artist-search-status" class="autofill-status"></div>
+      <div id="artist-search-results" class="search-results" style="display:none;"></div>
     </div>
-    <div class="form-row-split">
+
+    <div class="add-show-alt-methods">
+      <button type="button" id="show-link-method-btn" class="link-btn">or paste a link</button>
+      <button type="button" id="show-manual-method-btn" class="link-btn">or add manually</button>
+    </div>
+
+    <!-- Method 2: paste a link, autofill via server-side scrape -->
+    <div class="form-row" id="link-method-row" style="display:none;">
+      <label for="show-link-input">Show link</label>
+      <div class="inline-input-row">
+        <input type="url" id="show-link-input" placeholder="https://…">
+        <button type="button" id="link-autofill-btn" class="btn-solid">Autofill</button>
+      </div>
+      <div id="link-autofill-status" class="autofill-status"></div>
+    </div>
+
+    <!-- Method 3: manual fields — final review step for all three methods -->
+    <form id="add-show-form" style="display:none;">
       <div class="form-row">
-        <label for="show-date-input">Date</label>
-        <input type="date" id="show-date-input" required>
+        <label for="show-title">Show</label>
+        <input type="text" id="show-title" required placeholder="Artist / show title">
+      </div>
+      <div class="form-row-split">
+        <div class="form-row">
+          <label for="show-date-input">Date</label>
+          <input type="date" id="show-date-input" required>
+        </div>
+        <div class="form-row">
+          <label for="show-time-input">Time</label>
+          <input type="time" id="show-time-input">
+        </div>
       </div>
       <div class="form-row">
-        <label for="show-time-input">Time</label>
-        <input type="time" id="show-time-input">
+        <label for="show-venue-name">Venue</label>
+        <input type="text" id="show-venue-name" placeholder="Venue name">
       </div>
-    </div>
-    <div class="form-row">
-      <label for="show-venue-name">Venue</label>
-      <input type="text" id="show-venue-name" placeholder="Venue name">
-    </div>
-    <div class="form-row">
-      <label for="show-venue-url">Venue link</label>
-      <input type="url" id="show-venue-url" placeholder="https://…">
-    </div>
-    <div class="form-row">
-      <label for="show-openers">Openers</label>
-      <input type="text" id="show-openers" placeholder="Opener A, Opener B">
-    </div>
-    <div class="form-actions">
-      <button type="submit" class="btn-solid">Add show</button>
-      <button type="button" id="cancel-add-show" class="btn-outline">Cancel</button>
-    </div>
-  </form>
+      <div class="form-row">
+        <label for="show-venue-url">Venue link</label>
+        <input type="url" id="show-venue-url" placeholder="https://…">
+      </div>
+      <div class="form-row">
+        <label for="show-openers">Openers</label>
+        <input type="text" id="show-openers" placeholder="Opener A, Opener B">
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn-solid">Add show</button>
+        <button type="button" id="cancel-add-show" class="btn-outline">Cancel</button>
+      </div>
+    </form>
+
+  </div>
 
   <div id="show-list-content" class="show-list-empty">Loading…</div>
 </main>
@@ -98,15 +129,28 @@
 <script src="scripts/shows.js"></script>
 <script>
   const { getOrCreatePerson, getMyGroups, getGroupMembers, createGroup } = OTR;
-  const { getShowsForGroup, getResponsesForShows, overlapCount, setResponse, createShow } = OTR;
+  const { getShowsForGroup, getResponsesForShows, overlapCount, setResponse, createShow, parseShowLink, searchShows } = OTR;
 
   const switchBtn = document.getElementById('group-switch-btn');
   const groupMenu = document.getElementById('group-menu');
   const avatarDots = document.getElementById('avatar-dots');
   const avatarList = document.getElementById('avatar-list');
   const addShowBtn = document.getElementById('add-show-btn');
+  const addShowPanel = document.getElementById('add-show-panel');
   const addShowForm = document.getElementById('add-show-form');
   const cancelAddShow = document.getElementById('cancel-add-show');
+
+  const artistSearchInput = document.getElementById('artist-search-input');
+  const artistSearchBtn = document.getElementById('artist-search-btn');
+  const artistSearchStatus = document.getElementById('artist-search-status');
+  const artistSearchResults = document.getElementById('artist-search-results');
+
+  const showLinkMethodBtn = document.getElementById('show-link-method-btn');
+  const showManualMethodBtn = document.getElementById('show-manual-method-btn');
+  const linkMethodRow = document.getElementById('link-method-row');
+  const showLinkInput = document.getElementById('show-link-input');
+  const linkAutofillBtn = document.getElementById('link-autofill-btn');
+  const linkAutofillStatus = document.getElementById('link-autofill-status');
 
   let currentGroupId = null;
 
@@ -327,18 +371,105 @@
     document.querySelectorAll('.avatar-list.open').forEach((el) => el.classList.remove('open'));
   });
 
-  // Add show
-  addShowBtn.addEventListener('click', () => {
+  // ===== Add show: three entry methods (search, link, manual), all
+  // funneling into the same manual form for review before submit. =====
+
+  function resetAddShowPanel() {
+    addShowForm.reset();
+    addShowForm.style.display = 'none';
+
+    artistSearchInput.value = '';
+    artistSearchStatus.textContent = '';
+    artistSearchResults.innerHTML = '';
+    artistSearchResults.style.display = 'none';
+
+    showLinkInput.value = '';
+    linkAutofillStatus.textContent = '';
+    linkMethodRow.style.display = 'none';
+
+    document.getElementById('search-method-row').style.display = 'block';
+
+    addShowPanel.style.display = 'none';
+    addShowBtn.style.display = 'inline-block';
+  }
+
+  function revealManualForm(prefill) {
+    document.getElementById('show-title').value = prefill?.title || '';
+    document.getElementById('show-date-input').value = prefill?.show_date || '';
+    document.getElementById('show-time-input').value = prefill?.show_time || '';
+    document.getElementById('show-venue-name').value = prefill?.venue_name || '';
+    document.getElementById('show-venue-url').value = prefill?.venue_url || '';
+    document.getElementById('show-openers').value = prefill?.openers || '';
     addShowForm.style.display = 'block';
+    addShowForm.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  addShowBtn.addEventListener('click', () => {
+    addShowPanel.style.display = 'block';
     addShowBtn.style.display = 'none';
   });
 
-  cancelAddShow.addEventListener('click', () => {
-    addShowForm.reset();
-    addShowForm.style.display = 'none';
-    addShowBtn.style.display = 'inline-block';
+  cancelAddShow.addEventListener('click', resetAddShowPanel);
+
+  // Method switching
+  showLinkMethodBtn.addEventListener('click', () => {
+    document.getElementById('search-method-row').style.display = 'none';
+    linkMethodRow.style.display = 'block';
   });
 
+  showManualMethodBtn.addEventListener('click', () => {
+    revealManualForm(null);
+  });
+
+  // Method 1: artist search (Ticketmaster, New England)
+  artistSearchBtn.addEventListener('click', async () => {
+    const keyword = artistSearchInput.value.trim();
+    if (!keyword) return;
+
+    artistSearchStatus.textContent = 'Searching…';
+    artistSearchResults.style.display = 'none';
+    artistSearchResults.innerHTML = '';
+
+    const results = await searchShows(keyword);
+
+    if (results.length === 0) {
+      artistSearchStatus.textContent = 'No shows found — try a link or add manually.';
+      return;
+    }
+
+    artistSearchStatus.textContent = `${results.length} show${results.length === 1 ? '' : 's'} found`;
+    artistSearchResults.style.display = 'block';
+
+    results.forEach((show) => {
+      const item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'search-result-item';
+      item.innerHTML = `
+        <div class="result-title">${show.title || 'Untitled show'}</div>
+        <div class="result-meta">${show.show_date || 'No date'}${show.venue_name ? ' · ' + show.venue_name : ''}</div>
+      `;
+      item.addEventListener('click', () => revealManualForm(show));
+      artistSearchResults.appendChild(item);
+    });
+  });
+
+  // Method 2: paste a link, autofill via server-side scrape
+  linkAutofillBtn.addEventListener('click', async () => {
+    const url = showLinkInput.value.trim();
+    if (!url) return;
+
+    linkAutofillStatus.textContent = 'Reading link…';
+    const result = await parseShowLink(url);
+
+    if (!result.title && !result.show_date) {
+      linkAutofillStatus.textContent = "Couldn't read that link — add the details manually below.";
+    } else {
+      linkAutofillStatus.textContent = 'Filled in what we could find — check it over below.';
+    }
+    revealManualForm({ ...result, venue_url: result.venue_url || url });
+  });
+
+  // Method 3: manual submit — final step for all three methods
   addShowForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!currentGroupId) return;
@@ -355,9 +486,7 @@
 
     const show = await createShow(currentGroupId, person.id, fields);
     if (show) {
-      addShowForm.reset();
-      addShowForm.style.display = 'none';
-      addShowBtn.style.display = 'inline-block';
+      resetAddShowPanel();
       await renderShowList(currentGroupId);
     }
   });
