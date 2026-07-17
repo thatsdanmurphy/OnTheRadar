@@ -80,33 +80,23 @@
       <div id="link-autofill-status" class="autofill-status"></div>
     </div>
 
-    <!-- Method 3: manual fields — final review step for all three methods -->
+    <!-- Method 3: manual fields — also the fallback when search/link
+         autofill doesn't return a usable title+date. When it does,
+         the show gets created straight from that data with no form
+         shown at all (see submitShowDirectly in the script below). -->
     <form id="add-show-form" style="display:none;">
       <div class="form-row">
         <label for="show-title">Show</label>
         <input type="text" id="show-title" required placeholder="Artist / show title">
       </div>
-      <div class="form-row-split">
-        <div class="form-row">
-          <label for="show-date-input">Date</label>
-          <input type="date" id="show-date-input" required>
-        </div>
-        <div class="form-row">
-          <label for="show-time-input">Time</label>
-          <input type="time" id="show-time-input">
-        </div>
+      <div class="form-row">
+        <label for="show-date-input">Date</label>
+        <input type="date" id="show-date-input" required>
       </div>
       <div class="form-row">
         <label for="show-venue-name">Venue</label>
-        <input type="text" id="show-venue-name" placeholder="Venue name">
-      </div>
-      <div class="form-row">
-        <label for="show-venue-url">Venue link</label>
-        <input type="url" id="show-venue-url" placeholder="https://…">
-      </div>
-      <div class="form-row">
-        <label for="show-openers">Openers</label>
-        <input type="text" id="show-openers" placeholder="Opener A, Opener B">
+        <input type="text" id="show-venue-name" placeholder="Venue name" autocomplete="off">
+        <div id="venue-search-results" class="search-results" style="display:none;"></div>
       </div>
       <div class="form-actions">
         <button type="submit" class="btn-solid">Add show</button>
@@ -129,7 +119,7 @@
 <script src="scripts/shows.js"></script>
 <script>
   const { getOrCreatePerson, getMyGroups, getGroupMembers, createGroup } = OTR;
-  const { getShowsForGroup, getResponsesForShows, overlapCount, setResponse, createShow, parseShowLink, searchShows } = OTR;
+  const { getShowsForGroup, getResponsesForShows, overlapCount, setResponse, createShow, parseShowLink, searchShows, searchVenues } = OTR;
 
   const switchBtn = document.getElementById('group-switch-btn');
   const groupMenu = document.getElementById('group-menu');
@@ -152,7 +142,12 @@
   const linkAutofillBtn = document.getElementById('link-autofill-btn');
   const linkAutofillStatus = document.getElementById('link-autofill-status');
 
+  const venueNameInput = document.getElementById('show-venue-name');
+  const venueSearchResults = document.getElementById('venue-search-results');
+
   let currentGroupId = null;
+  let selectedVenueUrl = null;
+  let venueSearchTimer = null;
 
   function initials(name) {
     return name.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
@@ -387,6 +382,10 @@
     linkAutofillStatus.textContent = '';
     linkMethodRow.style.display = 'none';
 
+    venueSearchResults.innerHTML = '';
+    venueSearchResults.style.display = 'none';
+    selectedVenueUrl = null;
+
     document.getElementById('search-method-row').style.display = 'block';
 
     addShowPanel.style.display = 'none';
@@ -396,12 +395,26 @@
   function revealManualForm(prefill) {
     document.getElementById('show-title').value = prefill?.title || '';
     document.getElementById('show-date-input').value = prefill?.show_date || '';
-    document.getElementById('show-time-input').value = prefill?.show_time || '';
-    document.getElementById('show-venue-name').value = prefill?.venue_name || '';
-    document.getElementById('show-venue-url').value = prefill?.venue_url || '';
-    document.getElementById('show-openers').value = prefill?.openers || '';
+    venueNameInput.value = prefill?.venue_name || '';
+    selectedVenueUrl = prefill?.venue_url || null;
     addShowForm.style.display = 'block';
     addShowForm.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  // Used when search or link autofill already has enough to create the
+  // show outright (title + date) — no review form, just add it. Falls
+  // back to the form if the data turns out to be incomplete.
+  async function submitShowDirectly(fields) {
+    if (!currentGroupId) return;
+    if (!fields.title || !fields.show_date) {
+      revealManualForm(fields);
+      return;
+    }
+    const show = await createShow(currentGroupId, person.id, fields);
+    if (show) {
+      resetAddShowPanel();
+      await renderShowList(currentGroupId);
+    }
   }
 
   addShowBtn.addEventListener('click', () => {
@@ -448,47 +461,86 @@
         <div class="result-title">${show.title || 'Untitled show'}</div>
         <div class="result-meta">${show.show_date || 'No date'}${show.venue_name ? ' · ' + show.venue_name : ''}</div>
       `;
-      item.addEventListener('click', () => revealManualForm(show));
+      item.addEventListener('click', () => submitShowDirectly(show));
       artistSearchResults.appendChild(item);
     });
   });
 
-  // Method 2: paste a link, autofill via server-side scrape
+  // Method 2: paste a link, autofill via server-side scrape. A usable
+  // result (title + date) gets added straight away; anything less
+  // falls back to the manual form with whatever was found pre-filled.
   linkAutofillBtn.addEventListener('click', async () => {
     const url = showLinkInput.value.trim();
     if (!url) return;
 
     linkAutofillStatus.textContent = 'Reading link…';
     const result = await parseShowLink(url);
+    const fields = { ...result, venue_url: result.venue_url || url };
 
-    if (!result.title && !result.show_date) {
-      linkAutofillStatus.textContent = "Couldn't read that link — add the details manually below.";
+    if (fields.title && fields.show_date) {
+      await submitShowDirectly(fields);
     } else {
-      linkAutofillStatus.textContent = 'Filled in what we could find — check it over below.';
+      linkAutofillStatus.textContent = "Couldn't read that link — add the details manually below.";
+      revealManualForm(fields);
     }
-    revealManualForm({ ...result, venue_url: result.venue_url || url });
   });
 
-  // Method 3: manual submit — final step for all three methods
+  // Venue-name autocomplete — debounced lookup against Ticketmaster's
+  // venue directory. Picking a suggestion silently attaches its venue
+  // link; there's no visible link field for it to appear in.
+  venueNameInput.addEventListener('input', () => {
+    selectedVenueUrl = null;
+    clearTimeout(venueSearchTimer);
+
+    const keyword = venueNameInput.value.trim();
+    if (keyword.length < 3) {
+      venueSearchResults.style.display = 'none';
+      venueSearchResults.innerHTML = '';
+      return;
+    }
+
+    venueSearchTimer = setTimeout(async () => {
+      const venues = await searchVenues(keyword);
+      venueSearchResults.innerHTML = '';
+
+      if (venues.length === 0) {
+        venueSearchResults.style.display = 'none';
+        return;
+      }
+
+      venues.forEach((v) => {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'search-result-item';
+        item.innerHTML = `
+          <div class="result-title">${v.name}</div>
+          ${v.city ? `<div class="result-meta">${v.city}</div>` : ''}
+        `;
+        item.addEventListener('click', () => {
+          venueNameInput.value = v.name;
+          selectedVenueUrl = v.url;
+          venueSearchResults.style.display = 'none';
+          venueSearchResults.innerHTML = '';
+        });
+        venueSearchResults.appendChild(item);
+      });
+
+      venueSearchResults.style.display = 'block';
+    }, 300);
+  });
+
+  // Method 3: manual submit — used for plain manual entry, and as the
+  // fallback when search/link autofill didn't have enough to add the
+  // show outright.
   addShowForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    if (!currentGroupId) return;
-
     const fields = {
       title: document.getElementById('show-title').value.trim(),
       show_date: document.getElementById('show-date-input').value,
-      show_time: document.getElementById('show-time-input').value,
-      venue_name: document.getElementById('show-venue-name').value.trim(),
-      venue_url: document.getElementById('show-venue-url').value.trim(),
-      openers: document.getElementById('show-openers').value.trim(),
+      venue_name: venueNameInput.value.trim(),
+      venue_url: selectedVenueUrl,
     };
-    if (!fields.title || !fields.show_date) return;
-
-    const show = await createShow(currentGroupId, person.id, fields);
-    if (show) {
-      resetAddShowPanel();
-      await renderShowList(currentGroupId);
-    }
+    await submitShowDirectly(fields);
   });
 </script>
 

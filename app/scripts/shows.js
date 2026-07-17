@@ -98,6 +98,20 @@ window.OTR = window.OTR || {};
     return data?.shows || [];
   };
 
+  // Venue-name autocomplete for the Add Show form — looks up
+  // Ticketmaster's venue directory so a venue link gets attached
+  // automatically, without ever showing a link field.
+  OTR.searchVenues = async function (keyword) {
+    const { data, error } = await OTR.db.functions.invoke('search-venues', {
+      body: { keyword },
+    });
+    if (error) {
+      console.error('Venue search failed:', error);
+      return [];
+    }
+    return data?.venues || [];
+  };
+
   OTR.setResponse = async function (showId, personId, status) {
     const { error } = await OTR.db
       .from('responses')
