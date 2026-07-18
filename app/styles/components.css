@@ -410,7 +410,8 @@
   padding: var(--space-4);
   border-right: 1px solid var(--color-border);
   border-bottom: 1px solid var(--color-border);
-  opacity: 0.7;
+  background: var(--color-bg-inverse);
+  color: var(--color-text-inverse);
 }
 
 /* Fixed height, not min-height — every row stays uniform regardless
@@ -427,6 +428,12 @@
 
 .calendar-day.is-empty {
   background: rgba(10, 10, 10, 0.03);
+}
+
+/* Tinted so a day with something happening reads at a glance, before
+   even looking at the bubble/time inside it. */
+.calendar-day.has-shows {
+  background: rgba(242, 84, 126, 0.14);
 }
 
 .calendar-day-number {

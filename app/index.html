@@ -632,6 +632,7 @@
       cell.appendChild(num);
 
       const dayShows = showsByDate[dateStr] || [];
+      if (dayShows.length > 0) cell.classList.add('has-shows');
 
       dayShows.slice(0, CALENDAR_MAX_VISIBLE).forEach((show) => {
         const responses = responsesByShow[show.id] || [];

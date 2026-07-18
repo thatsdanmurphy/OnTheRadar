@@ -134,6 +134,11 @@
 **Why:** The Ticketmaster-sourced link costs nothing and already existed in data this app fetches anyway. A real Spotify integration would cost real setup (API key, Edge Function, secret) for less capability than it would have a year ago, given what's been removed — not worth it at any scope this project could reach.
 **Revisit if:** Spotify's dev terms change again, or the 5-user cap stops mattering because Spotify data becomes genuinely core to the product rather than a nice-to-have link.
 
+## 2026-07-18 — Calendar: days with shows get a pink tint, weekday header inverted
+**What:** Any day cell with 1+ shows gets a pink-tinted background (`.has-shows`, using the accent color at low opacity) so it reads at a glance before even looking at the bubble inside it. The weekday header row (S/M/T/W/T/F/S) flipped to black background, white text, matching the same inverted treatment already used on active buttons elsewhere.
+**Why:** Requested directly — the small dot alone wasn't obvious enough that a day had something on it; a tinted cell is a much bigger, easier target to notice while scanning a month.
+**Revisit if:** Never really — small, self-contained visual tweak.
+
 ## 2026-07-18 — Venue links stay pointed at Ticketmaster's venue page, not each venue's own site
 **What:** Raised wanting venue links to go to "legit venue sites" rather than Ticketmaster. Left as-is for now: Ticketmaster's Discovery API (both `search-tickets` and `search-venues`) doesn't expose a venue's own official website as a field — only its own Ticketmaster venue page, which is why that's what gets stored. Getting the venue's real site would need a separate lookup (a web search per venue, or a hand-maintained venue-name-to-URL table), which is real complexity for something that already works as a de facto calendar.
 **Why:** No cheap fix exists on Ticketmaster's side. Manually-entered venues and link-autofill from a venue's own page already produce their real site when the data's there, so the gap is specifically "shows added via Ticketmaster search."
