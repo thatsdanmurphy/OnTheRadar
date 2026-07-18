@@ -65,6 +65,10 @@ Deno.serve(async (req) => {
       // fine, price_min just stays null and the detail page hides the
       // price line rather than showing a false "$0".
       const priceRange = e.priceRanges?.[0];
+      // Ticketmaster's own attraction data includes each artist's
+      // verified Spotify link (among other socials) — free, since
+      // it's already in this same response. No separate API needed.
+      const attraction = e._embedded?.attractions?.[0];
       return {
         title: e.name || null,
         show_date: e.dates?.start?.localDate || null,
@@ -76,6 +80,7 @@ Deno.serve(async (req) => {
         price_min: priceRange?.min ?? null,
         price_max: priceRange?.max ?? null,
         price_currency: priceRange?.currency ?? null,
+        spotify_url: attraction?.externalLinks?.spotify?.[0]?.url || null,
       };
     });
 

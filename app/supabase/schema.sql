@@ -50,6 +50,7 @@ create table shows (
   price_min numeric,
   price_max numeric,
   price_currency text,
+  spotify_url text,
   created_by uuid references people(id),
   created_at timestamptz not null default now()
 );

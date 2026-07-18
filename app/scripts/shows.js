@@ -66,6 +66,7 @@ window.OTR = window.OTR || {};
         price_min: fields.price_min ?? null,
         price_max: fields.price_max ?? null,
         price_currency: fields.price_currency || null,
+        spotify_url: fields.spotify_url || null,
         openers: fields.openers || null,
       })
       .select()

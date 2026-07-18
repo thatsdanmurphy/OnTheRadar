@@ -528,7 +528,7 @@
     }
     showDetailCard.appendChild(top);
 
-    if (show.price_min != null || show.source_url) {
+    if (show.price_min != null || show.source_url || show.spotify_url) {
       const meta = document.createElement('div');
       meta.className = 'show-detail-meta';
 
@@ -548,6 +548,16 @@
         buyBtn.className = 'btn-solid show-detail-buy';
         buyBtn.textContent = 'Buy tickets';
         meta.appendChild(buyBtn);
+      }
+
+      if (show.spotify_url) {
+        const spotifyLink = document.createElement('a');
+        spotifyLink.href = show.spotify_url;
+        spotifyLink.target = '_blank';
+        spotifyLink.rel = 'noopener';
+        spotifyLink.className = 'link-btn';
+        spotifyLink.textContent = 'Listen on Spotify';
+        meta.appendChild(spotifyLink);
       }
 
       showDetailCard.appendChild(meta);
