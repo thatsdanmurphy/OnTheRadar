@@ -144,6 +144,14 @@
     </div>
     <div class="calendar-grid" id="calendar-grid"></div>
   </div>
+
+  <!-- Show detail — reached from a "View details" link on a list card
+       or by tapping a calendar bubble (calendar cells are too small to
+       hold the full response control, so this is where that lives). -->
+  <div id="show-detail-view" style="display:none;">
+    <button type="button" id="show-detail-back" class="link-btn" style="margin-bottom: var(--space-16);">‹ Back</button>
+    <div class="show-card" id="show-detail-card"></div>
+  </div>
 </main>
 
 <!-- ===== Footer — next up ===== -->
@@ -168,6 +176,10 @@
   const calendarView = document.getElementById('calendar-view');
   const calendarPrevBtn = document.getElementById('calendar-prev');
   const calendarNextBtn = document.getElementById('calendar-next');
+
+  const showDetailView = document.getElementById('show-detail-view');
+  const showDetailBackBtn = document.getElementById('show-detail-back');
+  const showDetailCard = document.getElementById('show-detail-card');
 
   const switchBtn = document.getElementById('group-switch-btn');
   const groupMenu = document.getElementById('group-menu');
@@ -330,6 +342,46 @@
     }
   }
 
+  // Shared between the list card and the show detail view — title,
+  // venue, openers, who's-in avatars, and the response control. Kept
+  // in one place so the two surfaces can't drift apart.
+  function renderShowInteractiveBody(container, show, responses, onResponseChange) {
+    const mine = responses.find((r) => r.person_id === person.id);
+    const interested = responses.filter((r) => r.status === 'curious' || r.status === 'going');
+
+    container.innerHTML = `
+      <div class="show-title">${show.source_url ? `<a href="${show.source_url}" target="_blank" rel="noopener">${show.title}</a>` : show.title}</div>
+      ${show.venue_name ? `<div class="show-venue">${show.venue_url ? `<a href="${show.venue_url}" target="_blank" rel="noopener">${show.venue_name}</a>` : show.venue_name}</div>` : ''}
+      ${show.openers ? `<div class="show-openers">with ${show.openers}</div>` : ''}
+    `;
+
+    if (interested.length > 0) {
+      const avatarRow = document.createElement('div');
+      avatarRow.className = 'show-card-avatars';
+      avatarRow.appendChild(buildAvatarStack(interested.map((r) => r.people)));
+      container.appendChild(avatarRow);
+    }
+
+    const responseRow = document.createElement('div');
+    responseRow.className = 'show-responses';
+
+    [['curious', 'Curious'], ['going', 'Got tickets'], ['out', "I'm out"]].forEach(([status, label]) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'resp-btn';
+      btn.dataset.status = status;
+      btn.textContent = label;
+      if (mine && mine.status === status) btn.classList.add('active');
+      btn.addEventListener('click', async () => {
+        const ok = await setResponse(show.id, person.id, status);
+        if (ok) await onResponseChange();
+      });
+      responseRow.appendChild(btn);
+    });
+
+    container.appendChild(responseRow);
+  }
+
   function renderListView(shows, responsesByShow) {
     const content = listContent;
 
@@ -346,7 +398,6 @@
       const responses = responsesByShow[show.id] || [];
       const mine = responses.find((r) => r.person_id === person.id);
       const overlap = overlapCount(responses);
-      const interested = responses.filter((r) => r.status === 'curious' || r.status === 'going');
 
       const card = document.createElement('div');
       card.className = 'show-card';
@@ -367,43 +418,86 @@
       card.appendChild(top);
 
       const body = document.createElement('div');
-      body.innerHTML = `
-        <div class="show-title">${show.source_url ? `<a href="${show.source_url}" target="_blank" rel="noopener">${show.title}</a>` : show.title}</div>
-        ${show.venue_name ? `<div class="show-venue">${show.venue_url ? `<a href="${show.venue_url}" target="_blank" rel="noopener">${show.venue_name}</a>` : show.venue_name}</div>` : ''}
-        ${show.openers ? `<div class="show-openers">with ${show.openers}</div>` : ''}
-      `;
       card.appendChild(body);
+      renderShowInteractiveBody(body, show, responses, () => renderCurrentView(currentGroupId));
 
-      if (interested.length > 0) {
-        const avatarRow = document.createElement('div');
-        avatarRow.className = 'show-card-avatars';
-        avatarRow.appendChild(buildAvatarStack(interested.map((r) => r.people)));
-        card.appendChild(avatarRow);
-      }
+      const detailBtn = document.createElement('button');
+      detailBtn.type = 'button';
+      detailBtn.className = 'link-btn show-detail-link';
+      detailBtn.textContent = 'View details';
+      detailBtn.addEventListener('click', () => openShowDetail(show.id));
+      card.appendChild(detailBtn);
 
-      const responseRow = document.createElement('div');
-      responseRow.className = 'show-responses';
-
-      [['curious', 'Curious'], ['going', 'Got tickets'], ['out', "I'm out"]].forEach(([status, label]) => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'resp-btn';
-        btn.dataset.status = status;
-        btn.textContent = label;
-        if (mine && mine.status === status) btn.classList.add('active');
-        btn.addEventListener('click', async () => {
-          const ok = await setResponse(show.id, person.id, status);
-          if (ok) await renderCurrentView(currentGroupId);
-        });
-        responseRow.appendChild(btn);
-      });
-
-      card.appendChild(responseRow);
       content.appendChild(card);
     });
   }
 
-  const CALENDAR_WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  // Formats show_time ("19:30:00") down to something that fits a
+  // calendar cell — "7:30 PM" rather than a full date+time string.
+  function formatTimeShort(timeStr) {
+    const d = new Date(`2000-01-01T${timeStr}`);
+    return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  }
+
+  async function openShowDetail(showId) {
+    if (!currentGroupId) return;
+    const { shows, responsesByShow } = await loadGroupData(currentGroupId);
+    const show = shows.find((s) => s.id === showId);
+    if (!show) return;
+
+    viewToggle.style.display = 'none';
+    addShowBtn.style.display = 'none';
+    listContent.style.display = 'none';
+    calendarView.style.display = 'none';
+    showDetailView.style.display = 'block';
+
+    renderShowDetail(show, responsesByShow[show.id] || []);
+  }
+
+  function renderShowDetail(show, responses) {
+    const mine = responses.find((r) => r.person_id === person.id);
+    const overlap = overlapCount(responses);
+
+    showDetailCard.className = 'show-card';
+    if (mine && mine.status === 'out') showDetailCard.classList.add('is-out');
+    showDetailCard.innerHTML = '';
+
+    const top = document.createElement('div');
+    top.className = 'show-card-top';
+    const dateEl = document.createElement('div');
+    dateEl.className = 'show-date';
+    dateEl.textContent = formatDate(show.show_date, show.show_time);
+    top.appendChild(dateEl);
+    if (overlap >= 2) {
+      const badge = document.createElement('div');
+      badge.className = 'show-overlap';
+      badge.textContent = `${overlap} overlap`;
+      top.appendChild(badge);
+    }
+    showDetailCard.appendChild(top);
+
+    const body = document.createElement('div');
+    showDetailCard.appendChild(body);
+
+    renderShowInteractiveBody(body, show, responses, async () => {
+      const { shows, responsesByShow } = await loadGroupData(currentGroupId);
+      const updated = shows.find((s) => s.id === show.id);
+      if (updated) renderShowDetail(updated, responsesByShow[updated.id] || []);
+    });
+  }
+
+  function closeShowDetail() {
+    showDetailView.style.display = 'none';
+    viewToggle.style.display = 'inline-flex';
+    addShowBtn.style.display = 'inline-block';
+    listContent.style.display = viewMode === 'list' ? '' : 'none';
+    calendarView.style.display = viewMode === 'calendar' ? 'block' : 'none';
+  }
+
+  showDetailBackBtn.addEventListener('click', closeShowDetail);
+
+  const CALENDAR_WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  const CALENDAR_MAX_VISIBLE = 2;
 
   function renderCalendarView(shows, responsesByShow) {
     const grid = document.getElementById('calendar-grid');
@@ -450,20 +544,29 @@
       num.textContent = day;
       cell.appendChild(num);
 
-      (showsByDate[dateStr] || []).forEach((show) => {
+      const dayShows = showsByDate[dateStr] || [];
+
+      dayShows.slice(0, CALENDAR_MAX_VISIBLE).forEach((show) => {
         const responses = responsesByShow[show.id] || [];
         const overlap = overlapCount(responses);
 
-        const el = document.createElement(show.source_url ? 'a' : 'div');
-        el.className = 'calendar-show' + (overlap >= 2 ? ' has-overlap' : '');
-        el.textContent = show.title;
-        if (show.source_url) {
-          el.href = show.source_url;
-          el.target = '_blank';
-          el.rel = 'noopener';
-        }
-        cell.appendChild(el);
+        // Bubble = something's happening (Google/Apple-calendar style),
+        // not the full title — the title lives on the detail page a
+        // tap away, since a cell this small can't hold it legibly.
+        const row = document.createElement('button');
+        row.type = 'button';
+        row.className = 'calendar-show' + (overlap >= 2 ? ' has-overlap' : '');
+        row.innerHTML = `<span class="calendar-show-dot"></span><span class="calendar-show-label">${show.show_time ? formatTimeShort(show.show_time) : show.title}</span>`;
+        row.addEventListener('click', () => openShowDetail(show.id));
+        cell.appendChild(row);
       });
+
+      if (dayShows.length > CALENDAR_MAX_VISIBLE) {
+        const more = document.createElement('div');
+        more.className = 'calendar-more';
+        more.textContent = `+${dayShows.length - CALENDAR_MAX_VISIBLE} more`;
+        cell.appendChild(more);
+      }
 
       grid.appendChild(cell);
     }
