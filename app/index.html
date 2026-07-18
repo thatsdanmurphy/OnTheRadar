@@ -49,11 +49,18 @@
 
       <!-- Step 2: only right after creating a first group — the
            moment an invite link is most worth putting in front of
-           someone, since the group is otherwise empty. -->
+           someone, since the group is otherwise empty. Both real
+           actions front and center; skipping is there but quiet.
+           Adding a show drops straight into the real app with the
+           Add Show panel already open — the empty-state screen just
+           gives way to the normal list once a show actually exists. -->
       <div id="name-gate-step-share" style="display:none;">
-        <p class="name-gate-tagline">You're in. Invite your friends to start finding overlap.</p>
-        <button type="button" id="name-gate-copy-link" class="btn-solid">Copy invite link</button>
-        <button type="button" id="name-gate-continue" class="btn-outline">Continue</button>
+        <p class="name-gate-tagline">You're in. Share the link, then add your first show.</p>
+        <div class="name-gate-share-actions">
+          <button type="button" id="name-gate-copy-link" class="btn-solid">Copy invite link</button>
+          <button type="button" id="name-gate-add-show" class="btn-solid">+ Add first show</button>
+        </div>
+        <button type="button" id="name-gate-continue" class="link-btn">Skip to your group</button>
       </div>
     </div>
   </div>
@@ -191,6 +198,7 @@
   const nameGateGroupRow = document.getElementById('name-gate-group-row');
   const nameGateStepShare = document.getElementById('name-gate-step-share');
   const nameGateCopyLinkBtn = document.getElementById('name-gate-copy-link');
+  const nameGateAddShowBtn = document.getElementById('name-gate-add-show');
   const nameGateContinueBtn = document.getElementById('name-gate-continue');
 
   // Captured once at load, before handleGroupJoinFromUrl strips the
@@ -738,6 +746,12 @@
     } catch {
       window.prompt('Copy this invite link:', link);
     }
+  });
+
+  nameGateAddShowBtn.addEventListener('click', async () => {
+    await enterAppFromGate();
+    addShowPanel.style.display = 'block';
+    addShowBtn.style.display = 'none';
   });
 
   nameGateContinueBtn.addEventListener('click', enterAppFromGate);

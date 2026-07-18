@@ -219,8 +219,16 @@
   max-width: 400px;
 }
 
-.name-gate-box .btn-outline {
-  margin-left: var(--space-8);
+.name-gate-share-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  margin-bottom: var(--space-16);
+}
+
+.name-gate-share-actions .btn-solid {
+  width: 100%;
+  text-align: center;
 }
 
 .name-gate-tagline {
