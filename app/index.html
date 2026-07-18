@@ -106,6 +106,12 @@
     <button type="button" id="add-show-btn" class="btn-solid" style="display:none;">+ Add show</button>
   </div>
 
+  <!-- Lives on the main page, not the header's group-switcher menu —
+       that menu is ambiguous once someone's in more than one group,
+       since "current" isn't obvious from inside it. This is always
+       scoped to whichever group is actually being viewed. -->
+  <button type="button" id="invite-link-btn" class="link-btn invite-link-btn" style="display:none;">Invite a friend</button>
+
   <div id="add-show-panel" class="add-show-form" style="display:none;">
 
     <!-- Method 1: search by artist name (Ticketmaster, New England) -->
@@ -221,6 +227,7 @@
 
   const switchBtn = document.getElementById('group-switch-btn');
   const groupMenu = document.getElementById('group-menu');
+  const inviteLinkBtn = document.getElementById('invite-link-btn');
   const avatarDots = document.getElementById('avatar-dots');
   const avatarList = document.getElementById('avatar-list');
   const addShowBtn = document.getElementById('add-show-btn');
@@ -244,6 +251,7 @@
   const venueSearchResults = document.getElementById('venue-search-results');
 
   let currentGroupId = null;
+  let currentGroup = null;
   let selectedVenueUrl = null;
   let selectedSourceUrl = null;
   let venueSearchTimer = null;
@@ -288,7 +296,7 @@
     return wrap;
   }
 
-  function renderGroupMenu(groups, currentGroup) {
+  function renderGroupMenu(groups) {
     groupMenu.innerHTML = '';
     groups.forEach(g => {
       const btn = document.createElement('button');
@@ -297,27 +305,6 @@
       btn.addEventListener('click', () => selectGroup(g));
       groupMenu.appendChild(btn);
     });
-
-    if (groups.length > 0) {
-      const copyBtn = document.createElement('button');
-      copyBtn.type = 'button';
-      copyBtn.textContent = 'Copy invite link';
-      copyBtn.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        const current = groups.find((g) => g.id === currentGroupId) || groups[0];
-        const link = `${window.location.origin}${window.location.pathname}?g=${current.slug}`;
-        try {
-          await navigator.clipboard.writeText(link);
-          copyBtn.textContent = 'Copied!';
-          setTimeout(() => { copyBtn.textContent = 'Copy invite link'; }, 1500);
-        } catch {
-          // Clipboard API needs a secure context (https, or localhost —
-          // not file://). Fall back to a prompt so it's still copyable.
-          window.prompt('Copy this invite link:', link);
-        }
-      });
-      groupMenu.appendChild(copyBtn);
-    }
 
     const newBtn = document.createElement('button');
     newBtn.type = 'button';
@@ -343,14 +330,30 @@
   }
 
   async function selectGroup(group) {
+    currentGroup = group;
     switchBtn.textContent = `${group.name} ▾`;
     groupMenu.classList.remove('open');
     currentGroupId = group.id;
     addShowBtn.style.display = 'inline-block';
     viewToggle.style.display = 'inline-flex';
+    inviteLinkBtn.style.display = 'inline-block';
     await renderAvatars(group.id);
     await renderCurrentView(group.id);
   }
+
+  inviteLinkBtn.addEventListener('click', async () => {
+    if (!currentGroup) return;
+    const link = `${window.location.origin}${window.location.pathname}?g=${currentGroup.slug}`;
+    try {
+      await navigator.clipboard.writeText(link);
+      inviteLinkBtn.textContent = 'Copied!';
+      setTimeout(() => { inviteLinkBtn.textContent = 'Invite a friend'; }, 1500);
+    } catch {
+      // Clipboard API needs a secure context (https, or localhost —
+      // not file://). Fall back to a prompt so it's still copyable.
+      window.prompt('Copy this invite link:', link);
+    }
+  });
 
   let person = null;
 
@@ -645,7 +648,7 @@
     const group = await createGroup(person.id, name);
     if (!group) return;
     const groups = await getMyGroups(person.id);
-    renderGroupMenu(groups, group);
+    renderGroupMenu(groups);
     await selectGroup(group);
   }
 
@@ -673,13 +676,13 @@
 
     if (groups.length === 0) {
       switchBtn.textContent = 'No groups yet ▾';
-      renderGroupMenu([], null);
+      renderGroupMenu([]);
       document.getElementById('show-list-content').textContent = 'Create a group to start adding shows.';
       return;
     }
 
     const targetGroup = groups.find((g) => g.id === joinedGroup?.id) || groups[0];
-    renderGroupMenu(groups, targetGroup);
+    renderGroupMenu(groups);
     await selectGroup(targetGroup);
   }
 

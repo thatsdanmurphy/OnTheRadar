@@ -613,6 +613,11 @@
   padding: 0;
 }
 
+.invite-link-btn {
+  display: inline-block;
+  margin-bottom: var(--space-16);
+}
+
 .show-detail-link {
   display: inline-block;
   margin-top: var(--space-8);
