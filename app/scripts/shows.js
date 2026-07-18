@@ -63,6 +63,9 @@ window.OTR = window.OTR || {};
         venue_name: fields.venue_name || null,
         venue_url: fields.venue_url || null,
         source_url: fields.source_url || null,
+        price_min: fields.price_min ?? null,
+        price_max: fields.price_max ?? null,
+        price_currency: fields.price_currency || null,
         openers: fields.openers || null,
       })
       .select()

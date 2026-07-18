@@ -105,6 +105,19 @@ function parseEventFromHtml(html: string, sourceUrl: string) {
           if (names.length) result.title = names.join(', ');
         }
 
+        // Best-effort — schema.org Offer isn't always present, and
+        // when it is it's usually a single price, not a range. Fine
+        // either way, the detail page just shows what it gets.
+        if (event.offers) {
+          const offers = Array.isArray(event.offers) ? event.offers : [event.offers];
+          const prices = offers.map((o: any) => parseFloat(o?.price)).filter((n: number) => !isNaN(n));
+          if (prices.length) {
+            result.price_min = Math.min(...prices);
+            result.price_max = Math.max(...prices);
+            result.price_currency = offers[0]?.priceCurrency || null;
+          }
+        }
+
         break;
       }
     } catch {

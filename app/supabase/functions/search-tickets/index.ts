@@ -61,6 +61,10 @@ Deno.serve(async (req) => {
 
     const shows = allEvents.map((e: any) => {
       const venue = e._embedded?.venues?.[0];
+      // Not always populated (pre-onsale, resale-heavy events, etc.) —
+      // fine, price_min just stays null and the detail page hides the
+      // price line rather than showing a false "$0".
+      const priceRange = e.priceRanges?.[0];
       return {
         title: e.name || null,
         show_date: e.dates?.start?.localDate || null,
@@ -69,6 +73,9 @@ Deno.serve(async (req) => {
         venue_url: venue?.url || null,
         source_url: e.url || null,
         image: e.images?.[0]?.url || null,
+        price_min: priceRange?.min ?? null,
+        price_max: priceRange?.max ?? null,
+        price_currency: priceRange?.currency ?? null,
       };
     });
 

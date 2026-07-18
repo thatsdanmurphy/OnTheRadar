@@ -613,6 +613,19 @@
   padding: 0;
 }
 
+.show-detail-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-16);
+  margin-bottom: var(--space-16);
+}
+
+.show-detail-price {
+  font-family: var(--font-data);
+  font-size: var(--text-sub-size);
+  font-weight: 700;
+}
+
 .invite-link-btn {
   display: inline-block;
   margin-bottom: var(--space-16);

@@ -357,6 +357,17 @@
 
   let person = null;
 
+  // "$45", "$45–$120" — null if there's no price data at all, so the
+  // caller can just skip the price line entirely rather than show a
+  // misleading "$0" or an empty range.
+  function formatPriceRange(min, max, currency) {
+    if (min == null) return null;
+    const symbol = !currency || currency === 'USD' ? '$' : `${currency} `;
+    const fmt = (n) => (Number.isInteger(n) ? n : Number(n).toFixed(2));
+    if (max == null || max === min) return `${symbol}${fmt(min)}`;
+    return `${symbol}${fmt(min)}–${symbol}${fmt(max)}`;
+  }
+
   function formatDate(dateStr, timeStr) {
     const d = new Date(`${dateStr}T${timeStr || '00:00'}`);
     const date = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
@@ -516,6 +527,31 @@
       top.appendChild(badge);
     }
     showDetailCard.appendChild(top);
+
+    if (show.price_min != null || show.source_url) {
+      const meta = document.createElement('div');
+      meta.className = 'show-detail-meta';
+
+      const priceText = formatPriceRange(show.price_min, show.price_max, show.price_currency);
+      if (priceText) {
+        const price = document.createElement('div');
+        price.className = 'show-detail-price';
+        price.textContent = priceText;
+        meta.appendChild(price);
+      }
+
+      if (show.source_url) {
+        const buyBtn = document.createElement('a');
+        buyBtn.href = show.source_url;
+        buyBtn.target = '_blank';
+        buyBtn.rel = 'noopener';
+        buyBtn.className = 'btn-solid show-detail-buy';
+        buyBtn.textContent = 'Buy tickets';
+        meta.appendChild(buyBtn);
+      }
+
+      showDetailCard.appendChild(meta);
+    }
 
     const body = document.createElement('div');
     showDetailCard.appendChild(body);

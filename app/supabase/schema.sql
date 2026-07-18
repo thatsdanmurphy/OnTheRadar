@@ -47,6 +47,9 @@ create table shows (
   show_time time,
   openers text,
   source_url text,
+  price_min numeric,
+  price_max numeric,
+  price_currency text,
   created_by uuid references people(id),
   created_at timestamptz not null default now()
 );
