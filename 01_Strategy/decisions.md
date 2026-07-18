@@ -93,7 +93,7 @@
 **Why:** Requested directly — a flat upcoming list works for a handful of shows but a calendar makes date clustering and month-to-month browsing easier to scan at a glance.
 **Revisit if:** A single day regularly has enough shows to need "+N more" overflow handling, or the calendar should default to the month of the nearest upcoming show instead of always opening on today's month.
 
-## 2026-07-17 — Accent color: blood red → hot pink → dusty salmon
-**What:** `--color-accent` went through two swaps in one sitting: `#b3121b` (blood red) → `#ff1493` (hot pink, Clash/Westwood register) → `#e8927c` (dusty salmon — warmer, softer, more cream/orange in it, less electric). Single token both times, so overlap badges, button hover, search-result highlight, and form-focus outline all followed automatically.
-**Why:** The hot pink read as too electric/shock-value once seen rendered; the ask was to warm and soften it while staying in the pink family rather than drifting toward true orange or coral. Still just the one ink color used only to mark overlap — only the specific shade moved, not the rule.
-**Revisit if:** Never really — swap the token again if the shade needs further adjustment, same pattern as both times here.
+## 2026-07-17 — Accent color: blood red → hot pink → salmon → warm rose-pink
+**What:** `--color-accent` went through three swaps in one sitting: `#b3121b` (blood red) → `#ff1493` (hot pink, Clash/Westwood register) → `#e8927c` (dusty salmon, too far toward orange/cream) → `#f2547e` (warm rose-pink, the middle ground between the hot pink and the salmon). Single token every time, so overlap badges, button hover, search-result highlight, and form-focus outline all followed automatically.
+**Why:** Hot pink read as too electric; salmon overcorrected too far toward orange/cream and stopped reading as pink. This lands between the two — still warm, still clearly pink first.
+**Revisit if:** Never really — swap the token again if the shade needs further adjustment, same pattern as every time here.

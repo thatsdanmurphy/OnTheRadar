@@ -23,7 +23,7 @@ CBGB. A shitty old bar with one working light. Joe Strummer, Kurt Cobain, Elliot
 
 ## Color
 - Background: true white or near-black — pick one and commit, no "paper" tint
-- Primary accent: one ink color (dusty salmon-pink — warmer and softer than a shock pink, sun-faded-flyer register), used only to mark overlap — never decorative
+- Primary accent: one ink color (warm rose-pink — between a shock pink and salmon, still reads as pink first), used only to mark overlap — never decorative
 - Text: pure black or pure white depending on background — max contrast, no gray-on-gray
 - Rule: flat, full stop. No gradients, no glow, no pulse, no drop shadows standing in for depth. Nothing in the UI should look like it's imitating a physical object.
 
