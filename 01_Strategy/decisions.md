@@ -92,3 +92,8 @@
 **What:** Added a segmented List/Calendar toggle above the show list. Calendar is a month grid with prev/next navigation, showing each show on its date (title linked to `source_url`, bold when overlap ≥ 2). Both views share one data fetch so they never disagree with each other.
 **Why:** Requested directly — a flat upcoming list works for a handful of shows but a calendar makes date clustering and month-to-month browsing easier to scan at a glance.
 **Revisit if:** A single day regularly has enough shows to need "+N more" overflow handling, or the calendar should default to the month of the nearest upcoming show instead of always opening on today's month.
+
+## 2026-07-17 — Accent color swapped from blood red to hot pink
+**What:** `--color-accent` changed from `#b3121b` to `#ff1493`. Single token, so overlap badges, the "add show" button hover, search-result highlight, and form-focus outline all picked it up automatically — nothing else to touch.
+**Why:** Requested directly, referencing The Clash/Westwood-era shock-pink rather than blood red. Still just the one ink color used only to mark overlap — the rule itself (one accent, never decorative) didn't change, just which color fills that role.
+**Revisit if:** Never really — swap the token again if the color itself needs to change again, same as this time.
