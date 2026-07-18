@@ -16,11 +16,34 @@
 </head>
 <body>
 
+<!-- ===== Name gate ===== -->
+<!-- Shown only when this browser has no person cookie yet — a plain
+     on-page form, not a window.prompt(). Header + main stay hidden
+     until this is submitted, then init() continues as normal. This
+     is the whole "splash page" — no separate marketing screen, just
+     the same shell with a name field in front of it. -->
+<div id="name-gate" style="display:none;">
+  <div class="container" style="padding-block: var(--space-56);">
+    <div class="row">
+      <div class="col-half">
+        <div class="wordmark" style="margin-bottom: var(--space-24); display: block;">On the Radar</div>
+        <form id="name-gate-form">
+          <div class="form-row">
+            <label for="name-gate-input">What's your name?</label>
+            <input type="text" id="name-gate-input" required placeholder="Your name" autocomplete="name">
+          </div>
+          <button type="submit" class="btn-solid">Continue</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ===== Header nav ===== -->
 <!-- Wired to Supabase — real people/groups/memberships, no more mock
      data. This is the first of three components (header, body
      container, footer) building up on the frame. -->
-<header class="site-header">
+<header class="site-header" id="site-header">
   <div class="container">
     <div class="row">
       <div class="col-half">
@@ -47,8 +70,12 @@
 <!-- Show cards for the current group's shows — real data, wired to
      Supabase. Curious/going/out buttons write to the responses table
      immediately on click. Overlap count only counts curious + going. -->
-<main class="container show-list">
+<main class="container show-list" id="main-content">
   <div class="show-list-header">
+    <div class="view-toggle" id="view-toggle" style="display:none;">
+      <button type="button" class="view-toggle-btn active" data-view="list">List</button>
+      <button type="button" class="view-toggle-btn" data-view="calendar">Calendar</button>
+    </div>
     <button type="button" id="add-show-btn" class="btn-solid" style="display:none;">+ Add show</button>
   </div>
 
@@ -107,6 +134,15 @@
   </div>
 
   <div id="show-list-content" class="show-list-empty">Loading…</div>
+
+  <div id="calendar-view" style="display:none;">
+    <div class="calendar-nav">
+      <button type="button" id="calendar-prev" class="calendar-nav-btn">‹</button>
+      <div class="calendar-month-label" id="calendar-month-label"></div>
+      <button type="button" id="calendar-next" class="calendar-nav-btn">›</button>
+    </div>
+    <div class="calendar-grid" id="calendar-grid"></div>
+  </div>
 </main>
 
 <!-- ===== Footer — next up ===== -->
@@ -118,8 +154,19 @@
 <script src="scripts/identity.js"></script>
 <script src="scripts/shows.js"></script>
 <script>
-  const { getOrCreatePerson, getMyGroups, getGroupMembers, createGroup } = OTR;
+  const { getPerson, createPerson, getMyGroups, getGroupMembers, createGroup, getGroupBySlug, joinGroup } = OTR;
   const { getShowsForGroup, getResponsesForShows, overlapCount, setResponse, createShow, parseShowLink, searchShows, searchVenues } = OTR;
+
+  const nameGate = document.getElementById('name-gate');
+  const nameGateForm = document.getElementById('name-gate-form');
+  const siteHeader = document.getElementById('site-header');
+  const mainContent = document.getElementById('main-content');
+
+  const viewToggle = document.getElementById('view-toggle');
+  const listContent = document.getElementById('show-list-content');
+  const calendarView = document.getElementById('calendar-view');
+  const calendarPrevBtn = document.getElementById('calendar-prev');
+  const calendarNextBtn = document.getElementById('calendar-next');
 
   const switchBtn = document.getElementById('group-switch-btn');
   const groupMenu = document.getElementById('group-menu');
@@ -149,6 +196,8 @@
   let selectedVenueUrl = null;
   let selectedSourceUrl = null;
   let venueSearchTimer = null;
+  let viewMode = 'list';
+  let calendarMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 
   function initials(name) {
     return name.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
@@ -197,6 +246,28 @@
       btn.addEventListener('click', () => selectGroup(g));
       groupMenu.appendChild(btn);
     });
+
+    if (groups.length > 0) {
+      const copyBtn = document.createElement('button');
+      copyBtn.type = 'button';
+      copyBtn.textContent = 'Copy invite link';
+      copyBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const current = groups.find((g) => g.id === currentGroupId) || groups[0];
+        const link = `${window.location.origin}${window.location.pathname}?g=${current.slug}`;
+        try {
+          await navigator.clipboard.writeText(link);
+          copyBtn.textContent = 'Copied!';
+          setTimeout(() => { copyBtn.textContent = 'Copy invite link'; }, 1500);
+        } catch {
+          // Clipboard API needs a secure context (https, or localhost —
+          // not file://). Fall back to a prompt so it's still copyable.
+          window.prompt('Copy this invite link:', link);
+        }
+      });
+      groupMenu.appendChild(copyBtn);
+    }
+
     const newBtn = document.createElement('button');
     newBtn.type = 'button';
     newBtn.textContent = '+ New group';
@@ -225,8 +296,9 @@
     groupMenu.classList.remove('open');
     currentGroupId = group.id;
     addShowBtn.style.display = 'inline-block';
+    viewToggle.style.display = 'inline-flex';
     await renderAvatars(group.id);
-    await renderShowList(group.id);
+    await renderCurrentView(group.id);
   }
 
   let person = null;
@@ -239,20 +311,32 @@
     return `${date} · ${time}`;
   }
 
-  async function renderShowList(groupId) {
-    const content = document.getElementById('show-list-content');
-    content.textContent = 'Loading…';
-
+  // Fetches once, both views render from the same data — keeps List
+  // and Calendar guaranteed in sync regardless of which is showing.
+  async function loadGroupData(groupId) {
     const shows = await getShowsForGroup(groupId);
+    const showIds = shows.map((s) => s.id);
+    const responsesByShow = await getResponsesForShows(showIds);
+    return { shows, responsesByShow };
+  }
+
+  async function renderCurrentView(groupId) {
+    const { shows, responsesByShow } = await loadGroupData(groupId);
+    if (viewMode === 'calendar') {
+      renderCalendarView(shows, responsesByShow);
+    } else {
+      renderListView(shows, responsesByShow);
+    }
+  }
+
+  function renderListView(shows, responsesByShow) {
+    const content = listContent;
 
     if (shows.length === 0) {
       content.className = 'show-list-empty';
       content.textContent = 'No shows yet.';
       return;
     }
-
-    const showIds = shows.map((s) => s.id);
-    const responsesByShow = await getResponsesForShows(showIds);
 
     content.className = '';
     content.innerHTML = '';
@@ -308,7 +392,7 @@
         if (mine && mine.status === status) btn.classList.add('active');
         btn.addEventListener('click', async () => {
           const ok = await setResponse(show.id, person.id, status);
-          if (ok) await renderShowList(groupId);
+          if (ok) await renderCurrentView(currentGroupId);
         });
         responseRow.appendChild(btn);
       });
@@ -317,6 +401,100 @@
       content.appendChild(card);
     });
   }
+
+  const CALENDAR_WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+  function renderCalendarView(shows, responsesByShow) {
+    const grid = document.getElementById('calendar-grid');
+    const label = document.getElementById('calendar-month-label');
+
+    const year = calendarMonth.getFullYear();
+    const month = calendarMonth.getMonth();
+    label.textContent = calendarMonth
+      .toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+      .toUpperCase();
+
+    const showsByDate = {};
+    shows.forEach((show) => {
+      if (!showsByDate[show.show_date]) showsByDate[show.show_date] = [];
+      showsByDate[show.show_date].push(show);
+    });
+
+    grid.innerHTML = '';
+    CALENDAR_WEEKDAYS.forEach((wd) => {
+      const cell = document.createElement('div');
+      cell.className = 'calendar-weekday';
+      cell.textContent = wd;
+      grid.appendChild(cell);
+    });
+
+    const firstOfMonth = new Date(year, month, 1);
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const startWeekday = firstOfMonth.getDay();
+
+    for (let i = 0; i < startWeekday; i++) {
+      const blank = document.createElement('div');
+      blank.className = 'calendar-day is-empty';
+      grid.appendChild(blank);
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const cell = document.createElement('div');
+      cell.className = 'calendar-day';
+
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+      const num = document.createElement('div');
+      num.className = 'calendar-day-number';
+      num.textContent = day;
+      cell.appendChild(num);
+
+      (showsByDate[dateStr] || []).forEach((show) => {
+        const responses = responsesByShow[show.id] || [];
+        const overlap = overlapCount(responses);
+
+        const el = document.createElement(show.source_url ? 'a' : 'div');
+        el.className = 'calendar-show' + (overlap >= 2 ? ' has-overlap' : '');
+        el.textContent = show.title;
+        if (show.source_url) {
+          el.href = show.source_url;
+          el.target = '_blank';
+          el.rel = 'noopener';
+        }
+        cell.appendChild(el);
+      });
+
+      grid.appendChild(cell);
+    }
+
+    const totalCells = startWeekday + daysInMonth;
+    const trailing = (7 - (totalCells % 7)) % 7;
+    for (let i = 0; i < trailing; i++) {
+      const blank = document.createElement('div');
+      blank.className = 'calendar-day is-empty';
+      grid.appendChild(blank);
+    }
+  }
+
+  viewToggle.querySelectorAll('.view-toggle-btn').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      viewMode = btn.dataset.view;
+      viewToggle.querySelectorAll('.view-toggle-btn').forEach((b) => b.classList.toggle('active', b === btn));
+      listContent.style.display = viewMode === 'list' ? '' : 'none';
+      calendarView.style.display = viewMode === 'calendar' ? 'block' : 'none';
+      if (currentGroupId) await renderCurrentView(currentGroupId);
+    });
+  });
+
+  calendarPrevBtn.addEventListener('click', async () => {
+    calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1);
+    if (currentGroupId) await renderCurrentView(currentGroupId);
+  });
+
+  calendarNextBtn.addEventListener('click', async () => {
+    calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1);
+    if (currentGroupId) await renderCurrentView(currentGroupId);
+  });
 
   async function handleNewGroup() {
     groupMenu.classList.remove('open');
@@ -329,13 +507,26 @@
     await selectGroup(group);
   }
 
-  async function init() {
-    person = await getOrCreatePerson();
-    if (!person) {
-      switchBtn.textContent = 'Connection error';
-      return;
-    }
+  // Processes ?g=<slug> from a shared invite link: looks up the group
+  // and adds the person to it. Safe to no-op (bad slug, no param, or
+  // already a member) — the URL param is cleaned up either way so a
+  // page refresh doesn't keep re-processing it.
+  async function handleGroupJoinFromUrl(personId) {
+    const params = new URLSearchParams(window.location.search);
+    const slug = params.get('g');
+    if (!slug) return null;
 
+    window.history.replaceState({}, '', window.location.pathname);
+
+    const group = await getGroupBySlug(slug);
+    if (!group) return null;
+
+    await joinGroup(personId, group.id);
+    return group;
+  }
+
+  async function afterPerson() {
+    const joinedGroup = await handleGroupJoinFromUrl(person.id);
     const groups = await getMyGroups(person.id);
 
     if (groups.length === 0) {
@@ -345,9 +536,37 @@
       return;
     }
 
-    renderGroupMenu(groups, groups[0]);
-    await selectGroup(groups[0]);
+    const targetGroup = groups.find((g) => g.id === joinedGroup?.id) || groups[0];
+    renderGroupMenu(groups, targetGroup);
+    await selectGroup(targetGroup);
   }
+
+  async function init() {
+    person = await getPerson();
+
+    if (!person) {
+      siteHeader.style.display = 'none';
+      mainContent.style.display = 'none';
+      nameGate.style.display = 'block';
+      return;
+    }
+
+    await afterPerson();
+  }
+
+  nameGateForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.getElementById('name-gate-input').value.trim();
+    if (!name) return;
+
+    person = await createPerson(name);
+    if (!person) return;
+
+    nameGate.style.display = 'none';
+    siteHeader.style.display = '';
+    mainContent.style.display = '';
+    await afterPerson();
+  });
 
   init();
 
@@ -416,7 +635,7 @@
     const show = await createShow(currentGroupId, person.id, fields);
     if (show) {
       resetAddShowPanel();
-      await renderShowList(currentGroupId);
+      await renderCurrentView(currentGroupId);
     }
   }
 

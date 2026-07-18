@@ -291,8 +291,125 @@
 
 .show-list-header {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: var(--space-16);
+}
+
+/* View toggle — same segmented-control pattern as the response
+   control on show cards, reused rather than inventing a new look. */
+.view-toggle {
+  border: 1px solid var(--color-border);
+}
+
+.view-toggle-btn {
+  font-family: var(--font-data);
+  font-size: var(--text-meta-size);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: none;
+  border: none;
+  border-right: 1px solid var(--color-border);
+  color: var(--color-text);
+  padding: var(--space-8) var(--space-16);
+  cursor: pointer;
+}
+
+.view-toggle-btn:last-child {
+  border-right: none;
+}
+
+.view-toggle-btn:hover {
+  background: rgba(10, 10, 10, 0.08);
+}
+
+.view-toggle-btn.active {
+  background: var(--color-bg-inverse);
+  color: var(--color-text-inverse);
+}
+
+/* ---------- Calendar view ---------- */
+
+.calendar-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-16);
+}
+
+.calendar-month-label {
+  font-family: var(--font-display);
+  font-size: var(--text-head-size);
+  line-height: var(--text-head-lh);
+  text-transform: uppercase;
+}
+
+.calendar-nav-btn {
+  font-family: var(--font-data);
+  font-size: var(--text-body-size);
+  background: none;
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  padding: var(--space-4) var(--space-16);
+  cursor: pointer;
+}
+
+.calendar-nav-btn:hover {
+  background: rgba(10, 10, 10, 0.08);
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border-top: 1px solid var(--color-border);
+  border-left: 1px solid var(--color-border);
+}
+
+.calendar-weekday {
+  font-family: var(--font-data);
+  font-size: var(--text-meta-size);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: center;
+  padding: var(--space-8);
+  border-right: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  opacity: 0.7;
+}
+
+.calendar-day {
+  min-height: 88px;
+  border-right: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  padding: var(--space-4);
+}
+
+.calendar-day.is-empty {
+  background: rgba(10, 10, 10, 0.03);
+}
+
+.calendar-day-number {
+  font-family: var(--font-data);
+  font-size: var(--text-meta-size);
+  opacity: 0.6;
+  margin-bottom: var(--space-4);
+}
+
+.calendar-show {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--color-text);
+  text-decoration: none;
+  margin-bottom: var(--space-4);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calendar-show.has-overlap {
+  font-weight: 600;
 }
 
 .btn-solid {

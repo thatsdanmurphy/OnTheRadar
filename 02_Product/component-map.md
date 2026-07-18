@@ -30,12 +30,14 @@ Because column count itself changes per breakpoint, spans are semantic classes, 
 - On the Radar — original prototype (`app/on-the-radar.html`) — kept as reference; the mocked interactivity (list/calendar views, response states) it demonstrates gets rebuilt as real components on the frame rather than ported as-is.
 
 ## Components
+- **Name gate** (`app/index.html`, logic in `app/scripts/identity.js`) — the whole "onboarding" surface, and deliberately not a splash page: when a browser has no `otr_person_id` cookie, the header and main content stay hidden and a plain "What's your name?" form shows instead (`OTR.getPerson()` returns null → gate shows; submitting calls `OTR.createPerson(name)`, sets the cookie, then reveals the normal page). Replaces the old `window.prompt()`.
+  - **Joining a group via invite link**: opening a link with `?g=<group-slug>` (via `OTR.getGroupBySlug` + `OTR.joinGroup`) adds the person to that group and lands them in it — works both for a brand-new person (right after the name gate) and a returning one opening a friend's link for a group they're not in yet. The URL param gets cleaned up after processing so a refresh doesn't reprocess it. This is the join mechanism, full stop — no separate "invite code" concept, the slug just lives in a shareable link instead of something typed in, since sharing happens over text/iMessage where a tappable link beats a typed code.
+  - No group in the URL and no existing groups: falls back to the existing "No groups yet — create one" state.
 - **Header nav** (`app/index.html`, logic in `app/scripts/identity.js`, styles in `app/styles/components.css`) — wordmark, group switcher, crew avatar stack. Built and wired to Supabase — no more mock data.
   - Wordmark: links home, Archivo Black, head size.
-  - Person identity: `getOrCreatePerson()` reads the `otr_person_id` cookie, or creates a new `people` row and cookie on first visit (name entry is currently a placeholder `prompt()`, not final UI).
-  - Group switcher: shows the person's current group, click opens a menu listing all their groups (`getMyGroups`) + "New group" (`createGroup`, inserts a group + membership). Empty state: "No groups yet" when the person has none.
+  - Group switcher: shows the person's current group, click opens a menu listing all their groups (`getMyGroups`) + "Copy invite link" (builds `<origin><path>?g=<slug>` for whichever group is current, copies via the Clipboard API with a `window.prompt` fallback for non-secure contexts like `file://`) + "New group" (`createGroup`, inserts a group + membership). Empty state: "No groups yet" when the person has none.
   - Avatar stack: overlapping initials dots for the current group's members (`getGroupMembers`), click-to-expand into a plain name list. Same pattern reused from the original prototype's header avatar stack.
-  - Not yet built: switching which group is "current" doesn't persist (always defaults to the first group returned); joining an existing group via invite link isn't wired yet, only creating a new one.
+  - Not yet built: switching which group is "current" doesn't persist across a reload (always defaults to the first group returned, or whichever group an invite link just added them to).
 - **Show card** (`app/index.html`, logic in `app/scripts/shows.js`, styles in `app/styles/components.css`) — vertical card: date + overlap badge, title, venue (linked out), openers, who's-in avatar stack, response segmented control. Built and wired to Supabase.
   - Renders inside: show list (built) — Calendar view and "Most overlap" sort not yet built, this is the "Upcoming" list only, sorted by `show_date` ascending.
   - Response control: three buttons (Curious / Got tickets / I'm out) in one bordered segmented group, not floating pills. Click writes straight to `responses` via `setResponse` (upsert on `show_id, person_id`), then the whole list re-renders. Active button (filled black) reflects the current person's own response — all three states look the same when active, no special-casing "out."
@@ -51,9 +53,10 @@ Because column count itself changes per breakpoint, spans are semantic classes, 
   - Coverage tradeoff, worth remembering: Ticketmaster/Live Nation controls ~80% of *major* concert venues' primary ticketing, but that skews toward arenas/amphitheaters — small clubs and dive bars (the venues this app is actually about) are much less likely to be covered by either method, which is why manual entry stays a first-class path, not an apology.
   - Plain bordered inputs, no styling framework — `.form-row`/`.btn-solid`/`.btn-outline`/`.inline-input-row`/`.link-btn`/`.search-results` are reusable primitives in `components.css` now, not one-offs.
   - Not yet built: editing/deleting a show; joining an *existing* group via invite link (mirrors the header nav gap).
-- Calendar grid — month view, fixed-height uniform cells, overflow collapses to "+N more."
-  - Renders inside: Calendar view — not yet built
-  - Key props: month/year, shows-by-date map
+- **List/Calendar toggle** (`app/index.html`, styles in `app/styles/components.css`) — segmented control (same visual pattern as the show-card response control) above the show list. Both views render from one shared fetch (`loadGroupData` → `renderCurrentView` dispatches to `renderListView` or `renderCalendarView`) so they can't drift out of sync with each other.
+  - **List**: unchanged — the existing card-based "Upcoming" view.
+  - **Calendar**: a month grid (Sun–Sat columns, prev/next navigation, defaults to the real current month). Each day cell lists that date's shows by title, linked to `source_url` same as the list view, bold when overlap ≥ 2. No fixed-height/"+N more" overflow handling yet — fine at friend-group scale, worth revisiting if a single day ever gets crowded.
+  - Not yet built: no "most overlap" sort on the list view; calendar doesn't jump to the month of the nearest upcoming show on first load, always starts at today's month.
 - Avatar stack (click-to-expand) — dots that expand to a plain name list. One shared implementation (`buildAvatarStack`) used in both the header (whole crew) and every show card (who's interested) — built in both places now.
 
 ## Data Flow

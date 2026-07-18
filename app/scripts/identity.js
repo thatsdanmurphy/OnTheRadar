@@ -22,29 +22,32 @@ window.OTR = window.OTR || {};
     document.cookie = `${name}=${value}; max-age=${maxAge}; path=/; samesite=lax`;
   }
 
-  // Returns the current person's row, creating one if this browser
-  // has never visited before. Prompts for a display name only on
-  // first visit — this is a placeholder prompt() for now, not the
-  // final onboarding UI.
-  OTR.getOrCreatePerson = async function () {
+  // Returns the current person's row if this browser has visited
+  // before, or null if not — creation is a separate step now
+  // (see createPerson) so the caller can show a real on-page name
+  // gate instead of a prompt() before anything gets created.
+  OTR.getPerson = async function () {
     const existingId = getCookie(COOKIE_NAME);
-
-    if (existingId) {
-      const { data, error } = await OTR.db
-        .from('people')
-        .select('*')
-        .eq('id', existingId)
-        .single();
-      if (data && !error) return data;
-      // Cookie pointed at a person that no longer exists — fall through
-      // and create a new one rather than failing silently.
-    }
-
-    const name = window.prompt("What's your name?", '')?.trim() || 'Anonymous';
+    if (!existingId) return null;
 
     const { data, error } = await OTR.db
       .from('people')
-      .insert({ display_name: name })
+      .select('*')
+      .eq('id', existingId)
+      .single();
+
+    if (data && !error) return data;
+    // Cookie pointed at a person that no longer exists — treat as
+    // no person yet rather than failing silently.
+    return null;
+  };
+
+  // Creates a new person with the given display name and stores the
+  // cookie. Called once, from the name-gate form's submit handler.
+  OTR.createPerson = async function (name) {
+    const { data, error } = await OTR.db
+      .from('people')
+      .insert({ display_name: name || 'Anonymous' })
       .select()
       .single();
 
@@ -108,5 +111,40 @@ window.OTR = window.OTR || {};
     }
 
     return group;
+  };
+
+  // Looks up a group by its invite slug — the ?g=<slug> in a shared
+  // link. Returns null if the slug doesn't match anything rather than
+  // throwing, since a bad/stale link is an expected case, not a bug.
+  OTR.getGroupBySlug = async function (slug) {
+    const { data, error } = await OTR.db
+      .from('groups')
+      .select('*')
+      .eq('slug', slug)
+      .single();
+
+    if (error) {
+      console.error('No group found for slug:', slug, error);
+      return null;
+    }
+    return data;
+  };
+
+  // Adds a person to a group. Safe to call even if they're already a
+  // member (ignoreDuplicates on the group_id+person_id unique
+  // constraint) — opening the same invite link twice is a no-op.
+  OTR.joinGroup = async function (personId, groupId) {
+    const { error } = await OTR.db
+      .from('memberships')
+      .upsert(
+        { group_id: groupId, person_id: personId },
+        { onConflict: 'group_id,person_id', ignoreDuplicates: true }
+      );
+
+    if (error) {
+      console.error('Failed to join group:', error);
+      return false;
+    }
+    return true;
   };
 })();
