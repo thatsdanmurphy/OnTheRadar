@@ -23,11 +23,15 @@
      is the whole "splash page" — no separate marketing screen, just
      the same shell with a name field in front of it. -->
 <div id="name-gate" style="display:none;">
-  <div class="container" style="padding-block: var(--space-56);">
-    <div class="row">
-      <div class="col-half">
-        <div class="wordmark" style="display: block;">On the Radar</div>
-        <p class="name-gate-tagline">Line up shows with your pals.</p>
+  <div class="name-gate-center">
+    <div class="name-gate-box">
+      <div class="wordmark" style="display: block;">On the Radar</div>
+
+      <!-- Step 1: always shown first. Tagline differs depending on
+           whether this is an invite link (?g=<slug>, joining a group
+           that already exists) or a cold start (no group yet). -->
+      <div id="name-gate-step-name">
+        <p class="name-gate-tagline" id="name-gate-tagline">Line up shows with your pals.</p>
         <form id="name-gate-form">
           <div class="form-row">
             <label for="name-gate-input">What's your name?</label>
@@ -35,6 +39,29 @@
           </div>
           <button type="submit" class="btn-solid">Continue</button>
         </form>
+      </div>
+
+      <!-- Step 2: only for a cold start (no ?g= in the URL) — walks
+           straight into naming a first group rather than dropping
+           them into an empty app shell to go find "+ New group". -->
+      <div id="name-gate-step-group" style="display:none;">
+        <p class="name-gate-tagline">Set up your first group.</p>
+        <form id="name-gate-group-form">
+          <div class="form-row">
+            <label for="name-gate-group-input">Group name</label>
+            <input type="text" id="name-gate-group-input" required placeholder="e.g. The Crew" autocomplete="off">
+          </div>
+          <button type="submit" class="btn-solid">Create group</button>
+        </form>
+      </div>
+
+      <!-- Step 3: only right after creating that first group — the
+           moment an invite link is most worth putting in front of
+           someone, since the group is otherwise empty. -->
+      <div id="name-gate-step-share" style="display:none;">
+        <p class="name-gate-tagline">You're in. Invite your friends to start finding overlap.</p>
+        <button type="button" id="name-gate-copy-link" class="btn-solid">Copy invite link</button>
+        <button type="button" id="name-gate-continue" class="btn-outline">Continue</button>
       </div>
     </div>
   </div>
@@ -168,6 +195,19 @@
 
   const nameGate = document.getElementById('name-gate');
   const nameGateForm = document.getElementById('name-gate-form');
+  const nameGateTagline = document.getElementById('name-gate-tagline');
+  const nameGateStepName = document.getElementById('name-gate-step-name');
+  const nameGateStepGroup = document.getElementById('name-gate-step-group');
+  const nameGateStepShare = document.getElementById('name-gate-step-share');
+  const nameGateGroupForm = document.getElementById('name-gate-group-form');
+  const nameGateCopyLinkBtn = document.getElementById('name-gate-copy-link');
+  const nameGateContinueBtn = document.getElementById('name-gate-continue');
+
+  // Captured once at load, before handleGroupJoinFromUrl strips the
+  // ?g= param — decides which name-gate path to show (joining a
+  // group that already exists vs. a cold start with none yet).
+  const hasInviteSlug = !!new URLSearchParams(window.location.search).get('g');
+  let pendingNewGroup = null;
   const siteHeader = document.getElementById('site-header');
   const mainContent = document.getElementById('main-content');
 
@@ -652,9 +692,21 @@
       siteHeader.style.display = 'none';
       mainContent.style.display = 'none';
       nameGate.style.display = 'block';
+      nameGateTagline.textContent = hasInviteSlug
+        ? 'Track shows with your friends.'
+        : 'Track shows with friends and set up your first group.';
       return;
     }
 
+    await afterPerson();
+  }
+
+  // Reveals the normal app shell and runs the usual post-person setup
+  // (join-by-slug if applicable, load groups, select one).
+  async function enterAppFromGate() {
+    nameGate.style.display = 'none';
+    siteHeader.style.display = '';
+    mainContent.style.display = '';
     await afterPerson();
   }
 
@@ -666,11 +718,42 @@
     person = await createPerson(name);
     if (!person) return;
 
-    nameGate.style.display = 'none';
-    siteHeader.style.display = '';
-    mainContent.style.display = '';
-    await afterPerson();
+    if (hasInviteSlug) {
+      // Joining a group that already exists — nothing left to set up.
+      await enterAppFromGate();
+    } else {
+      // Cold start: walk straight into naming a first group instead of
+      // dropping them into an empty app shell to go find "+ New group".
+      nameGateStepName.style.display = 'none';
+      nameGateStepGroup.style.display = 'block';
+    }
   });
+
+  nameGateGroupForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const groupName = document.getElementById('name-gate-group-input').value.trim();
+    if (!groupName) return;
+
+    const group = await createGroup(person.id, groupName);
+    if (!group) return;
+
+    pendingNewGroup = group;
+    nameGateStepGroup.style.display = 'none';
+    nameGateStepShare.style.display = 'block';
+  });
+
+  nameGateCopyLinkBtn.addEventListener('click', async () => {
+    const link = `${window.location.origin}${window.location.pathname}?g=${pendingNewGroup.slug}`;
+    try {
+      await navigator.clipboard.writeText(link);
+      nameGateCopyLinkBtn.textContent = 'Copied!';
+      setTimeout(() => { nameGateCopyLinkBtn.textContent = 'Copy invite link'; }, 1500);
+    } catch {
+      window.prompt('Copy this invite link:', link);
+    }
+  });
+
+  nameGateContinueBtn.addEventListener('click', enterAppFromGate);
 
   init();
 
