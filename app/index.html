@@ -69,8 +69,8 @@
 
 <!-- ===== Body container ===== -->
 <!-- Show cards for the current group's shows — real data, wired to
-     Supabase. Curious/going/out buttons write to the responses table
-     immediately on click. Overlap count only counts curious + going. -->
+     Supabase. Curious/out buttons write to the responses table
+     immediately on click. Overlap count only counts curious. -->
 <main class="container show-list" id="main-content">
   <div class="show-list-header">
     <div class="view-toggle" id="view-toggle" style="display:none;">
@@ -347,7 +347,7 @@
   // in one place so the two surfaces can't drift apart.
   function renderShowInteractiveBody(container, show, responses, onResponseChange) {
     const mine = responses.find((r) => r.person_id === person.id);
-    const interested = responses.filter((r) => r.status === 'curious' || r.status === 'going');
+    const interested = responses.filter((r) => r.status === 'curious');
 
     container.innerHTML = `
       <div class="show-title">${show.source_url ? `<a href="${show.source_url}" target="_blank" rel="noopener">${show.title}</a>` : show.title}</div>
@@ -365,7 +365,7 @@
     const responseRow = document.createElement('div');
     responseRow.className = 'show-responses';
 
-    [['curious', 'Curious'], ['going', 'Got tickets'], ['out', "I'm out"]].forEach(([status, label]) => {
+    [['curious', 'Curious'], ['out', "I'm out"]].forEach(([status, label]) => {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'resp-btn';

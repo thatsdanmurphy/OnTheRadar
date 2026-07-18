@@ -1,7 +1,8 @@
 // On the Radar — shows + responses
 // Plain script (see supabase/client.js for why — no ES modules).
-// Only 'curious' and 'going' count toward overlap (see decision log:
-// "Response states are three-way: curious / going / out").
+// Only 'curious' counts toward overlap — 'out' never does, and
+// 'going' was cut entirely (see decision log: response states are
+// two-way now, curious/out).
 
 window.OTR = window.OTR || {};
 
@@ -43,9 +44,11 @@ window.OTR = window.OTR || {};
     return byShow;
   };
 
-  // Overlap = distinct people marked curious or going. 'out' never counts.
+  // Overlap = distinct people marked curious. 'out' never counts — and
+  // 'going' doesn't exist anymore (see decision log: cut down to two
+  // response states, curious/out).
   OTR.overlapCount = function (responses) {
-    return responses.filter((r) => r.status === 'curious' || r.status === 'going').length;
+    return responses.filter((r) => r.status === 'curious').length;
   };
 
   OTR.createShow = async function (groupId, personId, fields) {

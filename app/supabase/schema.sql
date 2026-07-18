@@ -51,14 +51,17 @@ create table shows (
   created_at timestamptz not null default now()
 );
 
--- One row per person per show: curious / going / out.
--- Only curious + going count toward the overlap indicator (app logic,
--- not enforced here) — see the response-states decision.
+-- One row per person per show: curious / out. Only 'curious' counts
+-- toward the overlap indicator (app logic, not enforced here) — see
+-- the response-states decision (originally three-way with 'going',
+-- cut down to two after "Got tickets" turned out not to map cleanly
+-- onto how a group actually buys tickets — sometimes together,
+-- sometimes separately, always off-platform).
 create table responses (
   id uuid primary key default gen_random_uuid(),
   show_id uuid not null references shows(id) on delete cascade,
   person_id uuid not null references people(id) on delete cascade,
-  status text not null check (status in ('curious', 'going', 'out')),
+  status text not null check (status in ('curious', 'out')),
   updated_at timestamptz not null default now(),
   unique (show_id, person_id)
 );
