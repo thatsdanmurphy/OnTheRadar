@@ -14,8 +14,18 @@
   box-sizing: border-box;
 }
 
+/* min-height + flex column, not just a background color, so the
+   footer can be locked to the bottom of the viewport on short pages
+   (an empty group, or just a couple of shows) instead of riding up
+   right under the content with a gap of raw page color beneath it.
+   #main-content gets flex: 1 (see components.css) so it's the one
+   thing that stretches to fill the leftover space; header and footer
+   both stay their natural height. */
 body {
   margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   background: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-body);

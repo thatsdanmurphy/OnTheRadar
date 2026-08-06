@@ -59,22 +59,6 @@
           <button type="submit" class="btn-solid">Continue</button>
         </form>
       </div>
-
-      <!-- Step 2: only right after creating a first group — the
-           moment an invite link is most worth putting in front of
-           someone, since the group is otherwise empty. Both real
-           actions front and center; skipping is there but quiet.
-           Adding a show drops straight into the real app with the
-           Add Show panel already open — the empty-state screen just
-           gives way to the normal list once a show actually exists. -->
-      <div id="name-gate-step-share" style="display:none;">
-        <p class="name-gate-tagline">You're in. Share the link, then add your first show.</p>
-        <div class="name-gate-share-actions">
-          <button type="button" id="name-gate-copy-link" class="btn-solid">Copy invite link</button>
-          <button type="button" id="name-gate-add-show" class="btn-solid">+ Add first show</button>
-        </div>
-        <button type="button" id="name-gate-continue" class="link-btn">Skip to your group</button>
-      </div>
     </div>
   </div>
 </div>
@@ -313,17 +297,12 @@
   const nameGateForm = document.getElementById('name-gate-form');
   const nameGateStepName = document.getElementById('name-gate-step-name');
   const nameGateGroupRow = document.getElementById('name-gate-group-row');
-  const nameGateStepShare = document.getElementById('name-gate-step-share');
-  const nameGateCopyLinkBtn = document.getElementById('name-gate-copy-link');
-  const nameGateAddShowBtn = document.getElementById('name-gate-add-show');
-  const nameGateContinueBtn = document.getElementById('name-gate-continue');
 
   // Captured once at load, before handleGroupJoinFromUrl strips the
   // ?g= param — decides which name-gate path to show (joining a
   // group that already exists vs. a cold start with none yet).
   const inviteSlug = new URLSearchParams(window.location.search).get('g');
   const hasInviteSlug = !!inviteSlug;
-  let pendingNewGroup = null;
   const nameGateInviteMessage = document.getElementById('name-gate-invite-message');
   const siteHeader = document.getElementById('site-header');
   const mainContent = document.getElementById('main-content');
@@ -1084,36 +1063,19 @@
     }
 
     // Cold start: the group-name field was right there in the same
-    // form, so create it now instead of a separate step.
+    // form, so create it now instead of a separate step. Used to drop
+    // into a "you're in, share the link" interstitial screen here —
+    // cut per direct feedback (felt like an unnecessary extra beat);
+    // straight into the app now, same as the invite-link path. The
+    // group heading row's share icon and the drawer's per-group share
+    // icon both still cover "grab the invite link," just not as a
+    // forced first stop.
     const groupName = document.getElementById('name-gate-group-input').value.trim();
     if (groupName) {
-      const group = await createGroup(person.id, groupName);
-      if (group) {
-        pendingNewGroup = group;
-        nameGateStepName.style.display = 'none';
-        nameGateStepShare.style.display = 'block';
-        return;
-      }
+      await createGroup(person.id, groupName);
     }
-    // No group name entered (or creation failed) — proceed anyway,
-    // they can create one later from the header's group switcher.
     await enterAppFromGate();
   });
-
-  nameGateCopyLinkBtn.addEventListener('click', async () => {
-    const ok = await copyInviteLink(pendingNewGroup.slug);
-    if (ok) {
-      nameGateCopyLinkBtn.textContent = 'Copied!';
-      setTimeout(() => { nameGateCopyLinkBtn.textContent = 'Copy invite link'; }, 1500);
-    }
-  });
-
-  nameGateAddShowBtn.addEventListener('click', async () => {
-    await enterAppFromGate();
-    openAddShowModal();
-  });
-
-  nameGateContinueBtn.addEventListener('click', enterAppFromGate);
 
   // Swaps every static <i data-lucide="..."> placeholder already in
   // the initial HTML (drawer close, modal close, tab-bar share) for

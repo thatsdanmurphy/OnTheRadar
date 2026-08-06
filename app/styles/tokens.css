@@ -65,7 +65,13 @@
   --color-logo-green: #8dc63f;      /* "Herd" in the wordmark — London Calling / Elvis-cover chartreuse green */
   --color-surface: #2b2924;         /* card + drawer + header-context fill — one step lighter than the page, not darker */
   --color-surface-text: #ebe8e1;    /* warm paper — text/icons for anything sitting on --color-surface */
-  --color-chip-bg: #ebe8e1;         /* filled/active chip fill (buttons, active toggle, calendar header) — light, since it needs to pop off an all-dark page now */
+  /* Filled/active chip fill (buttons, active toggle, calendar header).
+     Used to be a flat #ebe8e1 — the exact same hex as --color-text —
+     which read too bright/pale on a solid button, almost white.
+     color-mix()'d a touch darker off the same warm base rather than
+     picking a colder gray, so it reads as a slightly deeper cream, not
+     gold and not neutral gray. */
+  --color-chip-bg: color-mix(in srgb, #ebe8e1 92%, black);
   --color-chip-text: #211f1a;       /* charcoal text on the light chip */
   /* One shared "recessed" fill — a shade darker than --color-bg,
      color-mix()'d from it rather than a hand-picked hex, so it moves

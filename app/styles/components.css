@@ -500,8 +500,13 @@ body.drawer-open {
 
 /* ---------- Show list / show card ---------- */
 
+/* flex: 1 — the one stretchy piece in body's flex column (see
+   grid.css), so this is what absorbs the leftover space on a short
+   page (empty group, one or two shows) and the footer stays pinned
+   to the bottom of the viewport instead of riding up right under it. */
 .show-list {
   padding-block: var(--space-32);
+  flex: 1;
 }
 
 /* Centered, with a quiet guitar silhouette above the message — an
@@ -510,6 +515,12 @@ body.drawer-open {
    size; the guitar (headstock, neck, figure-8 body, soundhole) is more
    legible and more on-theme besides. Flat single-color fill, no
    gradient/glow — holds the brand's flat-full-stop rule. */
+/* Opacity set once, here, on the shared container — the message text
+   used to inherit --color-text at full strength while the icon sat at
+   0.35 opacity below it, so the two read as two different tones of
+   the same idea instead of one quiet empty-state voice. Both the
+   message text and the icon (currentColor fill) pick up this same
+   dimmed tone now. */
 .show-list-empty {
   display: flex;
   flex-direction: column;
@@ -521,14 +532,13 @@ body.drawer-open {
   font-size: var(--text-body-size);
   line-height: var(--text-body-lh);
   color: var(--color-text);
+  opacity: 0.35;
   padding-block: var(--space-64);
 }
 
 .show-list-empty-icon {
   width: var(--space-56);
   height: var(--space-56);
-  color: var(--color-text);
-  opacity: 0.35;
 }
 
 .show-list-empty-icon svg {
@@ -616,30 +626,23 @@ body.drawer-open {
   max-width: 400px;
 }
 
-/* Everything in the splash reads as one centered column now — labels
-   included, not just the wordmark/tagline above them. A label
-   left-aligned over a full-width filled field read like a stray
-   leftover of a left-aligned form, once the wordmark/tagline/button
-   were already centered around it. */
+/* Reverted back to left-aligned, per direct feedback — centered read
+   fine for the wordmark/tagline/button above and below, but a
+   question ("What's your name?") sitting dead-center over its own
+   answer field read odd once there were two of them stacked; a
+   label wants to sit at the start of the thing it's labeling, same
+   as every other form in the app. The field/button themselves stay
+   full-width and centered as a block either way. */
 .name-gate-box .form-row label {
-  text-align: center;
+  text-align: left;
 }
 
-/* Solid buttons span the full field width here — Continue (step 1)
-   and Copy invite link / Add first show (step 2) all match the input
-   fields above them, rather than shrinking to fit their own label
-   text. One rule for both steps instead of a step-2-only one, since
-   both want the exact same treatment. */
+/* Solid buttons span the full field width here — Continue matches
+   the input fields above it, rather than shrinking to fit its own
+   label text. */
 .name-gate-box .btn-solid {
   width: 100%;
   text-align: center;
-}
-
-.name-gate-share-actions {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-8);
-  margin-bottom: var(--space-16);
 }
 
 .name-gate-tagline {
