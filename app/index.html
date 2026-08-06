@@ -42,6 +42,11 @@
            separate step. -->
       <div id="name-gate-step-name">
         <p class="name-gate-tagline" id="name-gate-tagline">Line up shows with your pals.</p>
+        <!-- Invite-link visitors only — the brand tagline above stays put
+             either way, this adds the specific "here's what you're
+             joining" context underneath it, with real space between the
+             two so it doesn't read as one run-on line. -->
+        <p class="name-gate-invite-message" id="name-gate-invite-message" style="display:none;"></p>
         <form id="name-gate-form">
           <div class="form-row">
             <label for="name-gate-input">What's your name?</label>
@@ -317,7 +322,7 @@
   const inviteSlug = new URLSearchParams(window.location.search).get('g');
   const hasInviteSlug = !!inviteSlug;
   let pendingNewGroup = null;
-  const nameGateTagline = document.getElementById('name-gate-tagline');
+  const nameGateInviteMessage = document.getElementById('name-gate-invite-message');
   const siteHeader = document.getElementById('site-header');
   const mainContent = document.getElementById('main-content');
 
@@ -1018,17 +1023,18 @@
       nameGateGroupRow.style.display = hasInviteSlug ? 'none' : 'block';
 
       // Invite-link visitor: name the actual group they're about to
-      // join instead of the generic tagline, so the raw ?g=<slug> in
-      // the URL bar isn't the only context they get. Looked up
-      // separately from (and before) handleGroupJoinFromUrl's own
-      // getGroupBySlug call, which only runs after they've entered a
-      // name — this is purely for the copy, doesn't join anything.
-      // Falls back to the generic tagline on a stale/bad slug rather
-      // than claiming an invite that doesn't check out.
+      // join, as a second line under the brand tagline (not a
+      // replacement for it) — so the raw ?g=<slug> in the URL bar
+      // isn't the only context they get. Looked up separately from
+      // (and before) handleGroupJoinFromUrl's own getGroupBySlug call,
+      // which only runs after they've entered a name — this is purely
+      // for the copy, doesn't join anything. Stays hidden on a stale/
+      // bad slug rather than claiming an invite that doesn't check out.
       if (hasInviteSlug) {
         const invitedGroup = await getGroupBySlug(inviteSlug);
         if (invitedGroup) {
-          nameGateTagline.textContent = `You've been invited to join "${invitedGroup.name}" — add your name and jump in.`;
+          nameGateInviteMessage.textContent = `You've been invited to join "${invitedGroup.name}" to track shows together. Add your name and jump in.`;
+          nameGateInviteMessage.style.display = 'block';
         }
       }
       return;
