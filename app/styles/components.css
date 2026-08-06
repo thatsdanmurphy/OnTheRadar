@@ -908,7 +908,15 @@ body.drawer-open {
 }
 
 .name-gate-center {
+  /* 100vh on mobile measures the *maximum* viewport (address bar
+     collapsed), taller than what's actually visible whenever the
+     browser chrome is showing — that gap is exactly what forced a
+     scroll to see the whole centered splash on a phone. 100dvh tracks
+     the real, current visible viewport instead; kept 100vh first as a
+     fallback for browsers that don't support dvh yet, since the
+     second declaration simply wins wherever it's understood. */
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1680,10 +1688,12 @@ body.drawer-open {
 /* ---------- Footer ---------- */
 
 /* A hairline border-top was tried first and cut — too subtle to read
-   as a real boundary. Solid --color-footer-bg (true black, a step
-   darker than the page's own charcoal) instead: a genuine band, not a
-   suggestion of one, no border needed to mark where it starts. Quiet
-   inside it either way — copyright + a contact link, nothing else. */
+   as a real boundary. Went through a darker --color-fill-dim recess
+   treatment after that (a genuine color band, no border needed to
+   mark where it starts) — reverted back to --color-footer-bg aliasing
+   --color-bg directly, per direct feedback that matching the page
+   background reads better. Quiet inside it either way — copyright + a
+   contact link, nothing else. */
 .site-footer {
   background: var(--color-footer-bg);
   margin-top: var(--space-32);

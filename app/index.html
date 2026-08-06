@@ -3,15 +3,27 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gig Herd</title>
+<title>GigHerd</title>
+<!-- Search-engine + share-preview copy — one shared tagline
+     ("Line up shows with your pals.") everywhere it appears, same as
+     the header/name-gate, rather than writing separate marketing copy
+     nobody would notice diverging from the real in-app tagline.
+     "GigHerd" (no space) everywhere the brand name appears in <head>
+     now too — was "Gig Herd" with a space in the title/OG/Twitter
+     tags, inconsistent with the actual wordmark
+     (`<span>Gig</span><span>Herd</span>`, no space between). -->
 <meta name="description" content="Line up shows with your pals.">
+<meta name="theme-color" content="#211f1a">
+<link rel="manifest" href="site.webmanifest">
 <!-- Favicon — a tight "GH" monogram, same wordmark colors/weight as
      the header (Big Shoulders Display 900, pink "G"/green "H") on the
      app's own charcoal, so the browser tab reads as the same brand as
      the page itself. .ico first (broadest legacy support, includes
      16/32/48px), PNGs after for browsers/platforms that prefer a
      specific size — apple-touch-icon for iOS home-screen bookmarks,
-     the 192/512 pair for Android/PWA-style "add to home screen". All
+     the 192/512 pair for Android/PWA-style "add to home screen" (also
+     referenced by site.webmanifest above, so both paths point at the
+     same two files rather than a separate manifest-only set). All
      five generated from one 512px master, not drawn separately, so
      they can't drift out of sync with each other. -->
 <link rel="icon" href="assets/favicon.ico" sizes="any">
@@ -27,12 +39,13 @@
      domain (still TODO, see component-map.md's invite-link notes);
      og:url is left off rather than hardcoding a domain that doesn't
      exist yet. -->
-<meta property="og:title" content="Gig Herd">
+<meta property="og:title" content="GigHerd">
 <meta property="og:description" content="Line up shows with your pals.">
+<meta property="og:site_name" content="GigHerd">
 <meta property="og:image" content="assets/og-image.png">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Gig Herd">
+<meta name="twitter:title" content="GigHerd">
 <meta name="twitter:description" content="Line up shows with your pals.">
 <meta name="twitter:image" content="assets/og-image.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -359,9 +372,9 @@
      a suggestion of one. Contact is a bare mailto: link, not a form —
      there's no email service or backend for one in this app's stack,
      and a link that just opens your own mail client doesn't need one. ===== -->
-<footer class="site-footer">
+<footer class="site-footer" id="site-footer">
   <div class="container footer-inner">
-    <p class="footer-copyright">© 2026 Gig Herd</p>
+    <p class="footer-copyright">© 2026 GigHerd</p>
     <a class="footer-contact" href="mailto:dmurphy.dpm@gmail.com?subject=Gig%20Herd">Contact</a>
   </div>
 </footer>
@@ -389,6 +402,7 @@
   const nameGateInviteMessage = document.getElementById('name-gate-invite-message');
   const siteHeader = document.getElementById('site-header');
   const mainContent = document.getElementById('main-content');
+  const siteFooter = document.getElementById('site-footer');
 
   const groupHeadingRow = document.getElementById('group-heading-row');
   const groupHeadingName = document.getElementById('group-heading-name');
@@ -1283,6 +1297,7 @@
     if (!person) {
       siteHeader.style.display = 'none';
       mainContent.style.display = 'none';
+      siteFooter.style.display = 'none';
       nameGate.style.display = 'block';
       nameGateGroupRow.style.display = hasInviteSlug ? 'none' : 'block';
 
@@ -1313,6 +1328,7 @@
     nameGate.style.display = 'none';
     siteHeader.style.display = '';
     mainContent.style.display = '';
+    siteFooter.style.display = '';
     await afterPerson();
   }
 

@@ -86,7 +86,13 @@
      the exact same "darker recess" treatment, rather than inventing a
      second near-black value for the same idea. */
   --color-fill-dim: color-mix(in srgb, var(--color-bg) 80%, black);
-  --color-footer-bg: var(--color-fill-dim);
+  /* Back to aliasing --color-bg directly, per direct feedback ("same
+     as the main background ... it looks better that way") — this is a
+     deliberate reversal of the --color-fill-dim recess treatment
+     described above; --space-32 padding plus the margin-top separating
+     it from the content above still reads as a real break without any
+     color contrast doing that job too. */
+  --color-footer-bg: var(--color-bg);
   /* Translucent paper ring — replaces --color-accent (pink) on focus
      rings. Pink is supposed to mean overlap and nowhere else (see the
      Color section further down); a focus ring isn't a UI signal in
