@@ -921,6 +921,12 @@
     avatarRow.appendChild(cantMakeItGroup);
 
     container.appendChild(avatarRow);
+
+    // Handed back so handleDeclineWithUndo can find this group's own
+    // .avatar-my-slot after a re-render and drop the inline Undo
+    // button right next to the now-moved avatar, instead of building
+    // a separate undo bar elsewhere in the card.
+    return cantMakeItGroup;
   }
 
   // Plain text, no pill — see .show-date-badge in components.css.
@@ -941,42 +947,64 @@
 
   function renderEmptyState(container, message) {
     container.className = 'show-list-empty';
-    container.innerHTML = `<div class="show-list-empty-icon">${EMPTY_STATE_ICON}</div><div>${message}</div>`;
+    // Icon + message sit inside a big darker circle now, per direct
+    // feedback — the circle is its own element (not just a background
+    // on .show-list-empty) so it can stay solid/undimmed while the
+    // icon and message keep their own quieter, dimmed treatment on
+    // top of it (see .show-list-empty-circle in components.css).
+    container.innerHTML = `<div class="show-list-empty-circle"><div class="show-list-empty-icon">${EMPTY_STATE_ICON}</div><div class="show-list-empty-message">${message}</div></div>`;
   }
 
   // Marking a show "out" from the cross-group My Shows view removes it
   // from the very list it's sitting in (My Shows only ever shows
   // curious picks) — used to just vanish the card the instant you
-  // clicked, with no way back if it was a misclick. This fades the
-  // card's content instead (reuses the same opacity language as
-  // .is-out elsewhere) and appends a plain "Undo" — one shared pattern
-  // rather than a one-off per card. If Undo isn't clicked within the
-  // window, the pending refresh runs and the card leaves for real.
+  // clicked, with no way back if it was a misclick. Per direct
+  // feedback, the avatar itself needs to actually move to the "Can't
+  // make it" slot right away (real confirmation, not a frozen avatar
+  // behind a fade), and the old separate "Marked can't make it." bar
+  // is gone — the Undo lives right next to the moved avatar instead.
+  // The card still dims slowly in the background as a "pending
+  // removal" signal, and if Undo isn't clicked within the window, the
+  // pending refresh runs and the card leaves for real.
   const UNDO_WINDOW_MS = 4000;
-  function handleDeclineWithUndo(show, body, refresh) {
+  function handleDeclineWithUndo(show, card, body, responses, refresh) {
     return async () => {
       const ok = await setResponse(show.id, person.id, 'out');
       if (!ok) return;
 
-      body.classList.add('show-card-content-fading');
-      const undoBar = document.createElement('div');
-      undoBar.className = 'show-undo-bar';
-      undoBar.innerHTML = `<span>Marked can't make it.</span>`;
+      // Reflect the new status locally so the avatar re-renders into
+      // the "Can't make it" slot immediately, instead of waiting on a
+      // full refetch — same instant-reflect approach every other
+      // response change in the app already uses.
+      const updatedResponses = responses.filter((r) => r.person_id !== person.id);
+      updatedResponses.push({ person_id: person.id, status: 'out', people: person });
+
+      const declinedGroup = renderShowInteractiveBody(body, show, updatedResponses, refresh);
+      card.classList.add('show-card-content-fading');
+
+      const mySlot = declinedGroup && declinedGroup.querySelector('.avatar-my-slot');
+      if (!mySlot) return;
+
       const undoBtn = document.createElement('button');
       undoBtn.type = 'button';
       undoBtn.className = 'link-btn show-undo-btn';
       undoBtn.textContent = 'Undo';
-      undoBar.appendChild(undoBtn);
-      body.parentElement.appendChild(undoBar);
+      mySlot.appendChild(undoBtn);
 
       const timer = setTimeout(() => { refresh(); }, UNDO_WINDOW_MS);
 
-      undoBtn.addEventListener('click', async () => {
+      // Stops the click from bubbling to the group's own click handler
+      // (opens the "who's in" modal) — same reasoning as the ghost-add
+      // button's own stopPropagation.
+      undoBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
         clearTimeout(timer);
         const restored = await setResponse(show.id, person.id, 'curious');
         if (!restored) return;
-        body.classList.remove('show-card-content-fading');
-        undoBar.remove();
+        card.classList.remove('show-card-content-fading');
+        const restoredResponses = updatedResponses.filter((r) => r.person_id !== person.id);
+        restoredResponses.push({ person_id: person.id, status: 'curious', people: person });
+        renderShowInteractiveBody(body, show, restoredResponses, refresh);
       });
     };
   }
@@ -1033,7 +1061,7 @@
 
       const body = document.createElement('div');
       card.appendChild(body);
-      const onDecline = declineWithUndo ? handleDeclineWithUndo(show, body, refresh) : undefined;
+      const onDecline = declineWithUndo ? handleDeclineWithUndo(show, card, body, responses, refresh) : undefined;
       renderShowInteractiveBody(body, show, responses, refresh, onDecline);
 
       content.appendChild(card);

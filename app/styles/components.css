@@ -124,6 +124,12 @@
      own edges next to the roomier margins the rest of the app now
      uses (grid margins, card padding). */
   padding: var(--space-24);
+  /* Right-edge corners only — the left edge sits flush against the
+     screen edge (there's nothing to round it against), but the right
+     edge was a hard vertical line the whole height of the screen.
+     Same --radius token every card/button in the app already uses,
+     per direct feedback ("to match the cards"), not a bespoke value. */
+  border-radius: 0 var(--radius) var(--radius) 0;
   overflow-y: auto;
   transform: translateX(-100%);
   transition: transform 0.2s ease;
@@ -181,6 +187,27 @@
   border-bottom: none;
   margin-bottom: 0;
   padding-bottom: 0;
+}
+
+/* Used to separate from the groups section below with a plain
+   border-bottom stroke, inherited from .drawer-section above. Per
+   direct feedback ("I don't love the stroke ... maybe we do something
+   like we did for the footer"), swapped for a darker recessed band
+   instead — the same --color-fill-dim token and "separation through
+   fill, not a line" language the footer already uses, rather than a
+   drawn line. Bleeds out to the drawer's own edges (negative margin
+   matching .nav-drawer's own padding) so it reads as a real band
+   across the top of the panel, not an inset card floating inside it —
+   picks up the drawer's own top-right corner radius to match. Stays
+   --color-fill-dim specifically (not something darker) so it reads as
+   a quiet recess inside the drawer, not a jarring contrast against the
+   page's own background just outside it. */
+.drawer-identity-section {
+  border-bottom: none;
+  background: var(--color-fill-dim);
+  margin: calc(var(--space-24) * -1) calc(var(--space-24) * -1) var(--space-24) calc(var(--space-24) * -1);
+  padding: var(--space-24);
+  border-top-right-radius: var(--radius);
 }
 
 .drawer-identity {
@@ -695,26 +722,53 @@ body.drawer-open {
    A spotlight icon was tried first and didn't read clearly at this
    size; the guitar (headstock, neck, figure-8 body, soundhole) is more
    legible and more on-theme besides. Flat single-color fill, no
-   gradient/glow — holds the brand's flat-full-stop rule. */
-/* Opacity set once, here, on the shared container — the message text
-   used to inherit --color-text at full strength while the icon sat at
-   0.35 opacity below it, so the two read as two different tones of
-   the same idea instead of one quiet empty-state voice. Both the
-   message text and the icon (currentColor fill) pick up this same
-   dimmed tone now. */
+   gradient/glow — holds the brand's flat-full-stop rule. Just the
+   outer centering row now — the dimmed tone and the dark circle both
+   live one level in, on .show-list-empty-circle/its children, so the
+   circle itself can stay solid instead of also getting washed out. */
 .show-list-empty {
+  display: flex;
+  justify-content: center;
+  padding-block: var(--space-64);
+}
+
+/* Big darker circle behind the icon + message, per direct feedback —
+   used to be bare icon/text floating in open space, this gives the
+   whole empty state a real anchor. --color-fill-dim, the same
+   "recessed" token the footer and drawer identity band both use, kept
+   at full opacity (not dimmed like its own content) so it reads as a
+   deliberate, solid shape rather than another washed-out layer. */
+.show-list-empty-circle {
+  width: 220px;
+  height: 220px;
+  max-width: 100%;
+  border-radius: 50%;
+  background: var(--color-fill-dim);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: var(--space-16);
-  text-align: center;
+  padding: var(--space-24);
+}
+
+/* Opacity set once, here — the message text used to inherit
+   --color-text at full strength while the icon sat at 0.35 opacity
+   below it, so the two read as two different tones of the same idea
+   instead of one quiet empty-state voice. Both the message text and
+   the icon (currentColor fill) pick up this same dimmed tone now,
+   sitting on top of the circle's own full-opacity fill. */
+.show-list-empty-icon,
+.show-list-empty-message {
+  color: var(--color-text);
+  opacity: 0.35;
+}
+
+.show-list-empty-message {
   font-family: var(--font-body);
   font-size: var(--text-body-size);
   line-height: var(--text-body-lh);
-  color: var(--color-text);
-  opacity: 0.35;
-  padding-block: var(--space-64);
+  text-align: center;
 }
 
 /* 2x the original size, per direct feedback — the guitar read too
@@ -751,37 +805,29 @@ body.drawer-open {
   opacity: 0.5;
 }
 
-/* My Shows-only — see handleDeclineWithUndo in index.html. Dims just
-   the card's interactive content (title/venue/avatars), not the whole
-   card, so the date badge above it and the undo bar below it (see
-   .show-undo-bar) stay fully legible while the middle fades — a
-   pending removal, not a settled "out" state the way .is-out is on a
-   group's own page. */
+/* My Shows-only — see handleDeclineWithUndo in index.html. The avatar
+   itself already re-renders into the "Can't make it" slot immediately
+   on decline (real confirmation the status changed, not a frozen
+   avatar behind a fade), so this class's only job now is a slow,
+   soft whole-card dim signaling "this is on its way out." Still
+   0.4→0.8 wasn't soft enough per direct feedback ("still too
+   sudden") — pushed further to 1.4s and a lighter opacity floor
+   (0.55, not 0.4) so the card visibly settles rather than dropping. */
 .show-card-content-fading {
-  opacity: 0.4;
-  /* Slowed from 0.3s to 0.8s, per direct feedback — this is a "you
-     have a moment to reconsider" transition, not a snappy UI-state
-     swap, so it should visibly take its time rather than blink to its
-     dimmed state. */
-  transition: opacity 0.8s ease;
+  opacity: 0.55;
+  transition: opacity 1.4s ease;
 }
 
-/* Plain text + a text-button "Undo," same quiet meta-line register as
-   the date badge above it, not a toast/snackbar — this app doesn't
-   have that pattern anywhere else, and one card-local line does the
-   job without introducing one. */
-.show-undo-bar {
-  display: flex;
-  align-items: center;
-  gap: var(--space-8);
-  margin-top: var(--space-8);
+/* Sits directly beside the moved avatar dot inside .avatar-my-slot —
+   replaces the old separate "Marked can't make it." bar entirely, per
+   direct feedback ("just add the undo button next to the avatar").
+   Same quiet meta-line register the bar used to have. */
+.show-undo-btn {
+  margin-left: var(--space-8);
   font-family: var(--font-data);
   font-size: var(--text-meta-size);
-  opacity: 0.7;
-}
-
-.show-undo-btn {
   font-weight: 600;
+  opacity: 0.85;
 }
 
 /* Holds the date badge (left) and overlap badge (right, only when
@@ -1019,6 +1065,11 @@ body.drawer-open {
    the row always sits flush with the label. */
 .avatar-my-slot {
   flex-shrink: 0;
+  /* Row, not the default block stacking, so the inline Undo button
+     (My Shows decline only — see handleDeclineWithUndo) sits directly
+     beside the avatar dot instead of wrapping underneath it. */
+  display: flex;
+  align-items: center;
 }
 
 .avatar-my-slot .avatar-dot {
