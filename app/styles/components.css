@@ -609,16 +609,30 @@ body.drawer-open {
   max-width: 400px;
 }
 
+/* Everything in the splash reads as one centered column now — labels
+   included, not just the wordmark/tagline above them. A label
+   left-aligned over a full-width filled field read like a stray
+   leftover of a left-aligned form, once the wordmark/tagline/button
+   were already centered around it. */
+.name-gate-box .form-row label {
+  text-align: center;
+}
+
+/* Solid buttons span the full field width here — Continue (step 1)
+   and Copy invite link / Add first show (step 2) all match the input
+   fields above them, rather than shrinking to fit their own label
+   text. One rule for both steps instead of a step-2-only one, since
+   both want the exact same treatment. */
+.name-gate-box .btn-solid {
+  width: 100%;
+  text-align: center;
+}
+
 .name-gate-share-actions {
   display: flex;
   flex-direction: column;
   gap: var(--space-8);
   margin-bottom: var(--space-16);
-}
-
-.name-gate-share-actions .btn-solid {
-  width: 100%;
-  text-align: center;
 }
 
 .name-gate-tagline {
@@ -1252,15 +1266,28 @@ body.drawer-open {
   margin-bottom: var(--space-4);
 }
 
+/* Filled, not outlined — a recessed dark slot (--color-input-bg, a
+   shade darker than the page) rather than a border drawn on top of
+   the page's own color. Every other field in the app (name-gate,
+   Add Show's manual form, venue search) shares this one class, so
+   the change is app-wide, not splash-only. No border at rest — the
+   fill itself is the boundary; the accent ring on focus is still a
+   real outline; that's a distinct "you're typing here now" signal,
+   not the field's resting shape. */
 .form-row input {
   width: 100%;
   font-family: var(--font-body);
   font-size: var(--text-body-size);
-  border: 1px solid var(--color-border);
+  border: 1px solid transparent;
   border-radius: var(--radius);
-  padding: var(--space-8);
-  background: var(--color-bg);
+  padding: var(--space-8) var(--space-16);
+  background: var(--color-input-bg);
   color: var(--color-text);
+}
+
+.form-row input::placeholder {
+  color: var(--color-text);
+  opacity: 0.4;
 }
 
 .form-row input:focus {

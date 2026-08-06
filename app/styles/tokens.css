@@ -64,6 +64,7 @@
   --color-chip-bg: #ebe8e1;         /* filled/active chip fill (buttons, active toggle, calendar header) — light, since it needs to pop off an all-dark page now */
   --color-chip-text: #211f1a;       /* charcoal text on the light chip */
   --color-footer-bg: var(--color-bg); /* true black was tried and felt harsh next to the page's own charcoal — turns out --color-bg (#211f1a) already *is* the more-charcoal tone that was wanted, so the footer just reuses it directly instead of introducing a second near-black value */
+  --color-input-bg: color-mix(in srgb, var(--color-bg) 80%, black); /* form fields — a fill, not an outline. Everything else in the palette goes *lighter* than --color-bg (surface, chip); this is the one deliberate exception, a shade darker than the page so a field reads as a recessed slot cut into it rather than a raised card sitting on top of it. */
   /* Tint/scrim tokens — found scattered as duplicate rgba() literals
      across components.css (drawer overlay, modal overlay, several
      hover/active fills), each one hand-typing the decimal RGB of a

@@ -41,7 +41,7 @@
            yet, so it's collected in the same form rather than as a
            separate step. -->
       <div id="name-gate-step-name">
-        <p class="name-gate-tagline">Line up shows with your pals.</p>
+        <p class="name-gate-tagline" id="name-gate-tagline">Line up shows with your pals.</p>
         <form id="name-gate-form">
           <div class="form-row">
             <label for="name-gate-input">What's your name?</label>
@@ -314,8 +314,10 @@
   // Captured once at load, before handleGroupJoinFromUrl strips the
   // ?g= param — decides which name-gate path to show (joining a
   // group that already exists vs. a cold start with none yet).
-  const hasInviteSlug = !!new URLSearchParams(window.location.search).get('g');
+  const inviteSlug = new URLSearchParams(window.location.search).get('g');
+  const hasInviteSlug = !!inviteSlug;
   let pendingNewGroup = null;
+  const nameGateTagline = document.getElementById('name-gate-tagline');
   const siteHeader = document.getElementById('site-header');
   const mainContent = document.getElementById('main-content');
 
@@ -1014,6 +1016,21 @@
       mainContent.style.display = 'none';
       nameGate.style.display = 'block';
       nameGateGroupRow.style.display = hasInviteSlug ? 'none' : 'block';
+
+      // Invite-link visitor: name the actual group they're about to
+      // join instead of the generic tagline, so the raw ?g=<slug> in
+      // the URL bar isn't the only context they get. Looked up
+      // separately from (and before) handleGroupJoinFromUrl's own
+      // getGroupBySlug call, which only runs after they've entered a
+      // name — this is purely for the copy, doesn't join anything.
+      // Falls back to the generic tagline on a stale/bad slug rather
+      // than claiming an invite that doesn't check out.
+      if (hasInviteSlug) {
+        const invitedGroup = await getGroupBySlug(inviteSlug);
+        if (invitedGroup) {
+          nameGateTagline.textContent = `You've been invited to join "${invitedGroup.name}" — add your name and jump in.`;
+        }
+      }
       return;
     }
 

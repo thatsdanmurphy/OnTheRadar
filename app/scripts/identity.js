@@ -130,16 +130,60 @@ window.OTR = window.OTR || {};
     return true;
   };
 
-  // Creates a new group and makes the current person its first member.
-  OTR.createGroup = async function (personId, name) {
-    const { data: group, error: groupError } = await OTR.db
-      .from('groups')
-      .insert({ name })
-      .select()
-      .single();
+  // Turns a group name into a URL-safe slug — lowercase, spaces/
+  // punctuation collapsed to single hyphens, no leading/trailing
+  // hyphens. Falls back to a plain "group" if the name has nothing
+  // slug-able in it (e.g. entirely emoji/punctuation).
+  function slugify(name) {
+    return (
+      name
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '') || 'group'
+    );
+  }
 
-    if (groupError) {
-      console.error('Failed to create group:', groupError);
+  // Creates a new group and makes the current person its first member.
+  // The slug used to be a random 12-byte hex string, an opaque
+  // "unguessable slug" (see 01_Strategy/decisions.md's 2026-07-16
+  // identity-model entry) — genuinely fine for privacy, but it made
+  // every invite link and the URL bar itself look broken/spammy
+  // ("gigherd.com/?g=098aea86c5eb9dc6461b166f"). Switched to the
+  // group's own name, slugified, per direct request: this app is
+  // explicitly framed as low-stakes ("not something that needs to
+  // resist a motivated attacker" — see the same decisions.md entry),
+  // and a readable link is worth the small amount of guessability this
+  // trades away. `groups.slug` still has a DB-level unique constraint
+  // (schema.sql) and a random-hex default — passing an explicit slug
+  // here overrides that default; the loop below only exists to handle
+  // the case where the *same* group name already exists (retries with
+  // -2, -3, ... on a unique-constraint violation, Postgres code 23505).
+  OTR.createGroup = async function (personId, name) {
+    const base = slugify(name);
+    let slug = base;
+    let group = null;
+    let lastError = null;
+
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      const { data, error } = await OTR.db
+        .from('groups')
+        .insert({ name, slug })
+        .select()
+        .single();
+
+      if (!error) {
+        group = data;
+        break;
+      }
+
+      lastError = error;
+      if (error.code !== '23505') break; // not a slug collision — give up immediately
+      slug = `${base}-${attempt + 2}`; // base-2, base-3, ... (base itself was attempt 0)
+    }
+
+    if (!group) {
+      console.error('Failed to create group:', lastError);
       return null;
     }
 
