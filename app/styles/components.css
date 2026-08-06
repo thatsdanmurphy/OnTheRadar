@@ -76,8 +76,15 @@
   cursor: pointer;
 }
 
+/* A lighter tone of whatever avatar color is already set (not a
+   color swap to pink) — the resting fill is a solid, per-person
+   color via the --avatar-color custom property, so a translucent
+   overlay tint (the trick every transparent-background hover in this
+   file uses) wouldn't show up against it the same way. A brightness
+   filter works on any avatar color without needing to know which one
+   is active. */
 .header-avatar-btn:hover {
-  background: var(--color-accent);
+  filter: brightness(1.15);
 }
 
 /* ---------- Nav drawer ---------- */
@@ -343,7 +350,7 @@
 .drawer-group-select:focus-visible,
 .drawer-group-share:focus-visible,
 .drawer-new-group-btn:focus-visible {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--color-focus-ring);
   outline-offset: 2px;
 }
 
@@ -1222,9 +1229,15 @@ body.drawer-open {
   cursor: pointer;
 }
 
+/* Was a swap to the pink accent — a real "pink means overlap, nowhere
+   else" violation hiding in plain sight (see tokens.css's Color
+   section). A light chip reads better darkening slightly on hover
+   than lightening (it's already close to white), so this dims rather
+   than brightens — border and background are the same color to start
+   with, so one filter covers both without a separate border-color
+   line. */
 .btn-solid:hover {
-  background: var(--color-accent);
-  border-color: var(--color-accent);
+  filter: brightness(0.92);
 }
 
 .btn-outline {
@@ -1278,14 +1291,14 @@ body.drawer-open {
   margin-bottom: var(--space-4);
 }
 
-/* Filled, not outlined — a recessed dark slot (--color-input-bg, a
+/* Filled, not outlined — a recessed dark slot (--color-fill-dim, a
    shade darker than the page) rather than a border drawn on top of
    the page's own color. Every other field in the app (name-gate,
    Add Show's manual form, venue search) shares this one class, so
    the change is app-wide, not splash-only. No border at rest — the
-   fill itself is the boundary; the accent ring on focus is still a
-   real outline; that's a distinct "you're typing here now" signal,
-   not the field's resting shape. */
+   fill itself is the boundary; the focus ring is still a real
+   outline; that's a distinct "you're typing here now" signal, not
+   the field's resting shape. */
 .form-row input {
   width: 100%;
   font-family: var(--font-body);
@@ -1293,7 +1306,7 @@ body.drawer-open {
   border: 1px solid transparent;
   border-radius: var(--radius);
   padding: var(--space-8) var(--space-16);
-  background: var(--color-input-bg);
+  background: var(--color-fill-dim);
   color: var(--color-text);
 }
 
@@ -1302,8 +1315,12 @@ body.drawer-open {
   opacity: 0.4;
 }
 
+/* --color-focus-ring, not the pink accent — pink is reserved for
+   overlap (see tokens.css), and a focus ring isn't that kind of
+   signal. Translucent paper reads as "a lighter version of what's
+   already here," same language as every hover state below. */
 .form-row input:focus {
-  outline: 2px solid var(--color-accent);
+  outline: 2px solid var(--color-focus-ring);
   outline-offset: -1px;
 }
 

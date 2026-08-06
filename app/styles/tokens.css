@@ -40,11 +40,15 @@
      overlap" as a strict UI rule. Explicitly unified now, per direct
      request: too many pinks reading as slightly-off versions of each
      other, not a deliberate pair. --color-logo-pink is just an alias
-     for --color-accent below, so the wordmark, the overlap marker, and
-     the header avatar's hover state are all guaranteed to be the exact
-     same pink going forward, not three approximations of one idea.
-     This does relax the old "overlap only" rule — worth naming
-     honestly rather than pretending the rule still holds. "Herd" keeps
+     for --color-accent below, so the wordmark and the overlap marker
+     are guaranteed to be the exact same pink going forward, not two
+     approximations of one idea. The header avatar's hover state (and
+     every other hover/focus utility state in the app) was later moved
+     *off* pink entirely — see --color-focus-ring and the hover-state
+     pass in components.css — which actually restores the "overlap
+     only" rule rather than relaxing it further; pink is back to
+     meaning one thing again, just logo + overlap, not logo + overlap +
+     every hover state too. "Herd" keeps
      its own --color-logo-green, still pinned to the London Calling /
      Elvis Presley cover homage. Flat fills, no glow (a glow pass on
      "Herd" was tried and cut — "no glow, full stop" held). Army green
@@ -57,14 +61,34 @@
   --color-accent: #f3596e;          /* overlap marker — nowhere else, not even the logo anymore */
   --color-border: rgba(235, 232, 225, 0.18); /* translucent paper hairline — a solid charcoal border would vanish on a charcoal page */
   --color-secondary: #6b8e23;       /* army green — atmosphere only, one job as an avatar-color option */
-  --color-logo-pink: var(--color-accent); /* "Gig" in the wordmark — unified with the overlap/nav-hover pink, not its own value anymore */
+  --color-logo-pink: var(--color-accent); /* "Gig" in the wordmark — unified with the overlap marker's pink, not its own value anymore */
   --color-logo-green: #8dc63f;      /* "Herd" in the wordmark — London Calling / Elvis-cover chartreuse green */
   --color-surface: #2b2924;         /* card + drawer + header-context fill — one step lighter than the page, not darker */
   --color-surface-text: #ebe8e1;    /* warm paper — text/icons for anything sitting on --color-surface */
   --color-chip-bg: #ebe8e1;         /* filled/active chip fill (buttons, active toggle, calendar header) — light, since it needs to pop off an all-dark page now */
   --color-chip-text: #211f1a;       /* charcoal text on the light chip */
-  --color-footer-bg: var(--color-bg); /* true black was tried and felt harsh next to the page's own charcoal — turns out --color-bg (#211f1a) already *is* the more-charcoal tone that was wanted, so the footer just reuses it directly instead of introducing a second near-black value */
-  --color-input-bg: color-mix(in srgb, var(--color-bg) 80%, black); /* form fields — a fill, not an outline. Everything else in the palette goes *lighter* than --color-bg (surface, chip); this is the one deliberate exception, a shade darker than the page so a field reads as a recessed slot cut into it rather than a raised card sitting on top of it. */
+  /* One shared "recessed" fill — a shade darker than --color-bg,
+     color-mix()'d from it rather than a hand-picked hex, so it moves
+     if --color-bg ever does. Everything else in the palette goes
+     *lighter* than --color-bg (surface, chip); this is the deliberate
+     exception, for anything that should read as cut *into* the page
+     rather than sitting on top of it. Started as form-field-only
+     (--color-input-bg); the footer used to just alias --color-bg
+     directly (a true-black footer was tried and felt harsh next to
+     the page's own charcoal, and --color-bg alone read as no
+     separation at all) — renamed/generalized once the footer wanted
+     the exact same "darker recess" treatment, rather than inventing a
+     second near-black value for the same idea. */
+  --color-fill-dim: color-mix(in srgb, var(--color-bg) 80%, black);
+  --color-footer-bg: var(--color-fill-dim);
+  /* Translucent paper ring — replaces --color-accent (pink) on focus
+     rings. Pink is supposed to mean overlap and nowhere else (see the
+     Color section further down); a focus ring isn't a UI signal in
+     that sense, just "you're here via keyboard/a form field," so it
+     should read as a neutral, lighter version of the surface it's on,
+     the same language --tint-hover/--tint-active already use for
+     hover states. */
+  --color-focus-ring: color-mix(in srgb, var(--color-text) 40%, transparent);
   /* Tint/scrim tokens — found scattered as duplicate rgba() literals
      across components.css (drawer overlay, modal overlay, several
      hover/active fills), each one hand-typing the decimal RGB of a
