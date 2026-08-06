@@ -193,19 +193,33 @@
    see AVATAR_COLORS in index.html) instead of the old inverted
    paper-on-charcoal treatment, now that avatars carry per-person
    color as identity. White text throughout the palette, checked for
-   contrast against every swatch. */
+   contrast against every swatch. A real button now, not a plain div —
+   clicking it opens the name/color edit panel below (see
+   .drawer-identity-edit) — so native button chrome (border/padding)
+   is reset explicitly, same as every other icon-shaped button in the
+   app. Hover uses the same brightness-filter language as the header
+   avatar trigger, since it's a solid opaque fill a translucent tint
+   wouldn't show up against. */
 .drawer-avatar {
   width: var(--space-40);
   height: var(--space-40);
   border-radius: 50%;
   background: var(--avatar-color, var(--color-surface));
   color: var(--color-text-inverse);
+  border: none;
+  padding: 0;
+  cursor: pointer;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: var(--font-data);
   font-size: var(--text-meta-size);
+  transition: filter 0.15s ease;
+}
+
+.drawer-avatar:hover {
+  filter: brightness(1.15);
 }
 
 .drawer-name {
@@ -213,6 +227,14 @@
   font-weight: 600;
   font-size: var(--text-sub-size);
   line-height: var(--text-sub-lh);
+}
+
+/* Collapsed by default (see index.html) — opened by clicking the
+   avatar. Top margin matches the identity-section label's own rhythm
+   (--space-16) so it reads as the next thing in this section, not
+   crowding the name row above it. */
+.drawer-identity-edit {
+  margin-top: var(--space-16);
 }
 
 .drawer-label {
@@ -265,18 +287,14 @@
    the drawer was just redundant friction. Two-line row: name + member
    count.
 
-   Every row now shares the same card-like shape — a subtle
-   `--color-border` outline plus real padding — whether it's the
-   active group or not. Previously only the active row had any visible
-   boundary at all (its tonal fill); an inactive row was literally just
-   text floating with no edges, which read as broken/inconsistent
-   rather than a deliberate quiet state. Now the list reads as one
-   cohesive set of tappable rows, with the active one distinguished by
-   a filled tint plus a slightly stronger border on top of the same
-   shape everyone else has — never the pink accent, which stays
-   reserved for overlap. Dropped the old negative-margin bleed trick
-   (rows used to extend past the drawer's own padding); real borders
-   need to sit inside the drawer's padding like everything else. */
+   Rows used to carry a `--color-border` outline at rest, on the
+   reasoning that an inactive row with no visible edge at all read as
+   broken. Cut per direct feedback ("remove the outline from the
+   containers in the nav, they're not cool") — the row's own padding
+   plus the --space-8 gap between rows already reads as a list without
+   needing a drawn line around each item; hover/active states still
+   have real shape (a tonal fill), just no border underneath them at
+   rest. */
 .drawer-group-list {
   display: flex;
   flex-direction: column;
@@ -284,29 +302,27 @@
 }
 
 /* Row now holds two independent controls — select this group / share
-   its invite link — so the card shape (border, radius, padding) lives
-   on the row itself, not on a single button the way it used to. */
+   its invite link — so the card shape (radius, padding) lives on the
+   row itself, not on a single button the way it used to. */
 .drawer-group-row {
   display: flex;
   align-items: center;
   gap: var(--space-8);
-  border: 1px solid var(--color-border);
   border-radius: var(--radius);
   padding: var(--space-8) var(--space-8) var(--space-8) var(--space-16);
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition: background 0.15s ease;
 }
 
 .drawer-group-row:hover {
   background: var(--tint-hover);
 }
 
-/* Tonal fill plus a slightly stronger border — no color change. Pink
-   still means overlap, nowhere else, so "this is your current group"
-   reads through weight and fill/border strength instead of reaching
-   for the accent. */
+/* Tonal fill — no border, no color change. Pink still means overlap,
+   nowhere else, so "this is your current group" reads through a
+   filled tint plus bolder text weight instead of reaching for the
+   accent or drawing an edge around it. */
 .drawer-group-row.active {
   background: var(--tint-active);
-  border-color: var(--tint-active-strong);
 }
 
 /* The name+count half of the row — flexes to fill the space the
@@ -349,7 +365,9 @@
 
 .drawer-group-select:focus-visible,
 .drawer-group-share:focus-visible,
-.drawer-new-group-btn:focus-visible {
+.drawer-new-group-btn:focus-visible,
+.drawer-my-shows-btn:focus-visible,
+.drawer-avatar:focus-visible {
   outline: 2px solid var(--color-focus-ring);
   outline-offset: 2px;
 }
@@ -381,14 +399,18 @@
   margin-top: var(--space-4);
 }
 
-/* Stays a quiet text link, not another bordered row — it's a distinct
-   secondary action, not one more item in the list, so it shouldn't
-   share the list rows' card shape. Margin-top (was padding-top, same
-   value) bumped from --space-8 to --space-16 — proportionally further
-   from the list than individual rows sit from each other (--space-8),
-   so the hierarchy reads: rows are grouped tightly, "add new" sits a
-   clear step apart. */
+/* Used to be a plain quiet text link with no shape at all — per direct
+   feedback ("New group should have a container around it"), it's a
+   real tonal container now, same radius/padding language as a group
+   row (minus the border, per the no-outline rule above), rather than
+   a bare label floating under the list. Still reads as a distinct,
+   secondary action relative to the rows above it — no fill at rest,
+   just on hover — so it doesn't get mistaken for one more group to
+   select. */
 .drawer-new-group-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
   font-family: var(--font-data);
   font-weight: 600;
   font-size: var(--text-control-size);
@@ -397,15 +419,58 @@
   letter-spacing: 0.01em;
   background: none;
   border: none;
+  border-radius: var(--radius);
   color: var(--color-surface-text);
   opacity: 0.7;
-  margin-top: var(--space-16);
-  padding: 0;
+  margin-top: var(--space-8);
+  padding: var(--space-8) var(--space-8) var(--space-8) var(--space-16);
   cursor: pointer;
+  transition: background 0.15s ease, opacity 0.15s ease;
 }
 
 .drawer-new-group-btn:hover {
+  background: var(--tint-hover);
   opacity: 1;
+}
+
+/* Cross-group "My Shows" entry point — sits above the group list, its
+   own tonal container (matches .drawer-group-row's shape) rather than
+   one more row inside the list, since it isn't a group at all. Two
+   lines, same language as a group row's name + member-count. */
+.drawer-my-shows-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: var(--tint-hover);
+  border: none;
+  border-radius: var(--radius);
+  padding: var(--space-8) var(--space-8) var(--space-8) var(--space-16);
+  margin-bottom: var(--space-16);
+  color: var(--color-surface-text);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.drawer-my-shows-btn:hover {
+  background: var(--tint-active);
+}
+
+.drawer-my-shows-label {
+  display: block;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-lh);
+}
+
+.drawer-my-shows-sub {
+  display: block;
+  font-family: var(--font-data);
+  font-size: var(--text-meta-size);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.55;
+  margin-top: var(--space-4);
 }
 
 /* Locks page scroll while the drawer is open. */
@@ -592,6 +657,21 @@ body.drawer-open {
   text-transform: uppercase;
   letter-spacing: 0.04em;
   white-space: nowrap;
+}
+
+/* Only rendered in the cross-group My Shows view (see
+   renderMyShowsView/renderListView in index.html) — a quiet reminder
+   of which group this card belongs to, since Herd Picks already has
+   that context from the group heading row above the list and this
+   view doesn't. Same meta-line treatment as the date badge, dimmer
+   still since it's secondary to it, not a peer. */
+.show-group-tag {
+  font-family: var(--font-data);
+  font-size: var(--text-meta-size);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.45;
+  margin-top: var(--space-4);
 }
 
 /* Used to also hold a quiet arrow opening a detail page — cut along

@@ -107,16 +107,30 @@
 
   <div class="drawer-section drawer-identity-section">
     <div class="drawer-identity">
-      <div class="drawer-avatar" id="drawer-avatar"></div>
+      <!-- Click to reveal the edit panel below (name + color) — was a
+           plain non-interactive div; a real button now, since editing
+           either of those used to have no entry point at all. -->
+      <button type="button" class="drawer-avatar" id="drawer-avatar" aria-label="Edit your name and color" aria-expanded="false"></button>
       <div class="drawer-name" id="drawer-name"></div>
     </div>
-    <!-- A fixed palette, not a free color picker — every option stays
-         legible white-on-color both on the light card surface and the
-         drawer's charcoal, which an arbitrary color couldn't promise.
-         Picking one writes straight to people.avatar_color and
-         re-renders every avatar on screen. -->
-    <div class="drawer-label">Your color</div>
-    <div class="avatar-color-picker" id="avatar-color-picker"></div>
+    <!-- Hidden until the avatar's clicked — name + color used to sit
+         permanently expanded here, which read as more "settings you
+         must configure" than the identity block deserved, especially
+         now that color is auto-assigned on signup (see AVATAR_COLORS)
+         rather than something everyone has to pick themselves. -->
+    <div class="drawer-identity-edit" id="drawer-identity-edit" style="display:none;">
+      <div class="form-row">
+        <label for="drawer-name-input">Your name</label>
+        <input type="text" id="drawer-name-input" autocomplete="name">
+      </div>
+      <!-- A fixed palette, not a free color picker — every option stays
+           legible white-on-color both on the light card surface and the
+           drawer's charcoal, which an arbitrary color couldn't promise.
+           Picking one writes straight to people.avatar_color and
+           re-renders every avatar on screen. -->
+      <div class="drawer-label">Your color</div>
+      <div class="avatar-color-picker" id="avatar-color-picker"></div>
+    </div>
   </div>
 
   <!-- Crew (a plain name list for the current group) lived here and
@@ -125,6 +139,15 @@
        section in the drawer that didn't actually do anything when
        tapped. -->
   <div class="drawer-section drawer-section-last" id="group-bar" style="display:none;">
+    <!-- Cross-group view — everything you've marked curious, across
+         every group you're in, not scoped to whichever one happens to
+         be selected right now. Sits above the group list itself since
+         it's not really "one more group," it's the other way of
+         looking at the same shows. -->
+    <button type="button" class="drawer-my-shows-btn" id="drawer-my-shows-btn">
+      <span class="drawer-my-shows-label">My Shows</span>
+      <span class="drawer-my-shows-sub">Everything you're in, across groups</span>
+    </button>
     <div class="drawer-label">Your groups</div>
     <div class="drawer-group-list" id="drawer-group-list"></div>
     <button type="button" class="drawer-new-group-btn" id="drawer-new-group-btn">+ New group</button>
@@ -154,6 +177,13 @@
         <i data-lucide="users"></i>
       </button>
     </div>
+  </div>
+
+  <!-- My Shows — cross-group view, reuses .group-heading-row's h2
+       styling (same visual weight as "which group am I in") but with
+       no actions, since there's no single group here to share/view. -->
+  <div class="group-heading-row" id="my-shows-heading-row" style="display:none;">
+    <h2 class="group-heading-name">My Shows</h2>
   </div>
 
   <div class="tab-bar" id="tab-bar" style="display:none;">
@@ -290,7 +320,7 @@
 <script src="scripts/identity.js"></script>
 <script src="scripts/shows.js"></script>
 <script>
-  const { getPerson, createPerson, getMyGroups, getGroupMembers, getGroupMemberCounts, createGroup, getGroupBySlug, joinGroup, leaveGroup, updatePersonColor } = OTR;
+  const { getPerson, createPerson, getMyGroups, getGroupMembers, getGroupMemberCounts, createGroup, getGroupBySlug, joinGroup, leaveGroup, updatePersonColor, updatePersonName } = OTR;
   const { getShowsForGroup, getResponsesForShows, overlapCount, setResponse, createShow, searchShows, searchVenues } = OTR;
 
   const nameGate = document.getElementById('name-gate');
@@ -312,6 +342,7 @@
   const groupHeadingName = document.getElementById('group-heading-name');
   const groupShareBtn = document.getElementById('group-share-btn');
   const groupViewBtn = document.getElementById('group-view-btn');
+  const myShowsHeadingRow = document.getElementById('my-shows-heading-row');
   const listContent = document.getElementById('show-list-content');
 
   const peopleModalOverlay = document.getElementById('people-modal-overlay');
@@ -336,11 +367,14 @@
   const drawerCloseBtn = document.getElementById('drawer-close-btn');
   const drawerAvatar = document.getElementById('drawer-avatar');
   const drawerName = document.getElementById('drawer-name');
+  const drawerIdentityEdit = document.getElementById('drawer-identity-edit');
+  const drawerNameInput = document.getElementById('drawer-name-input');
 
   // Group list — lives inside the drawer now (was a header dropdown).
   const groupBar = document.getElementById('group-bar');
   const drawerGroupList = document.getElementById('drawer-group-list');
   const drawerNewGroupBtn = document.getElementById('drawer-new-group-btn');
+  const drawerMyShowsBtn = document.getElementById('drawer-my-shows-btn');
 
   const addShowCard = document.getElementById('add-show-card');
   const addShowBtn = document.getElementById('add-show-btn');
@@ -419,11 +453,15 @@
 
   // Fixed palette for avatar dots — not a free color picker. Pink is
   // deliberately excluded; it stays reserved for overlap/logo/hover
-  // (see tokens.css). First entry is the DB default — used to be
-  // charcoal (matched the old uniform dot on a light page), but that's
-  // invisible now that the page itself is charcoal, so the default
-  // became "Paper" instead: a neutral, un-chosen look that actually
-  // shows up against a dark background.
+  // (see tokens.css). First entry, "Paper," used to be the automatic
+  // default for everyone — meaning every new person showed up looking
+  // identical until they thought to go pick a color themselves, which
+  // in practice most people never did. New signups now get a random
+  // color from the other seven right away (see randomAvatarColor,
+  // called from the name-gate submit handler) — everyone's actually
+  // distinguishable from the first show card they see, and "Your
+  // color" in the drawer becomes a real edit, not a first-run chore.
+  // Paper stays in the palette as a manual pick, just not the default.
   //
   // The other seven are tuned to the logo's own tone/value — same
   // saturation (~54%) and lightness (~51%) as --color-logo-green —
@@ -446,6 +484,14 @@
 
   function avatarColor(p) {
     return (p && p.avatar_color) || AVATAR_COLORS[0].hex;
+  }
+
+  // Random pick from everything but Paper (index 0) — used once, at
+  // signup, so a fresh person doesn't start out looking like everyone
+  // else's unedited default.
+  function randomAvatarColor() {
+    const pool = AVATAR_COLORS.slice(1);
+    return pool[Math.floor(Math.random() * pool.length)].hex;
   }
 
   // Picking a single fixed text color for every avatar dot doesn't
@@ -674,6 +720,7 @@
   async function selectGroup(group) {
     currentGroup = group;
     currentGroupId = group.id;
+    myShowsHeadingRow.style.display = 'none';
     groupBar.style.display = 'block';
     await renderGroupSwitcher(myGroups);
     closeDrawer();
@@ -879,8 +926,13 @@
     container.innerHTML = `<div class="show-list-empty-icon">${EMPTY_STATE_ICON}</div><div>${message}</div>`;
   }
 
-  function renderListView(shows, responsesByShow, emptyMessage) {
+  // onChange defaults to the single-group refresh every existing
+  // caller wants; the cross-group My Shows view (see renderMyShowsView
+  // below) passes its own so a response change re-runs the aggregate
+  // fetch instead of trying to refresh one group that isn't selected.
+  function renderListView(shows, responsesByShow, emptyMessage, onChange) {
     const content = listContent;
+    const refresh = onChange || (() => renderCurrentView(currentGroupId));
 
     if (shows.length === 0) {
       renderEmptyState(content, emptyMessage || 'No shows yet.');
@@ -901,6 +953,17 @@
 
       card.appendChild(buildDateBadge(show));
 
+      // Only set in the cross-group My Shows view (see
+      // renderMyShowsView) — a quiet reminder of which group this show
+      // actually belongs to, since there's no single group heading
+      // doing that job here the way there is on Herd Picks.
+      if (show._groupName) {
+        const tag = document.createElement('div');
+        tag.className = 'show-group-tag';
+        tag.textContent = show._groupName;
+        card.appendChild(tag);
+      }
+
       if (overlap >= 2) {
         const top = document.createElement('div');
         top.className = 'show-card-top';
@@ -913,11 +976,55 @@
 
       const body = document.createElement('div');
       card.appendChild(body);
-      renderShowInteractiveBody(body, show, responses, () => renderCurrentView(currentGroupId));
+      renderShowInteractiveBody(body, show, responses, refresh);
 
       content.appendChild(card);
     });
   }
+
+  // Cross-group "My Shows" — every show, in every group this person
+  // is a member of, that they've personally marked curious. Fetches
+  // per-group (loadGroupData already exists for the single-group
+  // case) in parallel, then flattens into one sorted list rather than
+  // adding a dedicated cross-group query — myGroups is already loaded
+  // client-side, and this only runs when someone actually opens the
+  // view, not on every render.
+  async function renderMyShowsView() {
+    currentGroupId = null;
+    currentGroup = null;
+    closeDrawer();
+
+    groupHeadingRow.style.display = 'none';
+    tabBar.style.display = 'none';
+    addShowCard.style.display = 'none';
+    myShowsHeadingRow.style.display = 'flex';
+
+    const perGroup = await Promise.all(
+      myGroups.map(async (g) => ({ group: g, ...(await loadGroupData(g.id)) }))
+    );
+
+    const mergedResponses = {};
+    const myShows = [];
+    perGroup.forEach(({ group, shows, responsesByShow }) => {
+      Object.assign(mergedResponses, responsesByShow);
+      shows.forEach((s) => {
+        const mine = (responsesByShow[s.id] || []).find(
+          (r) => r.person_id === person.id && r.status === 'curious'
+        );
+        if (mine) myShows.push(Object.assign({ _groupName: group.name }, s));
+      });
+    });
+    myShows.sort((a, b) => (a.show_date || '').localeCompare(b.show_date || ''));
+
+    renderListView(
+      myShows,
+      mergedResponses,
+      "You haven't marked any shows yet — across any of your groups.",
+      () => renderMyShowsView()
+    );
+  }
+
+  drawerMyShowsBtn.addEventListener('click', renderMyShowsView);
 
   // Herd Picks / My Shows tab switch — bold label + underline handled
   // purely by the .active class, no fill/background swap.
@@ -991,6 +1098,47 @@
     });
   }
 
+  // Click the avatar to open/close the name + color edit panel below
+  // it — collapsed by default now (see the drawer-identity-edit HTML
+  // comment for why), so opening it always starts from the current
+  // name rather than whatever was left typed in from last time.
+  function setIdentityEditOpen(open) {
+    drawerIdentityEdit.style.display = open ? 'block' : 'none';
+    drawerAvatar.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open) drawerNameInput.value = person.display_name;
+  }
+
+  drawerAvatar.addEventListener('click', () => {
+    const isOpen = drawerIdentityEdit.style.display !== 'none';
+    setIdentityEditOpen(!isOpen);
+    if (!isOpen) drawerNameInput.focus();
+  });
+
+  // Saves on blur, not on every keystroke — Enter just blurs (no
+  // actual form here, so no submit event to hook), same "commit on
+  // leave" pattern as any plain text field without its own button.
+  async function saveNameIfChanged() {
+    const newName = drawerNameInput.value.trim();
+    if (!newName || newName === person.display_name) {
+      drawerNameInput.value = person.display_name;
+      return;
+    }
+    const ok = await updatePersonName(person.id, newName);
+    if (!ok) return;
+    person.display_name = newName;
+    drawerName.textContent = newName;
+    renderMyAvatarChrome();
+    if (currentGroupId) await renderCurrentView(currentGroupId);
+  }
+
+  drawerNameInput.addEventListener('blur', saveNameIfChanged);
+  drawerNameInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      drawerNameInput.blur();
+    }
+  });
+
   async function afterPerson() {
     drawerName.textContent = person.display_name;
     renderMyAvatarChrome();
@@ -1053,7 +1201,7 @@
     const name = document.getElementById('name-gate-input').value.trim();
     if (!name) return;
 
-    person = await createPerson(name);
+    person = await createPerson(name, randomAvatarColor());
     if (!person) return;
 
     if (hasInviteSlug) {
@@ -1103,6 +1251,7 @@
     navDrawer.setAttribute('aria-hidden', 'true');
     hamburgerBtn.setAttribute('aria-expanded', 'false');
     document.body.classList.remove('drawer-open');
+    setIdentityEditOpen(false);
   }
   hamburgerBtn.addEventListener('click', openDrawer);
   drawerCloseBtn.addEventListener('click', closeDrawer);

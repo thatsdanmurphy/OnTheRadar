@@ -44,10 +44,17 @@ window.OTR = window.OTR || {};
 
   // Creates a new person with the given display name and stores the
   // cookie. Called once, from the name-gate form's submit handler.
-  OTR.createPerson = async function (name) {
+  // avatarColor is optional — the caller (index.html) picks a random
+  // entry from AVATAR_COLORS up front now, rather than leaving
+  // everyone on the same "Paper" default until they think to go pick
+  // one themselves. Falls back to the DB column's own default (null)
+  // if omitted.
+  OTR.createPerson = async function (name, avatarColor) {
+    const insert = { display_name: name || 'Anonymous' };
+    if (avatarColor) insert.avatar_color = avatarColor;
     const { data, error } = await OTR.db
       .from('people')
-      .insert({ display_name: name || 'Anonymous' })
+      .insert(insert)
       .select()
       .single();
 
@@ -125,6 +132,23 @@ window.OTR = window.OTR || {};
 
     if (error) {
       console.error('Failed to update avatar color:', error);
+      return false;
+    }
+    return true;
+  };
+
+  // Updates the current person's display name — the one field from
+  // the name gate that had no edit path anywhere after signup.
+  OTR.updatePersonName = async function (personId, name) {
+    const trimmed = (name || '').trim();
+    if (!trimmed) return false;
+    const { error } = await OTR.db
+      .from('people')
+      .update({ display_name: trimmed })
+      .eq('id', personId);
+
+    if (error) {
+      console.error('Failed to update name:', error);
       return false;
     }
     return true;
