@@ -101,11 +101,16 @@
      stacks and the group switcher's own "N members" subtitle. -->
 <div class="drawer-overlay" id="drawer-overlay"></div>
 <aside class="nav-drawer" id="nav-drawer" aria-hidden="true">
-  <div class="drawer-top">
-    <button type="button" class="drawer-close-btn" id="drawer-close-btn" aria-label="Close menu"><i data-lucide="x"></i></button>
-  </div>
-
+  <!-- Close button now lives inside the identity section itself (was a
+       sibling .drawer-top row above it) so the section's own
+       --color-fill-dim band covers the true top of the drawer, flush to
+       the top border, instead of stopping short and leaving the close
+       button sitting on the lighter drawer surface above it. -->
   <div class="drawer-section drawer-identity-section">
+    <div class="drawer-top">
+      <button type="button" class="drawer-close-btn" id="drawer-close-btn" aria-label="Close menu"><i data-lucide="x"></i></button>
+    </div>
+
     <div class="drawer-identity">
       <!-- Click to reveal the edit panel below (name + color) — was a
            plain non-interactive div; a real button now, since editing

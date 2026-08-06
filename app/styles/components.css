@@ -201,7 +201,14 @@
    picks up the drawer's own top-right corner radius to match. Stays
    --color-fill-dim specifically (not something darker) so it reads as
    a quiet recess inside the drawer, not a jarring contrast against the
-   page's own background just outside it. */
+   page's own background just outside it.
+   `.drawer-top` (the close button) moved inside this section per direct
+   follow-up feedback — it used to sit above as a sibling, on the
+   lighter drawer surface, so the band visibly started below it instead
+   of at the drawer's true top edge. Nesting it here means the negative
+   margin now pulls the close button up into the band too — the fill
+   covers the whole top of the panel, flush to the top border, not just
+   the identity content beneath it. */
 .drawer-identity-section {
   border-bottom: none;
   background: var(--color-fill-dim);
@@ -534,8 +541,17 @@
   transition: background 0.15s ease;
 }
 
+/* --tint-active-strong, not --tint-active — --tint-hover (8%) and
+   --tint-active (10%) are only 2 percentage points apart, close enough
+   to read as no change at all next to the arrow circle's own
+   --tint-active-strong hover fill (30%, see below), so hovering
+   anywhere on the row but the circle looked like it did nothing. Per
+   direct feedback ("hover on my shows should highlight the whole row
+   not just the arrow icon"), the row itself now jumps to the same
+   strong tint the circle already used — genuinely visible, not just
+   technically-there. */
 .drawer-my-shows-btn:hover {
-  background: var(--tint-active);
+  background: var(--tint-active-strong);
 }
 
 /* Selected — set in index.html (selectGroup/renderMyShowsView toggle
@@ -594,16 +610,13 @@
   transition: background 0.15s ease;
 }
 
-/* --tint-active-strong, not --tint-active — the button's own hover
-   already washes its whole background to --tint-active (see above),
-   so filling the circle with that same tone would be invisible
-   against it. The stronger tint keeps the circle visibly distinct on
-   top of that wash, the same two-tier effect a group row's own hover
-   plus its separate .drawer-group-share hover circle gets for free by
-   being two different elements. */
-.drawer-my-shows-btn:hover .drawer-my-shows-arrow-circle {
-  background: var(--tint-active-strong);
-}
+/* Used to have its own --tint-active-strong hover fill here, back when
+   the row itself only washed to --tint-active on hover — a two-tier
+   trick so the circle stayed visible on top of a wash it would
+   otherwise blend into. The row's own hover is --tint-active-strong
+   now too (see .drawer-my-shows-btn:hover above), so a second identical
+   fill on the circle was just redundant — removed rather than kept as
+   dead-equal CSS. */
 
 /* Sized via container + svg, same Lucide convention as every other
    icon button in the app (see .drawer-name-btn svg above). Same
@@ -739,8 +752,10 @@ body.drawer-open {
    at full opacity (not dimmed like its own content) so it reads as a
    deliberate, solid shape rather than another washed-out layer. */
 .show-list-empty-circle {
-  width: 220px;
-  height: 220px;
+  /* Bumped from 220px — per direct follow-up feedback it still needed
+     to be bigger. `max-width: 100%` still caps it on narrow screens. */
+  width: 280px;
+  height: 280px;
   max-width: 100%;
   border-radius: 50%;
   background: var(--color-fill-dim);
