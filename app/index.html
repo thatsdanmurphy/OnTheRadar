@@ -111,7 +111,14 @@
            plain non-interactive div; a real button now, since editing
            either of those used to have no entry point at all. -->
       <button type="button" class="drawer-avatar" id="drawer-avatar" aria-label="Edit your name and color" aria-expanded="false"></button>
-      <div class="drawer-name" id="drawer-name"></div>
+      <!-- Name + a pencil icon, both clickable — same toggle as the
+           avatar. The pencil exists purely so "you can edit this" is
+           visible at a glance instead of only discoverable by
+           clicking the avatar and hoping. -->
+      <button type="button" class="drawer-name-btn" id="drawer-name-btn" aria-label="Edit your name and color" aria-expanded="false">
+        <span class="drawer-name" id="drawer-name"></span>
+        <i data-lucide="pencil" class="drawer-name-edit-icon"></i>
+      </button>
     </div>
     <!-- Hidden until the avatar's clicked — name + color used to sit
          permanently expanded here, which read as more "settings you
@@ -145,12 +152,21 @@
          it's not really "one more group," it's the other way of
          looking at the same shows. -->
     <button type="button" class="drawer-my-shows-btn" id="drawer-my-shows-btn">
-      <span class="drawer-my-shows-label">My Shows</span>
-      <span class="drawer-my-shows-sub">Everything you're in, across groups</span>
+      <span class="drawer-my-shows-text">
+        <span class="drawer-my-shows-label">My Shows</span>
+        <span class="drawer-my-shows-sub">Everything you've marked, across your groups</span>
+      </span>
+      <i data-lucide="chevron-right" class="drawer-my-shows-arrow"></i>
     </button>
     <div class="drawer-label">Your groups</div>
     <div class="drawer-group-list" id="drawer-group-list"></div>
-    <button type="button" class="drawer-new-group-btn" id="drawer-new-group-btn">+ New group</button>
+    <!-- Same visual weight as Add Show's own card now, per direct
+         feedback — a real surface, centered icon + label, not a quiet
+         row-shaped button underneath the list. -->
+    <button type="button" class="drawer-new-group-btn" id="drawer-new-group-btn">
+      <span class="drawer-new-group-icon">+</span>
+      <span>New group</span>
+    </button>
   </div>
 </aside>
 
@@ -184,11 +200,6 @@
        no actions, since there's no single group here to share/view. -->
   <div class="group-heading-row" id="my-shows-heading-row" style="display:none;">
     <h2 class="group-heading-name">My Shows</h2>
-  </div>
-
-  <div class="tab-bar" id="tab-bar" style="display:none;">
-    <button type="button" class="tab-btn active" data-tab="herd">Herd Picks</button>
-    <button type="button" class="tab-btn" data-tab="mine">My Shows</button>
   </div>
 
   <!-- Add show — one card, always, full width again now that the
@@ -337,7 +348,6 @@
   const siteHeader = document.getElementById('site-header');
   const mainContent = document.getElementById('main-content');
 
-  const tabBar = document.getElementById('tab-bar');
   const groupHeadingRow = document.getElementById('group-heading-row');
   const groupHeadingName = document.getElementById('group-heading-name');
   const groupShareBtn = document.getElementById('group-share-btn');
@@ -367,6 +377,7 @@
   const drawerCloseBtn = document.getElementById('drawer-close-btn');
   const drawerAvatar = document.getElementById('drawer-avatar');
   const drawerName = document.getElementById('drawer-name');
+  const drawerNameBtn = document.getElementById('drawer-name-btn');
   const drawerIdentityEdit = document.getElementById('drawer-identity-edit');
   const drawerNameInput = document.getElementById('drawer-name-input');
 
@@ -411,7 +422,6 @@
   let selectedVenueUrl = null;
   let selectedSourceUrl = null;
   let venueSearchTimer = null;
-  let activeTab = 'herd';
 
   function initials(name) {
     return name.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
@@ -419,8 +429,8 @@
 
   // Shared invite-link logic — was duplicated inline on the name-gate's
   // "Copy invite link" button; now the one place any share control
-  // (name-gate, the tab-bar CTA, each drawer group row) builds the
-  // link and writes it to the clipboard. Placeholder ?g=<slug> link
+  // (name-gate, the group heading row, each drawer group row) builds
+  // the link and writes it to the clipboard. Placeholder ?g=<slug> link
   // structure — real domain/slug work comes later once a real URL
   // domain is set up; this just reuses what already existed. Returns
   // whether the clipboard write succeeded, so callers can show their
@@ -643,9 +653,8 @@
       drawerGroupList.innerHTML = '';
       groupBar.style.display = 'none';
       groupHeadingRow.style.display = 'none';
-      tabBar.style.display = 'none';
       addShowCard.style.display = 'none';
-      renderEmptyState(document.getElementById('show-list-content'), 'Create a group to start adding shows.');
+      renderEmptyState(document.getElementById('show-list-content'), 'No groups yet.');
       return;
     }
 
@@ -722,9 +731,9 @@
     currentGroupId = group.id;
     myShowsHeadingRow.style.display = 'none';
     groupBar.style.display = 'block';
+    drawerMyShowsBtn.classList.remove('active');
     await renderGroupSwitcher(myGroups);
     closeDrawer();
-    tabBar.style.display = 'flex';
     groupHeadingName.textContent = group.name;
     groupHeadingRow.style.display = 'flex';
     await renderCurrentView(group.id);
@@ -749,22 +758,16 @@
     return { shows, responsesByShow };
   }
 
-  // "Herd Picks" is the full group list; "My Shows" filters down to
-  // shows this person has personally marked curious — resolves what
-  // had been a flagged-but-unbuilt feature (see component-map.md).
+  // The full group list, unfiltered — used to also branch on a
+  // Herd Picks / My Shows tab (a client-side filter to "shows I've
+  // marked curious," scoped to just this group), cut once the
+  // cross-group My Shows view (see renderMyShowsView) covered the
+  // same need without the one-group limitation. Add Show is always
+  // visible here now too — it used to hide on the My Shows tab.
   async function renderCurrentView(groupId) {
     const { shows, responsesByShow } = await loadGroupData(groupId);
-    const visibleShows = activeTab === 'mine'
-      ? shows.filter((s) => (responsesByShow[s.id] || []).some((r) => r.person_id === person.id && r.status === 'curious'))
-      : shows;
-    const emptyMessage = activeTab === 'mine' ? "You haven't marked any shows yet." : 'No shows yet.';
-    // Adding a show is a Herd Picks action — My Shows is a personal
-    // filter over the same list, not a place to create new shows from.
-    // The group heading row (above the tabs) stays visible on both —
-    // knowing which group you're in isn't tab-specific the way adding
-    // a show is.
-    addShowCard.style.display = activeTab === 'herd' ? 'block' : 'none';
-    renderListView(visibleShows, responsesByShow, emptyMessage);
+    addShowCard.style.display = 'block';
+    renderListView(shows, responsesByShow, 'No shows yet.');
   }
 
   // One labeled avatar group — reused for both "Heck yeah!" (curious)
@@ -832,7 +835,16 @@
   // used to sit on the headline (and the separate detail page it
   // opened) was cut. Everything worth seeing lives right on the card;
   // revisit a real detail page if that stops being true.
-  function renderShowInteractiveBody(container, show, responses, onResponseChange) {
+  // onDeclineOverride — only set by the cross-group My Shows view (see
+  // renderListView/handleDeclineWithUndo below). Marking "out" there
+  // removes the show from the very list it's sitting in (My Shows only
+  // ever shows curious picks), which used to just vanish the card
+  // instantly — jarring, and no way back if it was a misclick. The
+  // override swaps that for a fade + Undo instead of the normal
+  // "save and refresh" path. A group's own page doesn't need this —
+  // marking out there just dims the card in place (.is-out), it never
+  // disappears, so the default path still applies.
+  function renderShowInteractiveBody(container, show, responses, onResponseChange, onDeclineOverride) {
     const mine = responses.find((r) => r.person_id === person.id);
     const interested = responses.filter((r) => r.status === 'curious');
 
@@ -893,10 +905,10 @@
       declinedExceptMe,
       !!(mine && mine.status === 'out'),
       "Can't make it",
-      async () => {
+      onDeclineOverride || (async () => {
         const ok = await setResponse(show.id, person.id, 'out');
         if (ok) await onResponseChange();
-      },
+      }),
       declined.map((r) => r.people)
     );
     cantMakeItGroup.classList.add('avatar-group-declined');
@@ -926,11 +938,50 @@
     container.innerHTML = `<div class="show-list-empty-icon">${EMPTY_STATE_ICON}</div><div>${message}</div>`;
   }
 
+  // Marking a show "out" from the cross-group My Shows view removes it
+  // from the very list it's sitting in (My Shows only ever shows
+  // curious picks) — used to just vanish the card the instant you
+  // clicked, with no way back if it was a misclick. This fades the
+  // card's content instead (reuses the same opacity language as
+  // .is-out elsewhere) and appends a plain "Undo" — one shared pattern
+  // rather than a one-off per card. If Undo isn't clicked within the
+  // window, the pending refresh runs and the card leaves for real.
+  const UNDO_WINDOW_MS = 4000;
+  function handleDeclineWithUndo(show, body, refresh) {
+    return async () => {
+      const ok = await setResponse(show.id, person.id, 'out');
+      if (!ok) return;
+
+      body.classList.add('show-card-content-fading');
+      const undoBar = document.createElement('div');
+      undoBar.className = 'show-undo-bar';
+      undoBar.innerHTML = `<span>Marked can't make it.</span>`;
+      const undoBtn = document.createElement('button');
+      undoBtn.type = 'button';
+      undoBtn.className = 'link-btn show-undo-btn';
+      undoBtn.textContent = 'Undo';
+      undoBar.appendChild(undoBtn);
+      body.parentElement.appendChild(undoBar);
+
+      const timer = setTimeout(() => { refresh(); }, UNDO_WINDOW_MS);
+
+      undoBtn.addEventListener('click', async () => {
+        clearTimeout(timer);
+        const restored = await setResponse(show.id, person.id, 'curious');
+        if (!restored) return;
+        body.classList.remove('show-card-content-fading');
+        undoBar.remove();
+      });
+    };
+  }
+
   // onChange defaults to the single-group refresh every existing
   // caller wants; the cross-group My Shows view (see renderMyShowsView
   // below) passes its own so a response change re-runs the aggregate
   // fetch instead of trying to refresh one group that isn't selected.
-  function renderListView(shows, responsesByShow, emptyMessage, onChange) {
+  // declineWithUndo, also My-Shows-only, swaps the decline button's
+  // default "save and refresh" for handleDeclineWithUndo above.
+  function renderListView(shows, responsesByShow, emptyMessage, onChange, declineWithUndo) {
     const content = listContent;
     const refresh = onChange || (() => renderCurrentView(currentGroupId));
 
@@ -976,7 +1027,8 @@
 
       const body = document.createElement('div');
       card.appendChild(body);
-      renderShowInteractiveBody(body, show, responses, refresh);
+      const onDecline = declineWithUndo ? handleDeclineWithUndo(show, body, refresh) : undefined;
+      renderShowInteractiveBody(body, show, responses, refresh, onDecline);
 
       content.appendChild(card);
     });
@@ -992,10 +1044,11 @@
   async function renderMyShowsView() {
     currentGroupId = null;
     currentGroup = null;
+    drawerMyShowsBtn.classList.add('active');
+    await renderGroupSwitcher(myGroups);
     closeDrawer();
 
     groupHeadingRow.style.display = 'none';
-    tabBar.style.display = 'none';
     addShowCard.style.display = 'none';
     myShowsHeadingRow.style.display = 'flex';
 
@@ -1019,22 +1072,13 @@
     renderListView(
       myShows,
       mergedResponses,
-      "You haven't marked any shows yet — across any of your groups.",
-      () => renderMyShowsView()
+      'No shows marked yet.',
+      () => renderMyShowsView(),
+      true
     );
   }
 
   drawerMyShowsBtn.addEventListener('click', renderMyShowsView);
-
-  // Herd Picks / My Shows tab switch — bold label + underline handled
-  // purely by the .active class, no fill/background swap.
-  tabBar.querySelectorAll('.tab-btn').forEach((btn) => {
-    btn.addEventListener('click', async () => {
-      activeTab = btn.dataset.tab;
-      tabBar.querySelectorAll('.tab-btn').forEach((b) => b.classList.toggle('active', b === btn));
-      if (currentGroupId) await renderCurrentView(currentGroupId);
-    });
-  });
 
   async function handleNewGroup() {
     const name = window.prompt('Name this group:', '')?.trim();
@@ -1098,21 +1142,27 @@
     });
   }
 
-  // Click the avatar to open/close the name + color edit panel below
-  // it — collapsed by default now (see the drawer-identity-edit HTML
-  // comment for why), so opening it always starts from the current
-  // name rather than whatever was left typed in from last time.
+  // Click the avatar, or the name + pencil icon beside it, to open/
+  // close the name + color edit panel below — collapsed by default
+  // now (see the drawer-identity-edit HTML comment for why), so
+  // opening it always starts from the current name rather than
+  // whatever was left typed in from last time. Two separate triggers
+  // (can't nest a button in a button) toggle the same shared state.
   function setIdentityEditOpen(open) {
     drawerIdentityEdit.style.display = open ? 'block' : 'none';
     drawerAvatar.setAttribute('aria-expanded', open ? 'true' : 'false');
+    drawerNameBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
     if (open) drawerNameInput.value = person.display_name;
   }
 
-  drawerAvatar.addEventListener('click', () => {
+  function toggleIdentityEdit() {
     const isOpen = drawerIdentityEdit.style.display !== 'none';
     setIdentityEditOpen(!isOpen);
     if (!isOpen) drawerNameInput.focus();
-  });
+  }
+
+  drawerAvatar.addEventListener('click', toggleIdentityEdit);
+  drawerNameBtn.addEventListener('click', toggleIdentityEdit);
 
   // Saves on blur, not on every keystroke — Enter just blurs (no
   // actual form here, so no submit event to hook), same "commit on
@@ -1149,7 +1199,7 @@
     if (myGroups.length === 0) {
       groupBar.style.display = 'none';
       groupHeadingRow.style.display = 'none';
-      renderEmptyState(document.getElementById('show-list-content'), 'Create a group to start adding shows.');
+      renderEmptyState(document.getElementById('show-list-content'), 'No groups yet.');
       return;
     }
 
@@ -1226,8 +1276,8 @@
   });
 
   // Swaps every static <i data-lucide="..."> placeholder already in
-  // the initial HTML (drawer close, modal close, tab-bar share) for
-  // its real inline SVG. Dynamically-rendered icons (the per-group
+  // the initial HTML (drawer close, modal close, group heading share)
+  // for its real inline SVG. Dynamically-rendered icons (the per-group
   // share buttons in the drawer) get their own scoped call inside
   // renderGroupSwitcher(), since createIcons() only sees elements
   // that exist in the DOM at the moment it runs.

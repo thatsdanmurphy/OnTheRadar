@@ -222,11 +222,46 @@
   filter: brightness(1.15);
 }
 
+/* Name + a pencil icon, both clickable — a second trigger for the
+   same edit panel the avatar opens (can't nest the name inside the
+   avatar's own <button>, so this is a sibling one instead). The
+   pencil is the actual point of this button existing: without it,
+   "you can edit this" was only discoverable by clicking the avatar
+   and seeing what happened. */
+.drawer-name-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--color-surface-text);
+  opacity: 0.85;
+  transition: opacity 0.15s ease;
+}
+
+.drawer-name-btn:hover {
+  opacity: 1;
+}
+
 .drawer-name {
   font-family: var(--font-body);
   font-weight: 600;
   font-size: var(--text-sub-size);
   line-height: var(--text-sub-lh);
+}
+
+/* Sized via the parent + svg, same convention as every other Lucide
+   icon button in the app (.drawer-close-btn svg etc.) — Lucide swaps
+   the <i data-lucide> placeholder for an inline <svg> as a sibling
+   element, so sizing has to target the resulting svg, not the
+   placeholder's own class. */
+.drawer-name-btn svg {
+  width: var(--space-16);
+  height: var(--space-16);
+  opacity: 0.6;
+  flex-shrink: 0;
 }
 
 /* Collapsed by default (see index.html) — opened by clicking the
@@ -387,58 +422,73 @@
   font-weight: 600;
 }
 
-/* Member-count subtitle — same small/uppercase/tracked treatment as
-   every other meta line in the app (drawer labels, date). */
+/* Member-count subtitle — mixed case now, per direct feedback (was
+   uppercase+tracked, the same meta-line language as dates/labels, but
+   "1 MEMBER" read as shouty for a plain fact sitting right under a
+   name). Still small and dim, just sentence case. */
 .group-switch-item-count {
   display: block;
   font-family: var(--font-data);
   font-size: var(--text-meta-size);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
   opacity: 0.55;
   margin-top: var(--space-4);
 }
 
-/* Used to be a plain quiet text link with no shape at all — per direct
-   feedback ("New group should have a container around it"), it's a
-   real tonal container now, same radius/padding language as a group
-   row (minus the border, per the no-outline rule above), rather than
-   a bare label floating under the list. Still reads as a distinct,
-   secondary action relative to the rows above it — no fill at rest,
-   just on hover — so it doesn't get mistaken for one more group to
-   select. */
+/* Same visual weight as Add Show's own card now, per direct feedback
+   ("New group should have a container around it [like Add Show]") —
+   a real --color-surface-adjacent fill (--tint-hover, since the
+   drawer's own background already *is* --color-surface — reusing it
+   here would blend in), centered icon + label as one unit, same
+   --space-16 padding on all sides as .add-show-card, rather than a
+   quiet left-aligned row underneath the list. */
 .drawer-new-group-btn {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-8);
   width: 100%;
-  text-align: left;
-  font-family: var(--font-data);
-  font-weight: 600;
-  font-size: var(--text-control-size);
-  line-height: var(--text-control-lh);
-  text-transform: capitalize;
-  letter-spacing: 0.01em;
-  background: none;
+  background: var(--tint-hover);
   border: none;
   border-radius: var(--radius);
   color: var(--color-surface-text);
-  opacity: 0.7;
   margin-top: var(--space-8);
-  padding: var(--space-8) var(--space-8) var(--space-8) var(--space-16);
+  padding: var(--space-16);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--text-control-size);
+  line-height: var(--text-control-lh);
   cursor: pointer;
-  transition: background 0.15s ease, opacity 0.15s ease;
+  transition: background 0.15s ease;
 }
 
 .drawer-new-group-btn:hover {
-  background: var(--tint-hover);
-  opacity: 1;
+  background: var(--tint-active);
+}
+
+/* Same fixed-square-slot treatment as .add-show-icon, so the "+"
+   reads identically in both places. */
+.drawer-new-group-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--text-control-lh);
+  height: var(--text-control-lh);
+  font-size: var(--text-sub-size);
+  line-height: 1;
+  flex-shrink: 0;
 }
 
 /* Cross-group "My Shows" entry point — sits above the group list, its
    own tonal container (matches .drawer-group-row's shape) rather than
-   one more row inside the list, since it isn't a group at all. Two
-   lines, same language as a group row's name + member-count. */
+   one more row inside the list, since it isn't a group at all. A
+   trailing chevron marks it as a tappable destination — the row has
+   no other element (no share icon, unlike a group row) implying that
+   on its own. */
 .drawer-my-shows-btn {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-8);
   width: 100%;
   text-align: left;
   background: var(--tint-hover);
@@ -455,6 +505,20 @@
   background: var(--tint-active);
 }
 
+/* Selected — set in index.html (selectGroup/renderMyShowsView toggle
+   this alongside each other) so the drawer shows which section you're
+   already on when you reopen it, not just which one you're about to
+   pick. Same tonal-fill language as a group row's own .active state,
+   no border, no pink. */
+.drawer-my-shows-btn.active {
+  background: var(--tint-active);
+}
+
+.drawer-my-shows-text {
+  flex: 1;
+  min-width: 0;
+}
+
 .drawer-my-shows-label {
   display: block;
   font-family: var(--font-body);
@@ -463,14 +527,25 @@
   line-height: var(--text-body-lh);
 }
 
+/* Mixed case now, matching the member-count fix above — same reasoning,
+   a plain descriptive line shouldn't read as shouty uppercase. Copy
+   itself also simplified ("Everything you're in, across groups" read
+   awkwardly as a sentence) to describe what actually rolls up here. */
 .drawer-my-shows-sub {
   display: block;
   font-family: var(--font-data);
   font-size: var(--text-meta-size);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
   opacity: 0.55;
   margin-top: var(--space-4);
+}
+
+/* Sized via container + svg, same Lucide convention as every other
+   icon button in the app (see .drawer-name-btn svg above). */
+.drawer-my-shows-btn svg {
+  flex-shrink: 0;
+  width: var(--icon-size);
+  height: var(--icon-size);
+  opacity: 0.5;
 }
 
 /* Locks page scroll while the drawer is open. */
@@ -601,9 +676,13 @@ body.drawer-open {
   padding-block: var(--space-64);
 }
 
+/* 2x the original size, per direct feedback — the guitar read too
+   small/timid against how much empty space surrounds it. Doubled from
+   the existing --space-56 token via calc() rather than picking a new
+   hardcoded px value, so it still moves if that token ever does. */
 .show-list-empty-icon {
-  width: var(--space-56);
-  height: var(--space-56);
+  width: calc(var(--space-56) * 2);
+  height: calc(var(--space-56) * 2);
 }
 
 .show-list-empty-icon svg {
@@ -629,6 +708,35 @@ body.drawer-open {
    button itself doesn't need a special "out" treatment. */
 .show-card.is-out {
   opacity: 0.5;
+}
+
+/* My Shows-only — see handleDeclineWithUndo in index.html. Dims just
+   the card's interactive content (title/venue/avatars), not the whole
+   card, so the date badge above it and the undo bar below it (see
+   .show-undo-bar) stay fully legible while the middle fades — a
+   pending removal, not a settled "out" state the way .is-out is on a
+   group's own page. */
+.show-card-content-fading {
+  opacity: 0.4;
+  transition: opacity 0.3s ease;
+}
+
+/* Plain text + a text-button "Undo," same quiet meta-line register as
+   the date badge above it, not a toast/snackbar — this app doesn't
+   have that pattern anywhere else, and one card-local line does the
+   job without introducing one. */
+.show-undo-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  margin-top: var(--space-8);
+  font-family: var(--font-data);
+  font-size: var(--text-meta-size);
+  opacity: 0.7;
+}
+
+.show-undo-btn {
+  font-weight: 600;
 }
 
 /* Holds the date badge (left) and overlap badge (right, only when
@@ -983,56 +1091,12 @@ body.drawer-open {
   margin-left: 0;
 }
 
-/* ---------- Add show ---------- */
-
-/* Herd Picks (the full group list) vs My Shows (this person's own
-   curious picks only) — replaces the old List/Calendar toggle. Centered,
-   with no container-wide rule under it — a full-width stroke read as a
-   stray line across the page rather than part of the tabs. Only each
-   tab's own underline (see .tab-btn.active) carries a stroke now, and
-   only exactly as wide as its label. "My Shows" resolves what had been
-   an open, unbuilt question — see component-map.md. */
-.tab-bar {
-  display: flex;
-  justify-content: center;
-  gap: var(--space-24);
-  margin-bottom: var(--space-16);
-}
-
 .drawer-close-btn svg,
 .modal-close-btn svg,
 .drawer-group-share svg,
 .group-modal-invite-btn svg {
   width: var(--icon-size);
   height: var(--icon-size);
-}
-
-.tab-btn {
-  font-family: var(--font-data);
-  font-weight: 400;
-  font-size: var(--text-control-size);
-  line-height: var(--text-control-lh);
-  text-transform: capitalize;
-  letter-spacing: 0.01em;
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
-  color: var(--color-text);
-  opacity: 0.6;
-  padding: var(--space-8) 0;
-  cursor: pointer;
-}
-
-.tab-btn:hover {
-  opacity: 0.85;
-}
-
-/* Bold label + an off-white underline — the only two things that
-   change on select, no fill/background swap. */
-.tab-btn.active {
-  font-weight: 700;
-  opacity: 1;
-  border-bottom-color: var(--color-text);
 }
 
 /* ---------- Add show ---------- */
