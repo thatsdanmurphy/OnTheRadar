@@ -152,29 +152,43 @@
      Supabase. Curious/out buttons write to the responses table
      immediately on click. Overlap count only counts curious. -->
 <main class="container show-list" id="main-content">
+  <!-- Which group am I looking at — the one thing that was missing
+       once the secondary action moved out of the Add Show row (see
+       below). A real heading, not a button pretending to be one:
+       group name on the left, two small icon-only circular actions on
+       the right (share the invite link directly; view the group —
+       member list + leave, in the existing group modal). Visible on
+       both tabs, unlike Add Show — knowing which group you're in
+       isn't a Herd-Picks-only concern. -->
+  <div class="group-heading-row" id="group-heading-row" style="display:none;">
+    <h2 class="group-heading-name" id="group-heading-name"></h2>
+    <div class="group-heading-actions">
+      <button type="button" class="group-heading-btn" id="group-share-btn" aria-label="Share invite link">
+        <i data-lucide="share"></i>
+      </button>
+      <button type="button" class="group-heading-btn" id="group-view-btn" aria-label="View group">
+        <i data-lucide="users"></i>
+      </button>
+    </div>
+  </div>
+
   <div class="tab-bar" id="tab-bar" style="display:none;">
     <button type="button" class="tab-btn active" data-tab="herd">Herd Picks</button>
     <button type="button" class="tab-btn" data-tab="mine">My Shows</button>
   </div>
 
-  <!-- Add show + Invite sit side by side in one row — two peer actions,
-       Add Show carrying most of the width since it's the primary one.
-       Invite's visibility is tied to Add Show/tab-bar's own (all three
-       toggle together in selectGroup()) — sharing a group isn't
-       tab-specific, so it stays put across Herd Picks / My Shows even
-       though Add Show itself hides on My Shows. -->
-  <div class="show-list-actions">
-    <!-- Add show — one card, always. It doesn't hand off to a second
-         box when it opens; the same card grows/shrinks vertically in
-         place (CSS grid-rows trick — see .add-show-panel/.is-open in
-         components.css), toggled by the one button in its header. The
-         "+" rotates 45° into an "×" on open (pure CSS transform), so
-         that button is both the open and close control. -->
-    <div id="add-show-card" class="add-show-card" style="display:none;">
-      <button type="button" id="add-show-btn" class="add-show-toggle">
-        <span class="add-show-icon" id="add-show-icon">+</span>
-        <span class="add-show-label">Add a show</span>
-      </button>
+  <!-- Add show — one card, always, full width again now that the
+       group menu moved to the heading row above. It doesn't hand off
+       to a second box when it opens; the same card grows/shrinks
+       vertically in place (CSS grid-rows trick — see .add-show-panel/
+       .is-open in components.css), toggled by the one button in its
+       header. The "+" rotates 45° into an "×" on open (pure CSS
+       transform), so that button is both the open and close control. -->
+  <div id="add-show-card" class="add-show-card" style="display:none;">
+    <button type="button" id="add-show-btn" class="add-show-toggle">
+      <span class="add-show-icon" id="add-show-icon">+</span>
+      <span class="add-show-label">Add a show</span>
+    </button>
 
       <div id="add-show-panel" class="add-show-panel">
         <div class="add-show-panel-inner">
@@ -222,18 +236,6 @@
       </div>
       </div>
     </div>
-    </div>
-
-    <!-- Secondary action — opens the group modal (invite / member list /
-         leave), rather than being a bare "Invite" button. Showing the
-         group's own name here (not a generic "Group" label) doubles as
-         a lightweight "you're looking at ___" indicator, since there's
-         no other on-page confirmation of which group is current once
-         you're scrolled past the drawer. -->
-    <button type="button" class="group-menu-btn" id="group-menu-btn" style="display:none;">
-      <span class="group-menu-name" id="group-menu-name"></span>
-      <span class="group-menu-subtitle">View members</span>
-    </button>
   </div>
 
   <div id="show-list-content" class="show-list-empty">Loading…</div>
@@ -327,8 +329,10 @@
   const mainContent = document.getElementById('main-content');
 
   const tabBar = document.getElementById('tab-bar');
-  const groupMenuBtn = document.getElementById('group-menu-btn');
-  const groupMenuName = document.getElementById('group-menu-name');
+  const groupHeadingRow = document.getElementById('group-heading-row');
+  const groupHeadingName = document.getElementById('group-heading-name');
+  const groupShareBtn = document.getElementById('group-share-btn');
+  const groupViewBtn = document.getElementById('group-view-btn');
   const listContent = document.getElementById('show-list-content');
 
   const peopleModalOverlay = document.getElementById('people-modal-overlay');
@@ -546,7 +550,7 @@
 
   // Group modal — the current group's own management surface: invite,
   // full member list (not just who's responded to a show), leave.
-  // Opened from .group-menu-btn beside Add Show.
+  // Opened from the "view" icon in .group-heading-row.
   async function openGroupModal() {
     if (!currentGroup) return;
     groupModalTitle.textContent = currentGroup.name;
@@ -559,10 +563,23 @@
     groupModalOverlay.style.display = 'none';
   }
 
-  groupMenuBtn.addEventListener('click', openGroupModal);
+  // "View" in the group heading row opens the group modal (member list
+  // + leave — invite lives there too, redundant with the direct share
+  // button below, but harmless to have in both places).
+  groupViewBtn.addEventListener('click', openGroupModal);
   groupModalCloseBtn.addEventListener('click', closeGroupModal);
   groupModalOverlay.addEventListener('click', (e) => {
     if (e.target === groupModalOverlay) closeGroupModal();
+  });
+
+  // "Share" in the group heading row — a direct one-tap copy, no
+  // modal in the way, same pattern as the drawer's per-group share
+  // icons (icon flashes to a check on success instead of a text swap,
+  // since there's no label here to swap).
+  groupShareBtn.addEventListener('click', async () => {
+    if (!currentGroup) return;
+    const ok = await copyInviteLink(currentGroup.slug);
+    if (ok) flashShareSuccess(groupShareBtn);
   });
 
   // Invite, from inside the group modal — same shared copyInviteLink()
@@ -600,7 +617,7 @@
       currentGroupId = null;
       drawerGroupList.innerHTML = '';
       groupBar.style.display = 'none';
-      groupMenuBtn.style.display = 'none';
+      groupHeadingRow.style.display = 'none';
       tabBar.style.display = 'none';
       addShowCard.style.display = 'none';
       renderEmptyState(document.getElementById('show-list-content'), 'Create a group to start adding shows.');
@@ -682,8 +699,8 @@
     await renderGroupSwitcher(myGroups);
     closeDrawer();
     tabBar.style.display = 'flex';
-    groupMenuName.textContent = group.name;
-    groupMenuBtn.style.display = 'flex';
+    groupHeadingName.textContent = group.name;
+    groupHeadingRow.style.display = 'flex';
     await renderCurrentView(group.id);
   }
 
@@ -717,10 +734,10 @@
     const emptyMessage = activeTab === 'mine' ? "You haven't marked any shows yet." : 'No shows yet.';
     // Adding a show is a Herd Picks action — My Shows is a personal
     // filter over the same list, not a place to create new shows from.
-    // The group menu (invite/members/leave) rides along with it — both
-    // are "manage the group" actions, not something My Shows needs.
+    // The group heading row (above the tabs) stays visible on both —
+    // knowing which group you're in isn't tab-specific the way adding
+    // a show is.
     addShowCard.style.display = activeTab === 'herd' ? 'block' : 'none';
-    groupMenuBtn.style.display = activeTab === 'herd' ? 'flex' : 'none';
     renderListView(visibleShows, responsesByShow, emptyMessage);
   }
 
@@ -1004,7 +1021,7 @@
 
     if (myGroups.length === 0) {
       groupBar.style.display = 'none';
-      groupMenuBtn.style.display = 'none';
+      groupHeadingRow.style.display = 'none';
       renderEmptyState(document.getElementById('show-list-content'), 'Create a group to start adding shows.');
       return;
     }

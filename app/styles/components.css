@@ -947,18 +947,68 @@ body.drawer-open {
 
 /* ---------- Add show ---------- */
 
-/* Add Show + the group menu as two peer actions in one row — Add Show
-   carries most of the width (it's the primary, frequent action); the
-   group button is a fixed-width companion beside it rather than a
-   corner icon buried in the tab row. `align-items: stretch` (flex
-   default here) lets the group button match Add Show's own height
-   automatically, since both start from the same --space-16 padding
-   and a similar control-size line-height — no explicit height needed
-   on either. */
-.show-list-actions {
+/* Which group am I looking at — a real heading (name on the left) plus
+   two small icon-only circular actions on the right (share the invite
+   link directly; view the group — member list + leave, see the
+   .group-modal-* rules below). Lived as a button beside Add Show for a
+   couple of passes — cut once it became clear Add Show needed to be
+   the *only* thing in its own row, and "which group is this" reads
+   better as page context up top, not folded into an action button.
+   Visible on both tabs (set in selectGroup(), not renderCurrentView())
+   — unlike Add Show, knowing your current group isn't a Herd-Picks-
+   only concern. */
+.group-heading-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-16);
+  margin-bottom: var(--space-16);
+}
+
+.group-heading-name {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--text-sub-size);
+  line-height: var(--text-sub-lh);
+  text-transform: capitalize;
+}
+
+.group-heading-actions {
   display: flex;
   gap: var(--space-8);
-  margin-bottom: var(--space-16);
+  flex-shrink: 0;
+}
+
+/* Same circular icon-button language as .drawer-close-btn — transparent
+   fill, --tint-hover on hover — the one consistent shape every
+   icon-only control in the app shares. */
+.group-heading-btn {
+  width: var(--space-40);
+  height: var(--space-40);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: none;
+  border: none;
+  color: var(--color-surface-text);
+  padding: 0;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.group-heading-btn:hover {
+  background: var(--tint-hover);
+}
+
+.group-heading-btn svg {
+  width: var(--icon-size);
+  height: var(--icon-size);
 }
 
 /* One card, always — the literal top item in the list, same
@@ -966,10 +1016,10 @@ body.drawer-open {
    wall rather than chrome sitting above it. Opening it never hands off
    to a second box: .add-show-panel below grows/shrinks in place inside
    this same card (see the grid-rows trick further down), so the whole
-   thing reads as one card animating, not two cards swapping. */
+   thing reads as one card animating, not two cards swapping. Full
+   width again — it shared a row with the group menu button for a
+   couple of passes, cut above. */
 .add-show-card {
-  flex: 1;
-  min-width: 0;
   background: var(--color-surface);
   color: var(--color-surface-text);
   border-radius: var(--radius);
@@ -981,62 +1031,7 @@ body.drawer-open {
      transition caught up. One constant padding value removes the
      jump entirely and gives the row more presence at rest. */
   padding: var(--space-16);
-}
-
-/* Group menu button — same surface/radius language as .add-show-card
-   so the two read as peers in the same row, not a primary button next
-   to a bare utility icon. Fixed-width, doesn't grow with the row.
-   Shows the *current* group's own name rather than a generic "Group"
-   or "Invite" label — doubles as a lightweight "you're looking at
-   ___" indicator, since nothing else on the main screen confirms
-   which group is current once you're scrolled past the drawer.
-   Opens the group modal (invite / members / leave — see the modal
-   markup and .group-modal-* rules below) rather than acting on its
-   own. Name gets a hard cap (max-width + ellipsis) so a long group
-   name can't push Add Show out of most of the row's width. */
-.group-menu-btn {
-  flex-shrink: 0;
-  max-width: 160px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-4);
-  background: var(--color-surface);
-  color: var(--color-surface-text);
-  border: none;
-  border-radius: var(--radius);
-  padding: var(--space-8) var(--space-16);
-  cursor: pointer;
-  transition: opacity 0.15s ease;
-}
-
-.group-menu-btn:hover {
-  opacity: 0.85;
-}
-
-.group-menu-name {
-  display: block;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-family: var(--font-body);
-  font-weight: 600;
-  font-size: var(--text-control-size);
-  line-height: var(--text-control-lh);
-  text-transform: capitalize;
-}
-
-/* Same small/uppercase/tracked meta treatment as every other
-   secondary line in the app (drawer labels, member counts). */
-.group-menu-subtitle {
-  display: block;
-  font-family: var(--font-data);
-  font-size: var(--text-meta-size);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  opacity: 0.55;
+  margin-bottom: var(--space-16);
 }
 
 /* ---------- Group modal ---------- */
