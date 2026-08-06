@@ -156,7 +156,13 @@
         <span class="drawer-my-shows-label">My Shows</span>
         <span class="drawer-my-shows-sub">Everything you've marked, across your groups</span>
       </span>
-      <i data-lucide="chevron-right" class="drawer-my-shows-arrow"></i>
+      <!-- Same --space-32 circular hit-area as .drawer-group-share
+           (the per-group share icon) — the bare chevron alone read
+           misaligned/oddly spaced next to it, since it had no matching
+           circle giving it the same visual footprint. -->
+      <span class="drawer-my-shows-arrow-circle">
+        <i data-lucide="chevron-right"></i>
+      </span>
     </button>
     <div class="drawer-label">Your groups</div>
     <div class="drawer-group-list" id="drawer-group-list"></div>

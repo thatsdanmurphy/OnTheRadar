@@ -550,15 +550,40 @@
   margin-top: var(--space-4);
 }
 
+/* Same --space-32 circle .drawer-group-share uses for the per-group
+   share icon — a bare chevron with no matching circle read as
+   misaligned/off-weight sitting next to it, even with the svg itself
+   correctly sized. The circle is the actual fix: same footprint, same
+   hover behavior (fills on hover, driven off the parent button since
+   the whole row is one click target, not just this icon). */
+.drawer-my-shows-arrow-circle {
+  flex-shrink: 0;
+  width: var(--space-32);
+  height: var(--space-32);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background 0.15s ease;
+}
+
+/* --tint-active-strong, not --tint-active — the button's own hover
+   already washes its whole background to --tint-active (see above),
+   so filling the circle with that same tone would be invisible
+   against it. The stronger tint keeps the circle visibly distinct on
+   top of that wash, the same two-tier effect a group row's own hover
+   plus its separate .drawer-group-share hover circle gets for free by
+   being two different elements. */
+.drawer-my-shows-btn:hover .drawer-my-shows-arrow-circle {
+  background: var(--tint-active-strong);
+}
+
 /* Sized via container + svg, same Lucide convention as every other
    icon button in the app (see .drawer-name-btn svg above). Same
    --icon-size token .drawer-close-btn/.drawer-group-share/the group
    modal's icons all use, so it reads as one consistent icon language
-   rather than a one-off. Centered against the button's full height
-   (.drawer-my-shows-btn's own align-items: center), the same way
-   those other icon buttons center a single icon against their row. */
-.drawer-my-shows-btn svg {
-  flex-shrink: 0;
+   rather than a one-off. */
+.drawer-my-shows-arrow-circle svg {
   width: var(--icon-size);
   height: var(--icon-size);
   opacity: 0.5;
