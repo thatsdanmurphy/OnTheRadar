@@ -1121,27 +1121,33 @@ body.drawer-open {
 
 /* ---------- Add show ---------- */
 
-/* Which group am I looking at — a real heading (name on the left) plus
-   two small icon-only circular actions on the right (share the invite
-   link directly; view the group — member list + leave, see the
-   .group-modal-* rules below). Lived as a button beside Add Show for a
-   couple of passes — cut once it became clear Add Show needed to be
-   the *only* thing in its own row, and "which group is this" reads
-   better as page context up top, not folded into an action button.
-   Visible on both tabs (set in selectGroup(), not renderCurrentView())
-   — unlike Add Show, knowing your current group isn't a Herd-Picks-
-   only concern. */
+/* Which group am I looking at — a real heading, centered now (used to
+   be name-left/actions-right in one row; per direct feedback, both
+   this and the My Shows heading read better centered, with the
+   actions stacked underneath as their own row rather than crowding
+   the name on one line). Two small icon-only circular actions below
+   it (share the invite link directly; view the group — member list +
+   leave, see the .group-modal-* rules below). Lived as a button
+   beside Add Show for a couple of passes before this — cut once it
+   became clear Add Show needed to be the *only* thing in its own row,
+   and "which group is this" reads better as page context up top, not
+   folded into an action button. Visible on both tabs (set in
+   selectGroup(), not renderCurrentView()) — unlike Add Show, knowing
+   your current group isn't a Herd-Picks-only concern. Also reused
+   as-is by #my-shows-heading-row (no actions div there — nothing to
+   act on from a cross-group view), so this centering applies to both. */
 .group-heading-row {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-16);
+  gap: var(--space-8);
   margin-bottom: var(--space-16);
+  text-align: center;
 }
 
 .group-heading-name {
   margin: 0;
-  min-width: 0;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1155,12 +1161,15 @@ body.drawer-open {
 .group-heading-actions {
   display: flex;
   gap: var(--space-8);
-  flex-shrink: 0;
 }
 
-/* Same circular icon-button language as .drawer-close-btn — transparent
-   fill, --tint-hover on hover — the one consistent shape every
-   icon-only control in the app shares. */
+/* "Ghost circle" now — same dashed-border-circle language as
+   .avatar-ghost-add elsewhere on the page (join a response group),
+   reused here per direct feedback rather than inventing a second
+   "outlined circle" treatment. Dimmed at rest, solid paper fill on
+   hover/press — a quieter resting state than the old plain
+   transparent-fill-on-hover version, but a clearer "this is a tappable
+   circle" shape even before you touch it. */
 .group-heading-btn {
   width: var(--space-40);
   height: var(--space-40);
@@ -1169,15 +1178,19 @@ body.drawer-open {
   justify-content: center;
   border-radius: 50%;
   background: none;
-  border: none;
+  border: 2px dashed var(--color-border);
   color: var(--color-surface-text);
+  opacity: 0.5;
   padding: 0;
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: opacity 0.15s ease, background 0.15s ease, border-color 0.15s ease;
 }
 
 .group-heading-btn:hover {
-  background: var(--tint-hover);
+  opacity: 1;
+  background: var(--color-chip-bg);
+  color: var(--color-chip-text);
+  border-style: solid;
 }
 
 .group-heading-btn svg {
