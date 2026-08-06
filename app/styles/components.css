@@ -6,24 +6,456 @@
 
 /* ---------- Header nav ---------- */
 
+/* No visible container — no fill, no border, no shadow (the shadow
+   from the previous light-mode pass is gone; back to "flat, full
+   stop" now that there's no light-on-light contrast problem to solve
+   with it). The header just sits on the page's own charcoal, airy
+   rather than boxed off — extra padding here is doing the work a
+   border used to do, giving the row room to breathe instead of a
+   hard edge. */
 .site-header {
-  border-bottom: 1px solid var(--color-border);
-  padding-block: var(--space-16);
+  padding-block: var(--space-24);
 }
 
-.site-header .row {
+/* Nav chrome, not body content — deliberately not using .row/.col-*.
+   Grid, not flex: a flex-centered wordmark only lands center when both
+   side elements are the same width, and the avatar trigger (fixed
+   40px) and group switcher (content-width) never are. Two equal 1fr
+   side columns keep the middle column — and the wordmark inside it —
+   dead center regardless of what's in the flanks. */
+.header-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
+  gap: var(--space-16);
 }
 
+/* Value-prop one-liner, same copy as the name gate's tagline (see
+   .name-gate-tagline) — the app repeats it under the wordmark
+   everywhere, not just the first screen someone sees. Quiet by
+   design: small, low-opacity, sentence case, sitting under the row
+   rather than competing with it. */
+.header-tagline {
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-lh);
+  color: var(--color-text);
+  opacity: 0.55;
+  margin-top: var(--space-4);
+  /* A <p>'s browser-default margin-bottom (~1em, unrelated to any
+     token) was quietly inflating the gap below this into the tab bar —
+     found by rendering the header headless and reading the computed
+     margin directly (16px, not something in our own CSS). Zeroed out
+     so the gap below is entirely owned by --space-24 (header padding)
+     + --space-32 (main's own top padding), not a hidden extra 16px. */
+  margin-bottom: 0;
+}
+
+/* The nav trigger is a stand-in for "you," not a generic menu glyph —
+   filled with your own chosen avatar color (custom property set
+   inline via JS), falling back to the paper chip fill if unset. Text
+   color is also set inline per-instance (contrastTextFor in the
+   script) since a light avatar color needs dark text and a dark one
+   needs white — no single CSS color works for every swatch. */
+.header-avatar-btn {
+  width: var(--space-40);
+  height: var(--space-40);
+  border-radius: 50%;
+  justify-self: start;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--avatar-color, var(--color-chip-bg));
+  color: var(--color-chip-text);
+  border: none;
+  font-family: var(--font-data);
+  font-weight: 600;
+  font-size: var(--text-meta-size);
+  padding: 0;
+  cursor: pointer;
+}
+
+.header-avatar-btn:hover {
+  background: var(--color-accent);
+}
+
+/* ---------- Nav drawer ---------- */
+
+/* Flat scrim, not a shadow — dimming the page is what separates the
+   drawer from content, same logic as .show-card.is-out using opacity
+   instead of a new visual effect for "deprioritized." */
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--color-scrim);
+  z-index: 900;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+
+.drawer-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Same raised-surface treatment as a card now, rather than a
+   dedicated "dark inverse" surface — now that the whole page is dark,
+   the drawer doesn't need its own special charcoal, it just reads as
+   another slightly-lighter panel like everything else does. */
+.nav-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: min(320px, 85vw);
+  background: var(--color-surface);
+  color: var(--color-surface-text);
+  z-index: 901;
+  /* Bumped from --space-16 — the drawer read as cramped against its
+     own edges next to the roomier margins the rest of the app now
+     uses (grid margins, card padding). */
+  padding: var(--space-24);
+  overflow-y: auto;
+  transform: translateX(-100%);
+  transition: transform 0.2s ease;
+}
+
+.nav-drawer.open {
+  transform: translateX(0);
+}
+
+.drawer-top {
+  display: flex;
+  justify-content: flex-end;
+  /* Bumped from --space-8 — a lone icon in the corner with barely any
+     breathing room before the identity row read as an afterthought
+     rather than a considered header area. */
+  margin-bottom: var(--space-24);
+}
+
+/* Proper icon-button treatment — a fixed circular hit area with a
+   hover fill, matching the header avatar trigger's own conventions,
+   instead of a bare glyph with just padding and an opacity dim. */
+.drawer-close-btn {
+  width: var(--space-40);
+  height: var(--space-40);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: none;
+  border: none;
+  color: var(--color-surface-text);
+  font-family: var(--font-data);
+  font-size: var(--text-body-size);
+  padding: 0;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.drawer-close-btn:hover {
+  background: var(--tint-hover);
+}
+
+/* Bumped padding to --space-24 and, more importantly, the divider now
+   uses --color-border — the app's own warm-toned translucent hairline
+   (used everywhere else a divider appears, e.g. the avatar-group
+   declined split) — instead of a hardcoded pure-white rgba value that
+   didn't reference any token and read as a generic, undesigned line. */
+.drawer-section {
+  padding-bottom: var(--space-24);
+  margin-bottom: var(--space-24);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.drawer-section-last {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.drawer-identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-16);
+}
+
+/* Filled with your own chosen color (custom property set via JS —
+   see AVATAR_COLORS in index.html) instead of the old inverted
+   paper-on-charcoal treatment, now that avatars carry per-person
+   color as identity. White text throughout the palette, checked for
+   contrast against every swatch. */
+.drawer-avatar {
+  width: var(--space-40);
+  height: var(--space-40);
+  border-radius: 50%;
+  background: var(--avatar-color, var(--color-surface));
+  color: var(--color-text-inverse);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-data);
+  font-size: var(--text-meta-size);
+}
+
+.drawer-name {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--text-sub-size);
+  line-height: var(--text-sub-lh);
+}
+
+.drawer-label {
+  font-family: var(--font-data);
+  font-size: var(--text-meta-size);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.6;
+  margin-bottom: var(--space-8);
+}
+
+.drawer-identity-section .drawer-label {
+  margin-top: var(--space-16);
+}
+
+/* Fixed palette, not a free picker — every swatch is pre-checked for
+   white-on-color legibility on both the card surface and the drawer's
+   charcoal. Selected swatch gets a paper-colored ring, the one place
+   a "selected" state needs a border rather than a fill change, since
+   the fill itself *is* the color being chosen. */
+.avatar-color-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+}
+
+/* Bumped from --space-24 to --space-32 — matches the avatar-dot sizing
+   used everywhere else in the app (header trigger, drawer identity,
+   show-card avatars), so picking a color feels like sizing a real
+   avatar rather than tapping a small swatch. */
+.avatar-color-swatch {
+  width: var(--space-32);
+  height: var(--space-32);
+  border-radius: 50%;
+  border: 2px solid transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+/* Ring uses the chip fill (always paper-light), not --color-surface —
+   --color-surface is a dark tone now, so it would blend straight into
+   the drawer's own background instead of standing out as a ring. */
+.avatar-color-swatch.active {
+  border-color: var(--color-chip-bg);
+}
+
+/* Group list — plain always-visible rows, not a dropdown/popover.
+   Was a header dropdown for a while; moved back into the drawer,
+   where a second click-to-open step on top of already having opened
+   the drawer was just redundant friction. Two-line row: name + member
+   count.
+
+   Every row now shares the same card-like shape — a subtle
+   `--color-border` outline plus real padding — whether it's the
+   active group or not. Previously only the active row had any visible
+   boundary at all (its tonal fill); an inactive row was literally just
+   text floating with no edges, which read as broken/inconsistent
+   rather than a deliberate quiet state. Now the list reads as one
+   cohesive set of tappable rows, with the active one distinguished by
+   a filled tint plus a slightly stronger border on top of the same
+   shape everyone else has — never the pink accent, which stays
+   reserved for overlap. Dropped the old negative-margin bleed trick
+   (rows used to extend past the drawer's own padding); real borders
+   need to sit inside the drawer's padding like everything else. */
+.drawer-group-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+/* Row now holds two independent controls — select this group / share
+   its invite link — so the card shape (border, radius, padding) lives
+   on the row itself, not on a single button the way it used to. */
+.drawer-group-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--space-8) var(--space-8) var(--space-8) var(--space-16);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.drawer-group-row:hover {
+  background: var(--tint-hover);
+}
+
+/* Tonal fill plus a slightly stronger border — no color change. Pink
+   still means overlap, nowhere else, so "this is your current group"
+   reads through weight and fill/border strength instead of reaching
+   for the accent. */
+.drawer-group-row.active {
+  background: var(--tint-active);
+  border-color: var(--tint-active-strong);
+}
+
+/* The name+count half of the row — flexes to fill the space the
+   share button doesn't need, plain-reset so it reads as the row's
+   own text rather than a nested button. */
+.drawer-group-select {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--color-surface-text);
+}
+
+/* Small icon-only twin of .group-modal-invite-btn, sized down to fit
+   inside a list row instead of a standalone labeled control. */
+.drawer-group-share {
+  flex-shrink: 0;
+  width: var(--space-32);
+  height: var(--space-32);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: none;
+  border: none;
+  color: var(--color-surface-text);
+  opacity: 0.7;
+  padding: 0;
+  cursor: pointer;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+
+.drawer-group-share:hover {
+  background: var(--tint-active);
+  opacity: 1;
+}
+
+.drawer-group-select:focus-visible,
+.drawer-group-share:focus-visible,
+.drawer-new-group-btn:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Group name — force-capitalized regardless of how it was typed in,
+   so a lowercase group name still reads as deliberate Title Case. */
+.group-switch-item-name {
+  display: block;
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-lh);
+  text-transform: capitalize;
+}
+
+.drawer-group-row.active .group-switch-item-name {
+  font-weight: 600;
+}
+
+/* Member-count subtitle — same small/uppercase/tracked treatment as
+   every other meta line in the app (drawer labels, date). */
+.group-switch-item-count {
+  display: block;
+  font-family: var(--font-data);
+  font-size: var(--text-meta-size);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.55;
+  margin-top: var(--space-4);
+}
+
+/* Stays a quiet text link, not another bordered row — it's a distinct
+   secondary action, not one more item in the list, so it shouldn't
+   share the list rows' card shape. Margin-top (was padding-top, same
+   value) bumped from --space-8 to --space-16 — proportionally further
+   from the list than individual rows sit from each other (--space-8),
+   so the hierarchy reads: rows are grouped tightly, "add new" sits a
+   clear step apart. */
+.drawer-new-group-btn {
+  font-family: var(--font-data);
+  font-weight: 600;
+  font-size: var(--text-control-size);
+  line-height: var(--text-control-lh);
+  text-transform: capitalize;
+  letter-spacing: 0.01em;
+  background: none;
+  border: none;
+  color: var(--color-surface-text);
+  opacity: 0.7;
+  margin-top: var(--space-16);
+  padding: 0;
+  cursor: pointer;
+}
+
+.drawer-new-group-btn:hover {
+  opacity: 1;
+}
+
+/* Locks page scroll while the drawer is open. */
+body.drawer-open {
+  overflow: hidden;
+}
+
+/* Sized a step above --text-head-size on purpose — the wordmark is
+   the one place in the header that should carry real presence, and
+   24px read a little small once it was two-tone. Line-height stays
+   at the head-size rhythm (32px) since the bumped font-size still
+   fits comfortably under it. */
 .wordmark {
+  flex: 1;
+  text-align: center;
   font-family: var(--font-display);
-  font-size: var(--text-head-size);
+  font-weight: 900;
+  font-size: var(--text-wordmark-size);
   line-height: var(--text-head-lh);
   text-transform: uppercase;
   letter-spacing: 0.01em;
-  color: var(--color-text);
   text-decoration: none;
+}
+
+/* Optical correction, header-only — verified headless first: the
+   wordmark's grid column (`.header-row`'s `1fr auto 1fr`) genuinely
+   centers it at the row's exact mathematical midpoint, confirmed by
+   measuring real getBoundingClientRect() values (not a layout bug,
+   unlike the Add Show panel). But the avatar is a solid, filled circle
+   sitting flush in the far-left column with nothing mirroring its
+   visual weight on the right — an empty grid track reserves the same
+   *space*, but has zero *ink* — so a mathematically-centered wordmark
+   still reads as pulled left, the same optical-vs-geometric gap seen
+   on the Add Show button, just caused by weight instead of a bounding
+   box. Small manual nudge, tuned by rendering candidate offsets
+   headless and comparing screenshots (8px read balanced; 12–16px
+   started to overshoot). Scoped to the header specifically — the
+   name-gate's own wordmark has no avatar beside it, so it stays at
+   true geometric center. */
+.header-row .wordmark {
+  margin-left: var(--space-8);
+}
+
+/* Only the logo gets color like this — everything else in the app
+   stays black/charcoal per direction. "Gig" now uses --color-logo-pink,
+   which is just an alias for --color-accent — the same pink as the
+   overlap marker and the nav avatar's hover state, unified on purpose
+   after a few too many near-but-not-quite pinks. "Herd" keeps its own
+   dedicated --color-logo-green. Flat fills, no glow on either — the
+   brand's "no glow, full stop" rule holds here too, an earlier glow
+   pass on "Herd" got cut. */
+.wordmark-gig {
+  color: var(--color-logo-pink);
+}
+
+.wordmark-herd {
+  color: var(--color-logo-green);
 }
 
 .header-controls {
@@ -33,79 +465,11 @@
   flex-wrap: wrap;
 }
 
-/* Group switcher — wired to Supabase (memberships/groups) */
-.group-switch {
-  font-family: var(--font-data);
-  font-size: var(--text-meta-size);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  background: none;
-  border: 1px solid var(--color-border);
-  color: var(--color-text);
-  padding: var(--space-8) var(--space-16);
-  cursor: pointer;
-}
-
-.group-switch:hover {
-  background: var(--color-text);
-  color: var(--color-text-inverse);
-}
-
-.group-menu {
-  position: absolute;
-  top: calc(100% + var(--space-8));
-  right: 0;
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  min-width: 180px;
-  z-index: 20;
-  display: none;
-}
-
-.group-menu.open {
-  display: block;
-}
-
-.group-menu button {
-  display: block;
-  width: 100%;
-  text-align: left;
-  font-family: var(--font-body);
-  font-size: var(--text-body-size);
-  line-height: var(--text-body-lh);
-  background: none;
-  border: none;
-  border-bottom: 1px solid var(--color-border);
-  padding: var(--space-8) var(--space-16);
-  cursor: pointer;
-  color: var(--color-text);
-}
-
-.group-menu button:last-child {
-  border-bottom: none;
-  font-family: var(--font-data);
-  font-size: var(--text-meta-size);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.group-menu button:hover {
-  background: var(--color-bg-inverse);
-  color: var(--color-text-inverse);
-}
-
-.group-switch-wrap {
-  position: relative;
-}
-
-/* Avatar stack — click to expand into a plain name list */
-.avatar-stack {
-  position: relative;
-}
-
+/* Plain row of overlapping avatar dots — no click-to-expand of its
+   own anymore; that's now a modal opened at the .avatar-group level
+   (see .avatar-group-clickable and #people-modal-overlay below). */
 .avatar-dots {
   display: flex;
-  cursor: pointer;
 }
 
 .avatar-dot {
@@ -114,7 +478,7 @@
   border-radius: 50%;
   background: var(--color-bg-inverse);
   color: var(--color-text-inverse);
-  border: 2px solid var(--color-bg);
+  border: 2px solid var(--color-surface);
   font-family: var(--font-data);
   font-size: var(--text-meta-size);
   display: flex;
@@ -127,75 +491,102 @@
   margin-left: 0;
 }
 
-.avatar-list {
-  position: absolute;
-  top: calc(100% + var(--space-8));
-  right: 0;
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  min-width: 160px;
-  z-index: 20;
-  display: none;
-}
-
-.avatar-list.open {
-  display: block;
-}
-
-.avatar-list div {
-  font-family: var(--font-body);
-  font-size: var(--text-body-size);
-  line-height: var(--text-body-lh);
-  padding: var(--space-8) var(--space-16);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.avatar-list div:last-child {
-  border-bottom: none;
-}
-
 /* ---------- Show list / show card ---------- */
 
 .show-list {
   padding-block: var(--space-32);
 }
 
+/* Centered, with a quiet guitar silhouette above the message — an
+   empty stage waiting for a show, not just blank space with a caption.
+   A spotlight icon was tried first and didn't read clearly at this
+   size; the guitar (headstock, neck, figure-8 body, soundhole) is more
+   legible and more on-theme besides. Flat single-color fill, no
+   gradient/glow — holds the brand's flat-full-stop rule. */
 .show-list-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-16);
+  text-align: center;
   font-family: var(--font-body);
   font-size: var(--text-body-size);
   line-height: var(--text-body-lh);
   color: var(--color-text);
-  padding-block: var(--space-16);
+  padding-block: var(--space-64);
 }
 
+.show-list-empty-icon {
+  width: var(--space-56);
+  height: var(--space-56);
+  color: var(--color-text);
+  opacity: 0.35;
+}
+
+.show-list-empty-icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* color set here so anything inside without its own explicit color
+   (show-date, show-title...) inherits charcoal by default, instead of
+   the page's light text bleeding into the card. */
 .show-card {
-  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-surface-text);
+  border-radius: var(--radius);
   padding: var(--space-16);
   margin-bottom: var(--space-16);
   transition: opacity 0.15s;
 }
 
 /* Person has marked themselves out — deprioritize visually without
-   hiding it. Whole-card dimming carries this signal, so the response
-   buttons themselves don't need a special "out" treatment. */
+   hiding it. Whole-card dimming carries this signal, so the decline
+   button itself doesn't need a special "out" treatment. */
 .show-card.is-out {
   opacity: 0.5;
 }
 
+/* Holds the date badge (left) and overlap badge (right, only when
+   there's one to show — 2+ curious). */
 .show-card-top {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   gap: var(--space-16);
   margin-bottom: var(--space-8);
 }
 
-.show-date {
+/* Plain text now — the pill/tag treatment (first a clip-path flag,
+   then a ghosted pink chip) got cut entirely. This also quietly
+   un-bends the "pink means overlap, nowhere else" rule for dates —
+   there's no pink here anymore at all, so the overlap badge goes back
+   to being the only pink UI marker (the wordmark is now the only
+   other exception — see brand-brief.md). */
+.show-date-badge {
+  display: inline-block;
+  color: var(--color-surface-text);
+  opacity: 0.7;
   font-family: var(--font-data);
+  font-weight: 600;
   font-size: var(--text-meta-size);
-  line-height: var(--text-meta-lh);
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+/* Used to also hold a quiet arrow opening a detail page — cut along
+   with the detail page itself (not needed yet, see component-map.md).
+   Kept as its own row wrapper in case something else joins the title
+   here later. The title's own link (when present) still goes straight
+   to the external ticket page. */
+.show-title-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
+  margin-bottom: var(--space-8);
 }
 
 .show-title {
@@ -203,7 +594,6 @@
   font-weight: 600;
   font-size: var(--text-sub-size);
   line-height: var(--text-sub-lh);
-  margin-bottom: var(--space-4);
 }
 
 .name-gate-center {
@@ -237,8 +627,8 @@
   line-height: var(--text-body-lh);
   color: var(--color-text);
   opacity: 0.7;
-  margin-top: var(--space-8);
-  margin-bottom: var(--space-24);
+  text-align: center;
+  margin: var(--space-8) auto var(--space-24);
   max-width: 40ch;
 }
 
@@ -247,22 +637,27 @@
   font-weight: 600;
   font-size: var(--text-sub-size);
   line-height: var(--text-sub-lh);
-  color: var(--color-text);
+  color: var(--color-surface-text);
 }
 
-.show-venue a {
+.show-venue {
   font-family: var(--font-body);
   font-size: var(--text-body-size);
   line-height: var(--text-body-lh);
-  color: var(--color-text);
+  color: var(--color-surface-text);
+  margin-bottom: var(--space-4);
+}
+
+.show-venue a {
+  color: var(--color-surface-text);
 }
 
 .show-openers {
   font-family: var(--font-body);
   font-size: var(--text-meta-size);
-  color: var(--color-text);
+  color: var(--color-surface-text);
   opacity: 0.7;
-  margin-top: var(--space-4);
+  margin-bottom: var(--space-8);
 }
 
 /* Filled, not just colored text — overlap should read as a marker,
@@ -279,252 +674,524 @@
   flex-shrink: 0;
 }
 
+/* Bigger now — this is the primary interaction, not a passive
+   "who's in" display, so it needs real presence. Two labeled groups
+   side by side — "Heck yeah!" and "Can't make it" — each a self-
+   contained cluster (label + avatars + my own ghost/dot slot), set
+   apart with real space (--space-32) rather than run together, so
+   they read as two distinct lists, not one long row. Margin here
+   (rather than a wrapping .card-actions-row) is what separates the
+   whole thing from the text block above; collapses with .show-openers'/
+   .show-venue's own margin-bottom to the larger of the two. */
 .show-card-avatars {
-  margin: var(--space-8) 0;
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  margin-top: var(--space-16);
 }
 
 .show-card-avatars .avatar-dot {
-  width: var(--space-24);
-  height: var(--space-24);
-  font-size: 10px;
+  width: var(--space-40);
+  height: var(--space-40);
+  font-size: var(--text-control-size);
 }
 
-/* Segmented control — one bordered group, not three floating
-   buttons. Reads as a single considered control. */
-.show-responses {
-  display: inline-flex;
-  border: 1px solid var(--color-border);
-  margin-top: var(--space-8);
+/* One group = one label + one row (avatars + my slot). */
+.avatar-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
 }
 
-.resp-btn {
+.avatar-group-label {
   font-family: var(--font-data);
   font-size: var(--text-meta-size);
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  opacity: 0.55;
+}
+
+.avatar-group-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+/* "Can't make it" stays the quieter of the two groups — only its
+   label is dimmed further, not the avatars/ghost-add inside it (those
+   need to stay clearly legible and clearly tappable, not read as
+   disabled). The old flex `gap` on .show-card-avatars is gone in favor
+   of margin/padding split evenly (16px each side) around a vertical
+   rule, so the two groups still sit the same 32px apart overall, just
+   with a real line marking the split instead of space alone. */
+.avatar-group-declined {
+  margin-left: var(--space-16);
+  padding-left: var(--space-16);
+  border-left: 1px solid var(--color-border);
+}
+
+.avatar-group-declined .avatar-group-label {
+  opacity: 0.4;
+}
+
+/* Fixed slot for "me" — holds either the ghost add-button or my own
+   filled dot, same box either way, so the two states swap in place
+   instead of the plus and my eventual avatar landing in different
+   spots. Spacing from whatever's before it comes from .avatar-group-row's
+   own `gap` now, not a margin here — a margin-left would still apply
+   even when this is the *only* child (nobody else in the group yet),
+   nudging it out of alignment with the label above it. `gap` only
+   applies between siblings, so the first (and possibly only) item in
+   the row always sits flush with the label. */
+.avatar-my-slot {
+  flex-shrink: 0;
+}
+
+.avatar-my-slot .avatar-dot {
+  margin-left: 0;
+}
+
+/* Dotted circle + plus — tap it to join this group (curious in "Heck
+   yeah!", out in "Can't make it"). Only rendered for whichever group
+   the current person hasn't already responded into — the other slot
+   shows their real filled dot instead. Deliberately not pink on hover
+   — pink stays overlap-only; this fills solid paper instead, same
+   "active chip" language as buttons elsewhere. */
+.avatar-ghost-add {
+  width: var(--space-40);
+  height: var(--space-40);
+  border-radius: 50%;
+  border: 2px dashed var(--color-border);
   background: none;
-  border: none;
-  border-right: 1px solid var(--color-border);
-  color: var(--color-text);
-  padding: var(--space-8) var(--space-16);
+  color: var(--color-surface-text);
+  opacity: 0.5;
+  font-family: var(--font-data);
+  font-size: var(--text-sub-size);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.avatar-ghost-add:hover {
+  opacity: 1;
+  background: var(--color-chip-bg);
+  color: var(--color-chip-text);
+  border-style: solid;
+}
+
+/* Whole group is one tap target that opens the "who's in" modal (see
+   #people-modal-overlay) — the ghost "+" inside it stops its own
+   clicks from bubbling up, since joining and viewing are different
+   actions. Only applied when there's actually someone to show. */
+.avatar-group-clickable {
   cursor: pointer;
 }
 
-.resp-btn:last-child {
-  border-right: none;
+.avatar-group-clickable:hover .avatar-group-label {
+  opacity: 0.85;
 }
 
-.resp-btn:hover {
-  background: rgba(10, 10, 10, 0.08);
+/* ---------- Who's in a group (modal) ---------- */
+
+/* Flat dimming overlay, same language as the nav drawer's scrim —
+   reintroduced here after Add Show moved off the modal pattern; this
+   is a genuinely focused, occasional "view more" moment, not a quick
+   frequent action, so a modal still earns its keep for this one. */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--color-scrim);
+  z-index: 950;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-16);
 }
 
-.resp-btn.active {
-  background: var(--color-bg-inverse);
-  color: var(--color-text-inverse);
+.modal-box {
+  background: var(--color-surface);
+  color: var(--color-surface-text);
+  border-radius: var(--radius);
+  padding: var(--space-24);
+  width: 100%;
+  max-width: 360px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.modal-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-16);
+}
+
+.modal-title {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--text-sub-size);
+  line-height: var(--text-sub-lh);
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  color: var(--color-surface-text);
+  font-family: var(--font-data);
+  font-size: var(--text-body-size);
+  opacity: 0.6;
+  cursor: pointer;
+  padding: var(--space-4);
+}
+
+.modal-close-btn:hover {
+  opacity: 1;
+}
+
+.person-list-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  padding: var(--space-8) 0;
+}
+
+.person-list-item .avatar-dot {
+  margin-left: 0;
 }
 
 /* ---------- Add show ---------- */
 
-.show-list-header {
+/* Herd Picks (the full group list) vs My Shows (this person's own
+   curious picks only) — replaces the old List/Calendar toggle. Centered,
+   with no container-wide rule under it — a full-width stroke read as a
+   stray line across the page rather than part of the tabs. Only each
+   tab's own underline (see .tab-btn.active) carries a stroke now, and
+   only exactly as wide as its label. "My Shows" resolves what had been
+   an open, unbuilt question — see component-map.md. */
+.tab-bar {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  justify-content: center;
+  gap: var(--space-24);
   margin-bottom: var(--space-16);
 }
 
-/* View toggle — same segmented-control pattern as the response
-   control on show cards, reused rather than inventing a new look. */
-.view-toggle {
-  border: 1px solid var(--color-border);
+.drawer-close-btn svg,
+.modal-close-btn svg,
+.drawer-group-share svg,
+.group-modal-invite-btn svg {
+  width: var(--icon-size);
+  height: var(--icon-size);
 }
 
-.view-toggle-btn {
+.tab-btn {
   font-family: var(--font-data);
-  font-size: var(--text-meta-size);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  font-weight: 400;
+  font-size: var(--text-control-size);
+  line-height: var(--text-control-lh);
+  text-transform: capitalize;
+  letter-spacing: 0.01em;
   background: none;
   border: none;
-  border-right: 1px solid var(--color-border);
+  border-bottom: 2px solid transparent;
   color: var(--color-text);
-  padding: var(--space-8) var(--space-16);
+  opacity: 0.6;
+  padding: var(--space-8) 0;
   cursor: pointer;
 }
 
-.view-toggle-btn:last-child {
-  border-right: none;
+.tab-btn:hover {
+  opacity: 0.85;
 }
 
-.view-toggle-btn:hover {
-  background: rgba(10, 10, 10, 0.08);
+/* Bold label + an off-white underline — the only two things that
+   change on select, no fill/background swap. */
+.tab-btn.active {
+  font-weight: 700;
+  opacity: 1;
+  border-bottom-color: var(--color-text);
 }
 
-.view-toggle-btn.active {
-  background: var(--color-bg-inverse);
-  color: var(--color-text-inverse);
-}
+/* ---------- Add show ---------- */
 
-/* ---------- Calendar view ---------- */
-
-.calendar-nav {
+/* Add Show + the group menu as two peer actions in one row — Add Show
+   carries most of the width (it's the primary, frequent action); the
+   group button is a fixed-width companion beside it rather than a
+   corner icon buried in the tab row. `align-items: stretch` (flex
+   default here) lets the group button match Add Show's own height
+   automatically, since both start from the same --space-16 padding
+   and a similar control-size line-height — no explicit height needed
+   on either. */
+.show-list-actions {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  gap: var(--space-8);
   margin-bottom: var(--space-16);
 }
 
-.calendar-month-label {
-  font-family: var(--font-display);
-  font-size: var(--text-head-size);
-  line-height: var(--text-head-lh);
-  text-transform: uppercase;
+/* One card, always — the literal top item in the list, same
+   surface/radius treatment as .show-card so it reads as part of the
+   wall rather than chrome sitting above it. Opening it never hands off
+   to a second box: .add-show-panel below grows/shrinks in place inside
+   this same card (see the grid-rows trick further down), so the whole
+   thing reads as one card animating, not two cards swapping. */
+.add-show-card {
+  flex: 1;
+  min-width: 0;
+  background: var(--color-surface);
+  color: var(--color-surface-text);
+  border-radius: var(--radius);
+  /* Same --space-16 padding on all sides, closed or open — a shorter
+     --space-8 closed-state padding was tried and reverted on two
+     counts: it read as too short a row, and the open/closed padding
+     *change* itself was unanimated, so toggling the card visibly
+     jumped in height a beat before the panel's own grid-rows
+     transition caught up. One constant padding value removes the
+     jump entirely and gives the row more presence at rest. */
+  padding: var(--space-16);
 }
 
-.calendar-nav-btn {
-  font-family: var(--font-data);
-  font-size: var(--text-body-size);
-  background: none;
-  border: 1px solid var(--color-border);
-  color: var(--color-text);
-  padding: var(--space-4) var(--space-16);
+/* Group menu button — same surface/radius language as .add-show-card
+   so the two read as peers in the same row, not a primary button next
+   to a bare utility icon. Fixed-width, doesn't grow with the row.
+   Shows the *current* group's own name rather than a generic "Group"
+   or "Invite" label — doubles as a lightweight "you're looking at
+   ___" indicator, since nothing else on the main screen confirms
+   which group is current once you're scrolled past the drawer.
+   Opens the group modal (invite / members / leave — see the modal
+   markup and .group-modal-* rules below) rather than acting on its
+   own. Name gets a hard cap (max-width + ellipsis) so a long group
+   name can't push Add Show out of most of the row's width. */
+.group-menu-btn {
+  flex-shrink: 0;
+  max-width: 160px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  background: var(--color-surface);
+  color: var(--color-surface-text);
+  border: none;
+  border-radius: var(--radius);
+  padding: var(--space-8) var(--space-16);
   cursor: pointer;
+  transition: opacity 0.15s ease;
 }
 
-.calendar-nav-btn:hover {
-  background: rgba(10, 10, 10, 0.08);
+.group-menu-btn:hover {
+  opacity: 0.85;
 }
 
-.calendar-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  border-top: 1px solid var(--color-border);
-  border-left: 1px solid var(--color-border);
+.group-menu-name {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--text-control-size);
+  line-height: var(--text-control-lh);
+  text-transform: capitalize;
 }
 
-.calendar-weekday {
+/* Same small/uppercase/tracked meta treatment as every other
+   secondary line in the app (drawer labels, member counts). */
+.group-menu-subtitle {
+  display: block;
   font-family: var(--font-data);
   font-size: var(--text-meta-size);
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  text-align: center;
-  padding: var(--space-4);
-  border-right: 1px solid var(--color-border);
-  border-bottom: 1px solid var(--color-border);
-  background: var(--color-bg-inverse);
-  color: var(--color-text-inverse);
+  opacity: 0.55;
 }
 
-/* Fixed height, not min-height — every row stays uniform regardless
-   of how many shows land on a given day (overflow becomes "+N more"
-   instead of stretching the row). Shrinks at the mobile breakpoint so
-   7 columns stay legible on a phone width. */
-.calendar-day {
-  height: 56px;
-  border-right: 1px solid var(--color-border);
-  border-bottom: 1px solid var(--color-border);
-  padding: var(--space-4) 2px;
-  overflow: hidden;
-}
+/* ---------- Group modal ---------- */
 
-.calendar-day.is-empty {
-  background: rgba(10, 10, 10, 0.03);
-}
-
-/* Tinted so a day with something happening reads at a glance, before
-   even looking at the bubble/time inside it. */
-.calendar-day.has-shows {
-  background: rgba(242, 84, 126, 0.14);
-}
-
-.calendar-day-number {
-  font-family: var(--font-data);
-  font-size: 10px;
-  opacity: 0.6;
-  margin-bottom: 2px;
-}
-
-/* Bubble + time, Google/Apple-calendar style — not the full title,
-   there isn't room. Tapping opens the show detail page, since that's
-   the only place a cell this size can hand off to. */
-.calendar-show {
+/* Invite people — the most common reason to open this modal, so it
+   sits first and gets the strongest visual weight (.btn-solid, the
+   same filled-chip treatment used for primary form actions), not a
+   quiet icon button. Copies the current group's invite link via the
+   shared copyInviteLink() helper; success swaps the label text to
+   "Copied!" briefly, same pattern as the name-gate's own invite
+   button (both have a real text label, unlike the icon-only share
+   buttons elsewhere, which flash to a check icon instead). */
+.group-modal-invite-btn {
   display: flex;
   align-items: center;
-  gap: 3px;
+  justify-content: center;
+  gap: var(--space-8);
+  width: 100%;
+  margin-bottom: var(--space-24);
+}
+
+.group-modal-label {
+  font-family: var(--font-data);
+  font-size: var(--text-meta-size);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.55;
+  margin-bottom: var(--space-8);
+}
+
+/* Leave group — a real but infrequent, semi-destructive action, kept
+   deliberately quiet: plain text, bottom of the sheet, no filled/red
+   treatment. The app has no destructive-red token anywhere else and
+   one rare action didn't seem worth introducing one for — a
+   window.confirm() before the actual leave (see the click handler)
+   covers the "don't do this by accident" need instead of a loud
+   button. Top border + margin separate it from the member list above,
+   so it doesn't read as just one more row in that list. */
+.group-modal-leave-btn {
+  display: block;
+  width: 100%;
+  margin-top: var(--space-24);
+  padding-top: var(--space-16);
+  border-top: 1px solid var(--color-border);
+  background: none;
+  border-left: none;
+  border-right: none;
+  border-bottom: none;
+  color: var(--color-surface-text);
+  font-family: var(--font-data);
+  font-weight: 600;
+  font-size: var(--text-control-size);
+  line-height: var(--text-control-lh);
+  text-transform: capitalize;
+  letter-spacing: 0.01em;
+  text-align: center;
+  opacity: 0.6;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.group-modal-leave-btn:hover {
+  opacity: 1;
+}
+
+/* The toggle row inside the card — no outline, same quiet hover
+   language as other text-only controls in the app. Same token set as
+   .show-title (font-body, 600, sub-size/line-height) at full color —
+   no idle dimming — since this is the first thing on the page and
+   should carry the same presence as every card title below it. Stays
+   exactly this width whether the panel below it is open or closed;
+   it's the same button doing both jobs, never replaced by a smaller
+   close icon.
+
+   Plain flex, icon and label grouped together and centered as one
+   unit. A 3-column grid (icon in its own column, label centered alone
+   in a mirrored middle column) was tried — it made the label's own
+   text land on the button's exact mathematical center, correcting a
+   real optical effect (a thin "+" carries less visual weight than the
+   dense label text, so centering their combined box read as slightly
+   off-center) — but it also visibly separated the icon from the
+   label, and reading them as one grouped unit mattered more than
+   perfect optical centering. Back to flex + `gap`, both are close
+   together again, centered as a pair. */
+/* Label size — dropped from --text-sub-size (20px, the card-title
+   match) down to --text-control-size (14px), the token the type scale
+   already names for "buttons, links, tappable controls" (see
+   component-map.md's type table). The sub-size match was a deliberate
+   choice at the time ("read with the same presence as every card
+   title below it") but read too large once it had to sit next to
+   Invite in the same row — a plain button label, not a headline. */
+.add-show-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-8);
   width: 100%;
   background: none;
   border: none;
   padding: 0;
-  margin-bottom: 2px;
-  font-family: var(--font-data);
-  font-size: 9px;
-  color: var(--color-text);
+  color: var(--color-surface-text);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--text-control-size);
+  line-height: var(--text-control-lh);
   cursor: pointer;
-  text-align: left;
 }
 
-.calendar-show-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--color-accent);
+.add-show-toggle:hover {
+  opacity: 0.85;
+}
+
+/* Rotates 45° open→closed — a "+" turned 45° reads as an "×", so this
+   one glyph and one transform cover both states, no glyph-swap needed
+   (and the label text next to it never changes — "Add a show" stays
+   "Add a show" whether the panel's open or closed; only the icon
+   communicates state). A fixed square slot (width/height both pinned
+   to the line-height token) with the glyph centered inside via its own
+   flex, rather than a bare glyph sized by font metrics — keeps the "+"
+   visually self-balanced regardless of font. */
+.add-show-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--text-control-lh);
+  height: var(--text-control-lh);
+  font-size: var(--text-sub-size);
+  line-height: 1;
+  transition: transform 0.2s ease;
   flex-shrink: 0;
 }
 
-.calendar-show-label {
+.add-show-card.is-open .add-show-icon {
+  transform: rotate(45deg);
+}
+
+/* Grow/shrink, not show/hide — a CSS grid-rows accordion (0fr closed,
+   1fr open) animates smoothly to the content's natural height without
+   guessing a max-height in px. .add-show-panel-inner needs its own
+   `overflow: hidden` for the collapse to reach true 0 (that's what
+   lets the browser treat its auto-minimum size as 0 instead of its
+   content's size). The genuinely non-obvious part, found only by
+   measuring actual rendered pixels: `.add-show-panel-inner` must carry
+   *no padding of its own*. A box's own padding always counts toward
+   its size regardless of `overflow` — `overflow: hidden` only zeroes
+   out a *child's* min-content contribution, not the box's own padding
+   — so a `padding-top` living directly on the overflow:hidden element
+   was quietly stopping the collapse from ever reaching true 0 (it
+   always leaked through as exactly that much residual height). That
+   residual height sat *below* the toggle button inside the card, which
+   is what made "Add a show" read as floating too high — 8px of real
+   padding above it, 8px + that leftover panel height below. The
+   padding now lives one level deeper, on `.add-show-panel-content` —
+   a plain child *inside* the overflow:hidden boundary, so it still
+   renders correctly once open, but no longer prevents the boundary
+   itself from collapsing to 0 while closed. */
+.add-show-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.25s ease;
+}
+
+.add-show-card.is-open .add-show-panel {
+  grid-template-rows: 1fr;
+}
+
+.add-show-panel-inner {
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  min-height: 0;
 }
 
-.calendar-show.has-overlap .calendar-show-label {
-  font-weight: 700;
-}
-
-.calendar-more {
-  font-family: var(--font-data);
-  font-size: 9px;
-  opacity: 0.6;
-}
-
-@media (min-width: 600px) {
-  .calendar-weekday {
-    padding: var(--space-8);
-  }
-
-  .calendar-day {
-    height: 96px;
-    padding: var(--space-8);
-  }
-
-  .calendar-day-number {
-    font-size: var(--text-meta-size);
-    margin-bottom: var(--space-4);
-  }
-
-  .calendar-show {
-    gap: var(--space-4);
-    font-size: var(--text-meta-size);
-    margin-bottom: var(--space-4);
-  }
-
-  .calendar-show-dot {
-    width: 6px;
-    height: 6px;
-  }
-
-  .calendar-more {
-    font-size: var(--text-meta-size);
-  }
+.add-show-panel-content {
+  padding-top: var(--space-16);
 }
 
 .btn-solid {
   font-family: var(--font-data);
-  font-size: var(--text-meta-size);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  background: var(--color-bg-inverse);
-  color: var(--color-text-inverse);
-  border: 1px solid var(--color-bg-inverse);
+  font-weight: 600;
+  font-size: var(--text-control-size);
+  line-height: var(--text-control-lh);
+  text-transform: capitalize;
+  letter-spacing: 0.01em;
+  background: var(--color-chip-bg);
+  color: var(--color-chip-text);
+  border: 1px solid var(--color-chip-bg);
+  border-radius: var(--radius);
   padding: var(--space-8) var(--space-16);
   cursor: pointer;
 }
@@ -536,25 +1203,32 @@
 
 .btn-outline {
   font-family: var(--font-data);
-  font-size: var(--text-meta-size);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  font-weight: 600;
+  font-size: var(--text-control-size);
+  line-height: var(--text-control-lh);
+  text-transform: capitalize;
+  letter-spacing: 0.01em;
   background: none;
   color: var(--color-text);
   border: 1px solid var(--color-border);
+  border-radius: var(--radius);
   padding: var(--space-8) var(--space-16);
   cursor: pointer;
 }
 
 .btn-outline:hover {
-  background: rgba(10, 10, 10, 0.08);
+  background: var(--tint-active);
 }
 
-.add-show-form {
-  border: 1px solid var(--color-border);
-  padding: var(--space-16);
-  margin-bottom: var(--space-16);
-}
+/* Add show — expands inline where the CTA card sits (#add-show-btn /
+   #add-show-panel in index.html), reusing .show-card's own surface
+   instead of a modal box. No overlay/scrim anymore: this is a quick,
+   frequent action, not a focused task that earns dimming the rest of
+   the page. The old .modal-top/.modal-title/.modal-close-btn title row
+   is gone entirely now — the toggle button itself carries the "Add a
+   show" label and doubles as the close control (see .add-show-card/
+   .add-show-icon above), so there's no separate title/close row left
+   to style. */
 
 .form-row {
   margin-bottom: var(--space-16);
@@ -583,6 +1257,7 @@
   font-family: var(--font-body);
   font-size: var(--text-body-size);
   border: 1px solid var(--color-border);
+  border-radius: var(--radius);
   padding: var(--space-8);
   background: var(--color-bg);
   color: var(--color-text);
@@ -609,38 +1284,17 @@
 
 .link-btn {
   font-family: var(--font-data);
-  font-size: var(--text-meta-size);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  font-weight: 600;
+  font-size: var(--text-control-size);
+  line-height: var(--text-control-lh);
+  text-transform: capitalize;
+  letter-spacing: 0.01em;
   background: none;
   border: none;
   color: var(--color-text);
   text-decoration: underline;
   cursor: pointer;
   padding: 0;
-}
-
-.show-detail-meta {
-  display: flex;
-  align-items: center;
-  gap: var(--space-16);
-  margin-bottom: var(--space-16);
-}
-
-.show-detail-price {
-  font-family: var(--font-data);
-  font-size: var(--text-sub-size);
-  font-weight: 700;
-}
-
-.invite-link-btn {
-  display: inline-block;
-  margin-bottom: var(--space-16);
-}
-
-.show-detail-link {
-  display: inline-block;
-  margin-top: var(--space-8);
 }
 
 .add-show-alt-methods {
@@ -659,6 +1313,8 @@
 
 .search-results {
   border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
   margin-bottom: var(--space-16);
 }
 
@@ -679,7 +1335,7 @@
 }
 
 .search-result-item:hover {
-  background: rgba(10, 10, 10, 0.08);
+  background: var(--tint-active);
 }
 
 .search-result-item .result-title {
@@ -692,4 +1348,55 @@
   font-size: var(--text-meta-size);
   opacity: 0.7;
   margin-top: var(--space-4);
+}
+
+/* ---------- Footer ---------- */
+
+/* A hairline border-top was tried first and cut — too subtle to read
+   as a real boundary. Solid --color-footer-bg (true black, a step
+   darker than the page's own charcoal) instead: a genuine band, not a
+   suggestion of one, no border needed to mark where it starts. Quiet
+   inside it either way — copyright + a contact link, nothing else. */
+.site-footer {
+  background: var(--color-footer-bg);
+  margin-top: var(--space-32);
+  padding-block: var(--space-32);
+}
+
+.footer-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-8);
+  text-align: center;
+}
+
+/* Plain, quiet — same meta-line treatment as other small print in the
+   app (drawer labels, date badge), not a sign-off moment. Margin
+   zeroed explicitly — same <p> default-margin leak as .header-tagline
+   (see there); .footer-inner's own `gap` already owns the spacing
+   around this, so any unreset browser default would just double up. */
+.footer-copyright {
+  font-family: var(--font-body);
+  font-size: var(--text-meta-size);
+  line-height: var(--text-meta-lh);
+  color: var(--color-text);
+  opacity: 0.45;
+  margin: 0;
+}
+
+/* Same opacity-brightens-on-hover language as the rest of the app's
+   text-only controls (Add Show, decline) — no underline, no border. */
+.footer-contact {
+  font-family: var(--font-data);
+  font-weight: 600;
+  font-size: var(--text-control-size);
+  line-height: var(--text-control-lh);
+  color: var(--color-text);
+  text-decoration: none;
+  opacity: 0.7;
+}
+
+.footer-contact:hover {
+  opacity: 1;
 }

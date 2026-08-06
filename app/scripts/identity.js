@@ -78,7 +78,7 @@ window.OTR = window.OTR || {};
   OTR.getGroupMembers = async function (groupId) {
     const { data, error } = await OTR.db
       .from('memberships')
-      .select('person_id, people(id, display_name)')
+      .select('person_id, people(id, display_name, avatar_color)')
       .eq('group_id', groupId);
 
     if (error) {
@@ -86,6 +86,48 @@ window.OTR = window.OTR || {};
       return [];
     }
     return data.map((row) => row.people);
+  };
+
+  // Member counts for a set of groups, keyed by group_id — powers the
+  // small "N members" subtitle under each row in the group switcher
+  // dropdown. One query for every group's count rather than one query
+  // per group, same reasoning as getResponsesForShows.
+  OTR.getGroupMemberCounts = async function (groupIds) {
+    if (!groupIds || groupIds.length === 0) return {};
+
+    const { data, error } = await OTR.db
+      .from('memberships')
+      .select('group_id')
+      .in('group_id', groupIds);
+
+    if (error) {
+      console.error('Failed to fetch group member counts:', error);
+      return {};
+    }
+
+    const counts = {};
+    data.forEach((row) => {
+      counts[row.group_id] = (counts[row.group_id] || 0) + 1;
+    });
+    return counts;
+  };
+
+  // Updates the current person's chosen avatar color — see
+  // supabase/migrations/2026-07-21-add-avatar-color.sql. Picked from a
+  // fixed palette (AVATAR_COLORS in index.html), not a free color
+  // picker, so every choice stays legible against both the light card
+  // surface and the drawer's charcoal.
+  OTR.updatePersonColor = async function (personId, color) {
+    const { error } = await OTR.db
+      .from('people')
+      .update({ avatar_color: color })
+      .eq('id', personId);
+
+    if (error) {
+      console.error('Failed to update avatar color:', error);
+      return false;
+    }
+    return true;
   };
 
   // Creates a new group and makes the current person its first member.
@@ -143,6 +185,25 @@ window.OTR = window.OTR || {};
 
     if (error) {
       console.error('Failed to join group:', error);
+      return false;
+    }
+    return true;
+  };
+
+  // Removes the current person from a group — the inverse of
+  // joinGroup, wired to the group modal's "Leave group" button.
+  // Memberships have no id of their own surfaced to the client, just
+  // the group_id+person_id pair, so a plain delete keyed on both is
+  // enough.
+  OTR.leaveGroup = async function (personId, groupId) {
+    const { error } = await OTR.db
+      .from('memberships')
+      .delete()
+      .eq('group_id', groupId)
+      .eq('person_id', personId);
+
+    if (error) {
+      console.error('Failed to leave group:', error);
       return false;
     }
     return true;

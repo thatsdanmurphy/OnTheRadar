@@ -1,10 +1,10 @@
-# Brand Brief: On the Radar
+# Brand Brief: Gig Herd
 
 ## The Concept
 A friend-group concert board that surfaces overlap: when two or more friends are curious about the same show, it rises to the top — automatically.
 
 ## The Audience
-A tight friend group with genuinely different music taste, who trust each other's ear but don't track the same artists. People who'd go to a show *because* a friend is going, if only they knew.
+A tight friend group who already trust each other's ear — not because their taste is different, but because everyone's got their own eye on different venues and artists, and someone's always finding out about a show first. That's how the group stays close to the scene together. Gig Herd just gives that a place to land: everyone's signal counts the same, and a show surfacing just means two or more people noticed it independently.
 
 ## The Voice
 Direct. Unfussy. Low-key excited.
@@ -16,16 +16,24 @@ CBGB. A shitty old bar with one working light. Joe Strummer, Kurt Cobain, Elliot
 
 **Guardrail:** the feeling should come from restraint — contrast, silence, absence of ornament — not from literal objects standing in for a bar. No staples, no pushpins, no torn-paper edges, no fake photocopier grain, no distressed textures. The second you're rendering a graphic of a staple, you've made a theme park version of a dive bar instead of the real thing. Punk isn't a costume on the interface. It's the interface having nothing to hide behind.
 
+**Where this brand pulls against a real dependency:** the fastest, and currently only realistic, way to search shows leans on Ticketmaster's API — the company a jury found liable for monopolizing live-event ticketing (DOJ v. Live Nation, April 2026), which is about as far from CBGB as a business gets. Worth naming honestly rather than pretending it's not there, but the practical call is to keep using it: there's no working alternative right now, and this needs a real artist-search path today. Not a phase-out plan — just an honest mismatch, left as-is on purpose.
+
 ## Typography
-- Display: bold condensed sans, no flourish — used for show titles and headline numbers
-- Data: monospace or typewriter-adjacent — used for dates, times, overlap counts. Feels hammered out, not designed.
-- Body: plain system sans — used for venue details, opener names, response states
+Two families. Free tier throughout (Google Fonts).
+- Display: Big Shoulders Display (900 only) — bold, poster-y, blunt and block-like. Headline duty only: the wordmark, section headings, hero/overlap numbers. Tried it on buttons, dates, avatars, and labels too — it was too loud everywhere at once, so it got pulled back to just the moments that should shout. The wordmark itself is now two-tone — "Gig" pink, "Herd" a cooler blue-green — see Color below.
+- Data + Body: Public Sans (400/600/700), one face for both roles, told apart by size/case/tracking rather than a typeface swap. Data (dates, times, counts, buttons, labels) is 12px, uppercase, letter-spaced — that carries the "hammered out, not designed" feel on its own, no separate face needed. Body (venue details, opener names, response states) is 16px, sentence case. A mono typeface was considered and dropped — mono is played out right now.
 
 ## Color
-- Background: true white or near-black — pick one and commit, no "paper" tint
-- Primary accent: one ink color (warm rose-pink — between a shock pink and salmon, still reads as pink first), used only to mark overlap — never decorative
-- Text: pure black or pure white depending on background — max contrast, no gray-on-gray
-- Rule: flat, full stop. No gradients, no glow, no pulse, no drop shadows standing in for depth. Nothing in the UI should look like it's imitating a physical object.
+Dark now — deliberately, on purpose, called for explicitly. (An earlier dark-page pass got reverted because it was a misread of an ambiguous request; this is a different, specific ask, not a repeat of that.)
+- Background: charcoal (`#211f1a`) — the base the whole page sits on now, not a light chip color floating on a light page. The room's dark; a bar with one working light, per the CBGB reference above, not a newsprint flyer anymore.
+- Cards + drawer: one step lighter than the page (`#2b2924`) — "raised," not "light." This is the direct opposite move from the light-mode era (cards were lighter *toward white*); here they're lighter *toward the page*, staying in the dark register the whole time rather than jumping to a light surface.
+- Filled/active chips (buttons, active toggle states): flipped to a light paper fill (`#ebe8e1` bg, `#211f1a` text) — the one place a "light" surface still exists. On an all-dark page, this is what has to pop for something to read as interactive/active; it's the same duotone logic as before, just inverted polarity, not a new decorative color.
+- **Primary accent — one pink, unified everywhere.** `--color-accent` (`#f3596e`) now marks overlap, colors the wordmark's "Gig," and is the hover fill on the header avatar trigger — one value, not three approximations of the same idea. This is a deliberate change from the "pink means overlap, nowhere else" rule that held through several earlier passes: the wordmark briefly ran its own separate `--color-logo-pink` token (first a direct-match reference swatch, then a desaturated variant tuned to the green's tone/value) specifically to keep that rule airtight, but the result was several near-identical pinks that read as slightly-off versions of each other rather than a deliberate palette. Called out explicitly, not a quiet drift: `--color-logo-pink` is now just an alias for `--color-accent`, so "pink means overlap" is no longer strictly true — pink now also means "logo" and "interactive hover" — worth naming honestly since it reverses a rule stated a few passes ago. "Herd" keeps its own dedicated `--color-logo-green` (`#8dc63f`), still pinned to the London Calling / Elvis Presley cover homage. Wordmark set tight with no space between the words, sized a step larger than a standard heading (30px) for presence in the header. Flat fills, no glow — a neon-glow pass on "Herd" was tried and cut earlier.
+- Secondary — army green (`#6b8e23`): atmosphere only now, no functional job. It used to be one of the eight avatar-palette options; that palette got retuned (see below) and army green's muted register didn't fit the new set, so it dropped out. Kept as a token in case it's needed again, not currently referenced anywhere in the UI.
+- **Avatar color palette** (eight swatches, `AVATAR_COLORS` in `app/index.html`): people can color their own avatar dot so who's who is legible at a glance. Fixed, curated list, not a free picker. Pink is still excluded outright — even with the overlap-only rule relaxed above, letting pink into a "pick any of these" pool would still make an avatar dot visually indistinguishable from the overlap marker/logo/hover states it's now shared across. "Paper" (`#ebe8e1`) stays the neutral default — it used to be charcoal (matched the old uniform dot on a light page), which is now invisible on a charcoal page. The other seven — Rust, Amber, Moss, Jade, Sky, Indigo, Violet — were retuned to sit at the logo's own tone/value (~54% saturation, ~51% lightness, matching `--color-logo-green`), just spread across different hues, so every avatar color reads as a sibling of the logo rather than an unrelated grab-bag (the earlier set mixed muted teal/slate/wine/mustard tones with no shared register). Green's own hue and the whole pink range are skipped so no swatch gets mistaken for the logo or the overlap marker. Text color per dot is computed per-swatch (luminance check, charcoal or white, whichever actually reads) rather than fixed, since the palette still spans from near-white (Paper) to fairly dark (Indigo, Violet).
+- Text: warm paper (`#ebe8e1`) on both the page and cards — the old page-background color is now just the ink, sitting on top of what used to be the ink's color. Full inversion, not a fresh color choice.
+- Header nav: no visible container anymore — no fill, no border, the drop-shadow exception from the light-mode era is gone too, since there's no light-surface-on-light-page problem left to solve with it. It just sits on the page's own charcoal, airy rather than boxed off.
+- Rule: flat, full stop — no exceptions currently standing. A glow effect on the wordmark was tried and cut (see above); no gradients, no pulse, no drop shadows standing in for depth anywhere in the app. Nothing in the UI should look like it's imitating a physical object.
 
 ## The Metaphor
 A flyer wall, but only in spirit — every show is one flyer among many, and overlap is the one two people noticed. It shows up in how things are named and how sparse the layout is, not in how things are drawn. If you can point at a UI element and say "that's supposed to look like tape," it's wrong.

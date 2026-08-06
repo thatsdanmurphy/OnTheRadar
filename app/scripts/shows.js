@@ -28,7 +28,7 @@ window.OTR = window.OTR || {};
 
     const { data, error } = await OTR.db
       .from('responses')
-      .select('show_id, person_id, status, people(display_name)')
+      .select('show_id, person_id, status, people(display_name, avatar_color)')
       .in('show_id', showIds);
 
     if (error) {

@@ -1,4 +1,4 @@
-# On the Radar — project brief
+# Gig Herd — project brief
 
 A friend-group concert board. Everyone adds shows they're curious about, even ones nobody else has heard of. When two or more people land on the same show, it surfaces — solving the actual problem (not that concert-planning apps don't exist, but that friends with different taste never see each other's shows).
 
@@ -22,4 +22,4 @@ Checked Spotify (has a "find gig buddies" feature request, unbuilt), Bandsintown
 4. **Ticketing integration?** Right now this only tracks interest — does it ever link through to actual purchase, or stay intentionally separate from ticketing?
 
 ## Suggested project instructions (paste into "Set project instructions")
-> You're helping me build "On the Radar," a concert-planning app for a friend group. The core mechanic: everyone adds shows they're curious about, and when 2+ friends want the same show, it surfaces automatically — solving the problem that friends with different music taste never see each other's shows. Keep visual style flat and minimal: no gradients, no glow/pulse animation, thin shadows only, ticket-stub/marquee identity established in the prototype. Build as vanilla HTML/CSS/JS artifacts I can open directly — show working prototypes rather than describing changes, and iterate fast based on my reactions rather than asking a lot of clarifying questions upfront.
+> You're helping me build "Gig Herd," a concert-planning app for a friend group. The core mechanic: everyone adds shows they're curious about, and when 2+ friends want the same show, it surfaces automatically — solving the problem that friends with different music taste never see each other's shows. Keep visual style flat and minimal: no gradients, no glow/pulse animation, thin shadows only, ticket-stub/marquee identity established in the prototype. Build as vanilla HTML/CSS/JS artifacts I can open directly — show working prototypes rather than describing changes, and iterate fast based on my reactions rather than asking a lot of clarifying questions upfront.

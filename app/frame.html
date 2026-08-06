@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>On the Radar — Frame</title>
+<title>Gig Herd — Frame</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@900&family=Public+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles/tokens.css">
 <link rel="stylesheet" href="styles/grid.css">
 <style>
@@ -20,7 +20,7 @@
 
   header.frame-header h1 {
     font-family: var(--font-display);
-    font-weight: 700;
+    font-weight: 900;
     font-size: var(--text-display-size);
     line-height: var(--text-display-lh);
     text-transform: uppercase;
@@ -44,7 +44,7 @@
 
   section.frame-section > h2 {
     font-family: var(--font-display);
-    font-weight: 700;
+    font-weight: 900;
     font-size: var(--text-head-size);
     line-height: var(--text-head-lh);
     text-transform: uppercase;
@@ -72,8 +72,8 @@
     font-size: var(--text-meta-size);
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    background: var(--color-bg-inverse);
-    color: var(--color-text-inverse);
+    background: var(--color-chip-bg);
+    color: var(--color-chip-text);
     border: none;
     padding: var(--space-8) var(--space-16);
     cursor: pointer;
@@ -81,6 +81,7 @@
 
   .grid-toggle:hover {
     background: var(--color-accent);
+    color: var(--color-chip-text);
   }
 
   #grid-overlay {
@@ -135,12 +136,13 @@
   .type-sample.meta   { font-family: var(--font-data); font-size: var(--text-meta-size); line-height: var(--text-meta-lh); text-transform: uppercase; letter-spacing: 0.04em; }
   .type-sample.body   { font-family: var(--font-body); font-size: var(--text-body-size); line-height: var(--text-body-lh); }
   .type-sample.sub    { font-family: var(--font-body); font-weight: 600; font-size: var(--text-sub-size); line-height: var(--text-sub-lh); }
-  .type-sample.head   { font-family: var(--font-display); font-weight: 700; font-size: var(--text-head-size); line-height: var(--text-head-lh); text-transform: uppercase; }
-  .type-sample.display{ font-family: var(--font-display); font-weight: 700; font-size: var(--text-display-size); line-height: var(--text-display-lh); text-transform: uppercase; }
+  .type-sample.head   { font-family: var(--font-display); font-weight: 900; font-size: var(--text-head-size); line-height: var(--text-head-lh); text-transform: uppercase; }
+  .type-sample.display{ font-family: var(--font-display); font-weight: 900; font-size: var(--text-display-size); line-height: var(--text-display-lh); text-transform: uppercase; }
 
   /* --- Grid demo columns --- */
   .demo-col {
-    background: var(--color-bg);
+    background: var(--color-surface);
+    color: var(--color-surface-text);
     border: 1px solid var(--color-border);
     padding: var(--space-16);
     font-family: var(--font-data);
@@ -152,6 +154,37 @@
   .measure-demo {
     border: 1px solid var(--color-border);
     padding: var(--space-16);
+  }
+
+  /* --- Color swatches --- */
+  .color-row {
+    display: flex;
+    gap: var(--space-16);
+    flex-wrap: wrap;
+  }
+
+  .color-swatch {
+    width: 160px;
+  }
+
+  .color-swatch .chip {
+    height: 96px;
+    border: 1px solid var(--color-border);
+    margin-bottom: var(--space-8);
+  }
+
+  .color-swatch .label {
+    font-family: var(--font-data);
+    font-size: var(--text-meta-size);
+    line-height: var(--text-meta-lh);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .color-swatch .hex {
+    font-family: var(--font-data);
+    font-size: var(--text-meta-size);
+    opacity: 0.6;
   }
 </style>
 </head>
@@ -167,7 +200,7 @@
 
 <header class="frame-header">
   <div class="container">
-    <h1>On the Radar — Frame</h1>
+    <h1>Gig Herd — Frame</h1>
     <p>Spacing, type, and grid tokens — 4/8/12 columns, mobile to desktop. No components yet — this is the baseline everything else builds on.</p>
   </div>
 </header>
@@ -181,27 +214,64 @@
   </section>
 
   <section class="frame-section">
+    <h2>Color</h2>
+    <p class="note">Dark, deliberately this time (an earlier dark-page pass was a misread and got reverted — this one was asked for specifically, with its own direction). Page and cards both live in the charcoal register now; cards read as "raised" one step lighter. Filled/active chips (buttons, active toggle states) flip to a light paper fill to still pop off an all-dark page. Pink is unified now, not overlap-exclusive — one `--color-accent` value colors the overlap marker, the wordmark's "Gig," and the header avatar's hover state; "Herd" keeps its own dedicated green. No glow anywhere, logo included — a glow pass on "Herd" was tried and cut. Army green is atmosphere only — it dropped out of the avatar-color palette when that set got retuned to the logo's own tone/value.</p>
+    <div class="color-row">
+      <div class="color-swatch">
+        <div class="chip" style="background: var(--color-bg); border: 1px solid var(--color-border);"></div>
+        <div class="label">Charcoal — page bg</div>
+        <div class="hex">#211f1a</div>
+      </div>
+      <div class="color-swatch">
+        <div class="chip" style="background: var(--color-surface); border: 1px solid var(--color-border);"></div>
+        <div class="label">Card + drawer fill</div>
+        <div class="hex">#2b2924</div>
+      </div>
+      <div class="color-swatch">
+        <div class="chip" style="background: var(--color-chip-bg);"></div>
+        <div class="label">Paper — filled/active chips</div>
+        <div class="hex">#ebe8e1</div>
+      </div>
+      <div class="color-swatch">
+        <div class="chip" style="background: var(--color-accent);"></div>
+        <div class="label">Pink — overlap, logo "Gig", nav hover (unified)</div>
+        <div class="hex">#f3596e</div>
+      </div>
+      <div class="color-swatch">
+        <div class="chip" style="background: var(--color-logo-green);"></div>
+        <div class="label">Logo green — "Herd" only</div>
+        <div class="hex">#8dc63f</div>
+      </div>
+      <div class="color-swatch">
+        <div class="chip" style="background: var(--color-secondary);"></div>
+        <div class="label">Army green — atmosphere</div>
+        <div class="hex">#6b8e23</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="frame-section">
     <h2>Type scale</h2>
-    <p class="note">Five sizes, three faces. Line-heights land on spacing tokens (16 / 24 / 24 / 32 / 48) so text stacks cleanly against everything else on the page.</p>
+    <p class="note">Five sizes, two faces. Big Shoulders Display is headline-only now (wordmark, section heads, hero numbers) — data and body share Public Sans, told apart by size, case, and tracking instead of a typeface swap. Line-heights land on spacing tokens (16 / 24 / 24 / 32 / 48) so text stacks cleanly against everything else on the page.</p>
 
     <div class="type-specimen">
-      <div class="type-meta">12 / 16<br>Space Mono</div>
+      <div class="type-meta">12 / 16<br>Public Sans, uppercase + tracked</div>
       <div class="type-sample meta">JUL 16 — 8:00 PM — 3 CURIOUS</div>
     </div>
     <div class="type-specimen">
-      <div class="type-meta">16 / 24<br>System sans</div>
+      <div class="type-meta">16 / 24<br>Public Sans</div>
       <div class="type-sample body">The Sinclair, Cambridge. Doors at 7, openers TBA. This is the default reading size — venue details, response labels, anything you're actually reading.</div>
     </div>
     <div class="type-specimen">
-      <div class="type-meta">20 / 24<br>System sans, semibold</div>
+      <div class="type-meta">20 / 24<br>Public Sans, semibold</div>
       <div class="type-sample sub">Show card title sits here</div>
     </div>
     <div class="type-specimen">
-      <div class="type-meta">24 / 32<br>Archivo Black</div>
+      <div class="type-meta">24 / 32<br>Big Shoulders Display</div>
       <div class="type-sample head">Section heading</div>
     </div>
     <div class="type-specimen">
-      <div class="type-meta">40 / 48<br>Archivo Black</div>
+      <div class="type-meta">40 / 48<br>Big Shoulders Display</div>
       <div class="type-sample display">3 overlap</div>
     </div>
   </section>

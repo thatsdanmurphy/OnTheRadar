@@ -22,59 +22,145 @@
   --space-72: 72px;
 
   /* --- Color ---------------------------------------------
-     True black / true white. One ink color, and it only ever
-     means one thing: overlap. Never used decoratively. */
-  --color-bg: #ffffff;
-  --color-bg-inverse: #0a0a0a;
-  --color-text: #0a0a0a;
-  --color-text-inverse: #ffffff;
-  --color-accent: #f2547e;   /* overlap marker — nowhere else */
-  --color-border: #0a0a0a;
+     Back to dark — this time deliberate and specific, not the
+     earlier misread. Page and cards both live in the dark register
+     now: --color-bg is the charcoal itself (not a light page with a
+     dark chip floating on it), --color-surface is one step lighter
+     for cards/drawer/header context to read as "raised" against it.
+     That flips what "filled chip" (buttons, active toggle states,
+     the calendar's weekday header) needs to be to still pop: a light
+     paper fill now, not a dark one — see --color-chip-bg/-text below.
+     --color-text-inverse stays pinned to white regardless of any of
+     this; it's specifically "white text for a colored/dark fill"
+     (avatar dots, the overlap badge), which stays true independent
+     of which way the page itself is going.
+     Pink used to be split into two tokens — --color-accent for overlap
+     (plus nav hover states) and a separate --color-logo-pink for "Gig"
+     — on the theory that keeping them apart protected "pink means
+     overlap" as a strict UI rule. Explicitly unified now, per direct
+     request: too many pinks reading as slightly-off versions of each
+     other, not a deliberate pair. --color-logo-pink is just an alias
+     for --color-accent below, so the wordmark, the overlap marker, and
+     the header avatar's hover state are all guaranteed to be the exact
+     same pink going forward, not three approximations of one idea.
+     This does relax the old "overlap only" rule — worth naming
+     honestly rather than pretending the rule still holds. "Herd" keeps
+     its own --color-logo-green, still pinned to the London Calling /
+     Elvis Presley cover homage. Flat fills, no glow (a glow pass on
+     "Herd" was tried and cut — "no glow, full stop" held). Army green
+     (--color-secondary) stays a separate, more muted tone — atmosphere,
+     not the wordmark. */
+  --color-bg: #211f1a;              /* charcoal — the page itself now, not a chip color */
+  --color-bg-inverse: #211f1a;      /* legacy alias, mostly vestigial now — see --color-chip-bg for the thing that used to live here */
+  --color-text: #ebe8e1;            /* warm paper — the old page color, now just the ink */
+  --color-text-inverse: #ffffff;    /* pure white — text on avatar dots / overlap badge specifically, not page-level */
+  --color-accent: #f3596e;          /* overlap marker — nowhere else, not even the logo anymore */
+  --color-border: rgba(235, 232, 225, 0.18); /* translucent paper hairline — a solid charcoal border would vanish on a charcoal page */
+  --color-secondary: #6b8e23;       /* army green — atmosphere only, one job as an avatar-color option */
+  --color-logo-pink: var(--color-accent); /* "Gig" in the wordmark — unified with the overlap/nav-hover pink, not its own value anymore */
+  --color-logo-green: #8dc63f;      /* "Herd" in the wordmark — London Calling / Elvis-cover chartreuse green */
+  --color-surface: #2b2924;         /* card + drawer + header-context fill — one step lighter than the page, not darker */
+  --color-surface-text: #ebe8e1;    /* warm paper — text/icons for anything sitting on --color-surface */
+  --color-chip-bg: #ebe8e1;         /* filled/active chip fill (buttons, active toggle, calendar header) — light, since it needs to pop off an all-dark page now */
+  --color-chip-text: #211f1a;       /* charcoal text on the light chip */
+  --color-footer-bg: var(--color-bg); /* true black was tried and felt harsh next to the page's own charcoal — turns out --color-bg (#211f1a) already *is* the more-charcoal tone that was wanted, so the footer just reuses it directly instead of introducing a second near-black value */
+  /* Tint/scrim tokens — found scattered as duplicate rgba() literals
+     across components.css (drawer overlay, modal overlay, several
+     hover/active fills), each one hand-typing the decimal RGB of a
+     color that already had a hex token above. color-mix() derives
+     them straight from --color-bg/--color-text instead, so there's
+     one source of truth per color, not a hex value and a matching
+     rgba() that can quietly drift apart. Also collapsed two near-
+     identical hover opacities (0.06 and 0.08 for what were both just
+     "subtle hover") down to one. */
+  --color-scrim: color-mix(in srgb, var(--color-bg) 45%, transparent); /* flat dimming overlay — drawer + modal scrims share this */
+  --tint-hover: color-mix(in srgb, var(--color-text) 8%, transparent); /* subtle hover fill on a dark surface */
+  --tint-active: color-mix(in srgb, var(--color-text) 10%, transparent); /* selected/active fill — group rows, outline-button hover, search results */
+  --tint-active-strong: color-mix(in srgb, var(--color-text) 30%, transparent); /* stronger border variant, paired with --tint-active for a selected state */
+  --radius: 8px;                    /* corner radius for boxed elements — cards, buttons, inputs, segmented controls */
 
   /* --- Type families ---------------------------------------
-     Three roles, three faces. Body stays a system stack on
-     purpose — no webfont weight for the thing people read most.
-     Display is Archivo Black: heaviest free weight available,
-     blunt and block-like rather than condensed/athletic — reads
-     as loud without leaning on a specific "gig poster" cliché. */
-  --font-display: 'Archivo Black', 'Arial Black', sans-serif;  /* titles, headline numbers */
-  --font-data: 'Space Mono', 'Courier New', monospace;        /* dates, times, counts */
-  --font-body: -apple-system, BlinkMacSystemFont,
-               'Helvetica Neue', Arial, sans-serif;           /* everything you read */
+     Two families, and now only one of them does double duty. Big
+     Shoulders Display stays headline-only (wordmark, section heads,
+     hero numbers) — it's a loud, poster-y face, and it turned out to
+     be too much everywhere else: buttons, dates, avatars, labels.
+     Data and body are now the same face, Public Sans, told apart by
+     size/case/tracking rather than a typeface swap — meta stays 12px
+     uppercase + tracked, body stays 16px sentence case. One quieter
+     workhorse instead of three (or two) competing voices. */
+  --font-display: 'Big Shoulders Display', 'Arial Black', sans-serif;  /* titles, headline numbers — only */
+  --font-data: 'Public Sans', -apple-system, BlinkMacSystemFont,
+               'Helvetica Neue', Arial, sans-serif;                    /* dates, times, counts, buttons, labels */
+  --font-body: 'Public Sans', -apple-system, BlinkMacSystemFont,
+               'Helvetica Neue', Arial, sans-serif;                    /* everything you read */
 
   /* --- Type scale --------------------------------------------
      Five sizes. Line-heights are spacing tokens, not new values —
      the type rhythm and the layout rhythm are the same rhythm.
      size / line-height / ratio / font / role
-     12  / 16 / 1.33  — Space Mono          — meta: timestamps, counts, labels
-     16  / 24 / 1.5   — system sans (body)  — default reading size
-     20  / 24 / 1.2   — system sans (body, semibold) — card titles
-     24  / 32 / 1.33  — Archivo Black (display) — section headings
-     40  / 48 / 1.2   — Archivo Black (display) — hero numbers, page title */
+     12  / 16 / 1.33  — Public Sans, uppercase + tracked (data) — meta: timestamps, counts, labels
+     16  / 24 / 1.5   — Public Sans (body)  — default reading size
+     20  / 24 / 1.2   — Public Sans (body, semibold) — card titles
+     24  / 32 / 1.33  — Big Shoulders Display — section headings
+     40  / 48 / 1.2   — Big Shoulders Display — hero numbers, page title */
   --text-meta-size: 12px;     --text-meta-lh: var(--space-16);
+  /* Buttons/controls got their own size — 12px uppercase+tracked read
+     as genuinely too small and cramped once it was carrying every
+     button in the app, not just dates/labels. Meta stays 12px for
+     things you scan (dates, labels, timestamps); controls (anything
+     tappable) step up to 14px/600 weight so they read as substantial
+     tap targets instead of fine print. */
+  --text-control-size: 14px; --text-control-lh: var(--space-16);
   --text-body-size: 16px;     --text-body-lh: var(--space-24);
   --text-sub-size: 20px;      --text-sub-lh: var(--space-24);
   --text-head-size: 24px;     --text-head-lh: var(--space-32);
   --text-display-size: 40px;  --text-display-lh: var(--space-48);
+  /* One deliberate off-scale size, now at least a named token instead
+     of a bare 30px sitting in components.css: the wordmark reads small
+     at --text-head-size (24px) once it's two-tone, but the next rung
+     up (--text-display-size, 40px) is too loud for a header. Line-height
+     stays pinned to --text-head-lh (32px) — the bumped size still fits
+     comfortably under it. */
+  --text-wordmark-size: 30px;
+
+  /* --- Icons ---------------------------------------------------
+     Lucide (lucide.dev) is the app's standard iconset going forward —
+     plain <i data-lucide="name"> placeholders, swapped for inline SVG
+     at runtime by lucide.createIcons() (see index.html). One size
+     token for every icon-only control (drawer close, modal close,
+     share buttons) keeps them visually consistent instead of each
+     button guessing its own px value. Circular buttons that need a
+     bigger tap target (--space-40, --space-32) size the surrounding
+     button box, not the glyph — same convention the old text-glyph
+     buttons already used. */
+  --icon-size: 20px;
 
   /* --- Grid --------------------------------------------------
      4 columns mobile, 8 tablet, 12 desktop (the standard Material
      layout-grid split — these three counts share clean factors,
      so half/quarter spans divide evenly at every breakpoint; thirds
      only divide evenly at 12, so treat thirds as a desktop-only
-     pattern). Max-width keeps body text from sprawling past a
-     readable measure on big screens. */
+     pattern). --grid-columns itself is untouched at every breakpoint —
+     .col-half/.col-quarter/.col-third's "half always means half"
+     contract depends on it staying 4/8/12.
+     Max-width + margin are what actually control how wide the page
+     reads, independent of the column count above — margin got a real
+     bump at tablet and desktop (was --space-24/--space-32, both felt
+     close to edge-to-edge in practice) and max-width came down from
+     1200px, so the container reads closer to an 8-column measure with
+     real breathing room on both sides, even though the grid underneath
+     is still technically 12 columns at desktop. */
   --grid-columns: 4;
   --grid-margin: var(--space-16);
   --grid-gutter: var(--space-16);
-  --grid-max-width: 1200px;
+  --grid-max-width: 960px;
 }
 
 /* Tablet: 600px+ */
 @media (min-width: 600px) {
   :root {
     --grid-columns: 8;
-    --grid-margin: var(--space-24);
+    --grid-margin: var(--space-48);
     --grid-gutter: var(--space-16);
   }
 }
@@ -83,7 +169,7 @@
 @media (min-width: 1024px) {
   :root {
     --grid-columns: 12;
-    --grid-margin: var(--space-32);
+    --grid-margin: var(--space-72);
     --grid-gutter: var(--space-24);
   }
 }

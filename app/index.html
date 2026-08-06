@@ -3,16 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>On the Radar</title>
+<title>Gig Herd</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@900&family=Public+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles/tokens.css">
 <link rel="stylesheet" href="styles/grid.css">
 <link rel="stylesheet" href="styles/components.css">
 <!-- Supabase UMD build — plain global script, not a module, so this
      keeps working when the file is opened directly (file://). -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Lucide — the app's standard iconset going forward. Pinned to a
+     specific version rather than @latest per Lucide's own docs, so an
+     upstream release can't silently change/rename glyphs out from
+     under us. Usage: <i data-lucide="name"></i> placeholders, swapped
+     for inline SVG by lucide.createIcons() — called once for static
+     icons and again after any dynamic render that adds new
+     data-lucide elements (see script below). -->
+<script src="https://unpkg.com/lucide@1.29.0/dist/umd/lucide.min.js"></script>
 </head>
 <body>
 
@@ -25,7 +33,7 @@
 <div id="name-gate" style="display:none;">
   <div class="name-gate-center">
     <div class="name-gate-box">
-      <div class="wordmark" style="display: block;">On the Radar</div>
+      <div class="wordmark" style="display: block;"><span class="wordmark-gig">Gig</span><span class="wordmark-herd">Herd</span></div>
 
       <!-- Step 1: always shown first, same tagline either way. A
            second field (group name) appears only for a cold start —
@@ -71,122 +79,218 @@
      data. This is the first of three components (header, body
      container, footer) building up on the frame. -->
 <header class="site-header" id="site-header">
+  <!-- Grid, not flex — a flex-centered wordmark only centers visually
+       when both side elements are the same width. Now that the group
+       switcher has moved into the drawer (see below), the header's
+       right column just sits empty, but the grid's two 1fr side
+       columns still stay equal width regardless, so the wordmark
+       keeps landing dead center. -->
+  <div class="container header-row">
+    <!-- Same trigger, same drawer, just an avatar instead of a hamburger
+         glyph — "menu" is really "you" here (identity, groups, crew
+         all live behind it), so the icon should say that directly. -->
+    <button type="button" class="header-avatar-btn" id="hamburger-btn" aria-label="Open menu" aria-expanded="false" aria-controls="nav-drawer">
+      <span id="header-avatar-initials"></span>
+    </button>
+    <a href="index.html" class="wordmark"><span class="wordmark-gig">Gig</span><span class="wordmark-herd">Herd</span></a>
+  </div>
+  <!-- Same one-liner as the name gate, so the value prop shows up
+       everywhere the wordmark does, not just the first screen someone
+       sees. -->
   <div class="container">
-    <div class="row">
-      <div class="col-half">
-        <a href="index.html" class="wordmark">On the Radar</a>
-      </div>
-      <div class="col-half header-controls" style="justify-content: flex-end;">
-
-        <div class="group-switch-wrap">
-          <button class="group-switch" id="group-switch-btn">Loading…</button>
-          <div class="group-menu" id="group-menu"></div>
-        </div>
-
-        <div class="avatar-stack">
-          <div class="avatar-dots" id="avatar-dots"></div>
-          <div class="avatar-list" id="avatar-list"></div>
-        </div>
-
-      </div>
-    </div>
+    <p class="header-tagline">Line up shows with your pals.</p>
   </div>
 </header>
+
+<!-- ===== Nav drawer ===== -->
+<!-- Identity + group switcher — the group switcher moved back in here
+     (it briefly lived in the header as a dropdown). Inside a drawer, a
+     second click-to-open dropdown was redundant friction (you already
+     opened the drawer to get here), so it's a plain always-visible
+     list now, not a popover. A Crew section (plain member names) used
+     to sit below this and got cut — redundant with the per-show avatar
+     stacks and the group switcher's own "N members" subtitle. -->
+<div class="drawer-overlay" id="drawer-overlay"></div>
+<aside class="nav-drawer" id="nav-drawer" aria-hidden="true">
+  <div class="drawer-top">
+    <button type="button" class="drawer-close-btn" id="drawer-close-btn" aria-label="Close menu"><i data-lucide="x"></i></button>
+  </div>
+
+  <div class="drawer-section drawer-identity-section">
+    <div class="drawer-identity">
+      <div class="drawer-avatar" id="drawer-avatar"></div>
+      <div class="drawer-name" id="drawer-name"></div>
+    </div>
+    <!-- A fixed palette, not a free color picker — every option stays
+         legible white-on-color both on the light card surface and the
+         drawer's charcoal, which an arbitrary color couldn't promise.
+         Picking one writes straight to people.avatar_color and
+         re-renders every avatar on screen. -->
+    <div class="drawer-label">Your color</div>
+    <div class="avatar-color-picker" id="avatar-color-picker"></div>
+  </div>
+
+  <!-- Crew (a plain name list for the current group) lived here and
+       got cut — redundant with the per-show avatar stacks and the
+       group switcher's own "N members" subtitle, and it was the one
+       section in the drawer that didn't actually do anything when
+       tapped. -->
+  <div class="drawer-section drawer-section-last" id="group-bar" style="display:none;">
+    <div class="drawer-label">Your groups</div>
+    <div class="drawer-group-list" id="drawer-group-list"></div>
+    <button type="button" class="drawer-new-group-btn" id="drawer-new-group-btn">+ New group</button>
+  </div>
+</aside>
 
 <!-- ===== Body container ===== -->
 <!-- Show cards for the current group's shows — real data, wired to
      Supabase. Curious/out buttons write to the responses table
      immediately on click. Overlap count only counts curious. -->
 <main class="container show-list" id="main-content">
-  <div class="show-list-header">
-    <div class="view-toggle" id="view-toggle" style="display:none;">
-      <button type="button" class="view-toggle-btn active" data-view="list">List</button>
-      <button type="button" class="view-toggle-btn" data-view="calendar">Calendar</button>
-    </div>
-    <button type="button" id="add-show-btn" class="btn-solid" style="display:none;">+ Add show</button>
+  <div class="tab-bar" id="tab-bar" style="display:none;">
+    <button type="button" class="tab-btn active" data-tab="herd">Herd Picks</button>
+    <button type="button" class="tab-btn" data-tab="mine">My Shows</button>
   </div>
 
-  <!-- Lives on the main page, not the header's group-switcher menu —
-       that menu is ambiguous once someone's in more than one group,
-       since "current" isn't obvious from inside it. This is always
-       scoped to whichever group is actually being viewed. -->
-  <button type="button" id="invite-link-btn" class="link-btn invite-link-btn" style="display:none;">Invite a friend</button>
+  <!-- Add show + Invite sit side by side in one row — two peer actions,
+       Add Show carrying most of the width since it's the primary one.
+       Invite's visibility is tied to Add Show/tab-bar's own (all three
+       toggle together in selectGroup()) — sharing a group isn't
+       tab-specific, so it stays put across Herd Picks / My Shows even
+       though Add Show itself hides on My Shows. -->
+  <div class="show-list-actions">
+    <!-- Add show — one card, always. It doesn't hand off to a second
+         box when it opens; the same card grows/shrinks vertically in
+         place (CSS grid-rows trick — see .add-show-panel/.is-open in
+         components.css), toggled by the one button in its header. The
+         "+" rotates 45° into an "×" on open (pure CSS transform), so
+         that button is both the open and close control. -->
+    <div id="add-show-card" class="add-show-card" style="display:none;">
+      <button type="button" id="add-show-btn" class="add-show-toggle">
+        <span class="add-show-icon" id="add-show-icon">+</span>
+        <span class="add-show-label">Add a show</span>
+      </button>
 
-  <div id="add-show-panel" class="add-show-form" style="display:none;">
+      <div id="add-show-panel" class="add-show-panel">
+        <div class="add-show-panel-inner">
+        <div class="add-show-panel-content">
+        <!-- Method 1: search by artist name (Ticketmaster, New England) -->
+        <div class="form-row" id="search-method-row">
+          <label for="artist-search-input">Search artist</label>
+          <div class="inline-input-row">
+            <input type="text" id="artist-search-input" placeholder="Artist or show name">
+            <button type="button" id="artist-search-btn" class="btn-solid">Search</button>
+          </div>
+          <div id="artist-search-status" class="autofill-status"></div>
+          <div id="artist-search-results" class="search-results" style="display:none;"></div>
+        </div>
 
-    <!-- Method 1: search by artist name (Ticketmaster, New England) -->
-    <div class="form-row" id="search-method-row">
-      <label for="artist-search-input">Search artist</label>
-      <div class="inline-input-row">
-        <input type="text" id="artist-search-input" placeholder="Artist or show name">
-        <button type="button" id="artist-search-btn" class="btn-solid">Search</button>
+        <div class="add-show-alt-methods">
+          <button type="button" id="show-manual-method-btn" class="link-btn">or add manually</button>
+        </div>
+
+        <!-- Method 2: manual fields — also the fallback when search
+             doesn't return a usable title+date. When it does, the show
+             gets created straight from that data with no form shown at
+             all (see submitShowDirectly in the script below). The
+             "paste a link" method was cut — one fewer entry point,
+             search covers the common case. -->
+        <form id="add-show-form" style="display:none;">
+          <div class="form-row">
+            <label for="show-title">Show</label>
+            <input type="text" id="show-title" required placeholder="Artist / show title">
+          </div>
+          <div class="form-row">
+            <label for="show-date-input">Date</label>
+            <input type="date" id="show-date-input" required>
+          </div>
+          <div class="form-row">
+            <label for="show-venue-name">Venue</label>
+            <input type="text" id="show-venue-name" placeholder="Venue name" autocomplete="off">
+            <div id="venue-search-results" class="search-results" style="display:none;"></div>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn-solid">Add show</button>
+            <button type="button" id="cancel-add-show" class="btn-outline">Cancel</button>
+          </div>
+        </form>
       </div>
-      <div id="artist-search-status" class="autofill-status"></div>
-      <div id="artist-search-results" class="search-results" style="display:none;"></div>
+      </div>
+    </div>
     </div>
 
-    <div class="add-show-alt-methods">
-      <button type="button" id="show-link-method-btn" class="link-btn">or paste a link</button>
-      <button type="button" id="show-manual-method-btn" class="link-btn">or add manually</button>
-    </div>
-
-    <!-- Method 2: paste a link, autofill via server-side scrape -->
-    <div class="form-row" id="link-method-row" style="display:none;">
-      <label for="show-link-input">Show link</label>
-      <div class="inline-input-row">
-        <input type="url" id="show-link-input" placeholder="https://…">
-        <button type="button" id="link-autofill-btn" class="btn-solid">Autofill</button>
-      </div>
-      <div id="link-autofill-status" class="autofill-status"></div>
-    </div>
-
-    <!-- Method 3: manual fields — also the fallback when search/link
-         autofill doesn't return a usable title+date. When it does,
-         the show gets created straight from that data with no form
-         shown at all (see submitShowDirectly in the script below). -->
-    <form id="add-show-form" style="display:none;">
-      <div class="form-row">
-        <label for="show-title">Show</label>
-        <input type="text" id="show-title" required placeholder="Artist / show title">
-      </div>
-      <div class="form-row">
-        <label for="show-date-input">Date</label>
-        <input type="date" id="show-date-input" required>
-      </div>
-      <div class="form-row">
-        <label for="show-venue-name">Venue</label>
-        <input type="text" id="show-venue-name" placeholder="Venue name" autocomplete="off">
-        <div id="venue-search-results" class="search-results" style="display:none;"></div>
-      </div>
-      <div class="form-actions">
-        <button type="submit" class="btn-solid">Add show</button>
-        <button type="button" id="cancel-add-show" class="btn-outline">Cancel</button>
-      </div>
-    </form>
-
+    <!-- Secondary action — opens the group modal (invite / member list /
+         leave), rather than being a bare "Invite" button. Showing the
+         group's own name here (not a generic "Group" label) doubles as
+         a lightweight "you're looking at ___" indicator, since there's
+         no other on-page confirmation of which group is current once
+         you're scrolled past the drawer. -->
+    <button type="button" class="group-menu-btn" id="group-menu-btn" style="display:none;">
+      <span class="group-menu-name" id="group-menu-name"></span>
+      <span class="group-menu-subtitle">View members</span>
+    </button>
   </div>
 
   <div id="show-list-content" class="show-list-empty">Loading…</div>
-
-  <div id="calendar-view" style="display:none;">
-    <div class="calendar-nav">
-      <button type="button" id="calendar-prev" class="calendar-nav-btn">‹</button>
-      <div class="calendar-month-label" id="calendar-month-label"></div>
-      <button type="button" id="calendar-next" class="calendar-nav-btn">›</button>
-    </div>
-    <div class="calendar-grid" id="calendar-grid"></div>
-  </div>
-
-  <!-- Show detail — reached from a "View details" link on a list card
-       or by tapping a calendar bubble (calendar cells are too small to
-       hold the full response control, so this is where that lives). -->
-  <div id="show-detail-view" style="display:none;">
-    <button type="button" id="show-detail-back" class="link-btn" style="margin-bottom: var(--space-16);">‹ Back</button>
-    <div class="show-card" id="show-detail-card"></div>
-  </div>
 </main>
 
-<!-- ===== Footer — next up ===== -->
+<!-- ===== Who's in a group — avatar + name for everyone in either
+     response group, opened by clicking the group on a show card. Same
+     flat overlay language as the nav drawer's scrim. ===== -->
+<div class="modal-overlay" id="people-modal-overlay" style="display:none;">
+  <div class="modal-box" id="people-modal-box">
+    <div class="modal-top">
+      <div class="modal-title" id="people-modal-title"></div>
+      <button type="button" class="modal-close-btn" id="people-modal-close-btn" aria-label="Close"><i data-lucide="x"></i></button>
+    </div>
+    <div class="person-list" id="people-modal-list"></div>
+  </div>
+</div>
+
+<!-- ===== Group modal — opened from the secondary action beside Add
+     Show. Invite at the top (the most common reason to open this),
+     the member list in the middle (answers "who's actually in this
+     group," not just "who's responded to a show"), Leave group quiet
+     and last (a real but infrequent action — bottom-of-sheet, plain
+     text, not a filled/red button; this app has no destructive-red
+     token anywhere and one rare action didn't seem worth introducing
+     one for). Confirms via a plain window.confirm() before leaving —
+     same "reach for the browser's own primitive before building custom
+     chrome" approach already used for the clipboard-copy fallback. ===== -->
+<div class="modal-overlay" id="group-modal-overlay" style="display:none;">
+  <div class="modal-box" id="group-modal-box">
+    <div class="modal-top">
+      <div class="modal-title" id="group-modal-title"></div>
+      <button type="button" class="modal-close-btn" id="group-modal-close-btn" aria-label="Close"><i data-lucide="x"></i></button>
+    </div>
+
+    <button type="button" class="btn-solid group-modal-invite-btn" id="group-modal-invite-btn">
+      <i data-lucide="share"></i>
+      <span>Invite people</span>
+    </button>
+
+    <div class="group-modal-label">Members</div>
+    <div class="person-list" id="group-modal-member-list"></div>
+
+    <button type="button" class="group-modal-leave-btn" id="group-modal-leave-btn">Leave group</button>
+  </div>
+</div>
+
+<!-- ===== Footer — plain copyright + a way to reach out, nothing else.
+     No social icons, no legal boilerplate, no "About" page — the app
+     is friend-group scale, not a commercial product. A "Got an idea?
+     Tell us" feedback line was tried and cut as too cute for what's
+     really just a contact link. Solid black band (--color-footer-bg),
+     not a hairline on the page's own charcoal — a real separation, not
+     a suggestion of one. Contact is a bare mailto: link, not a form —
+     there's no email service or backend for one in this app's stack,
+     and a link that just opens your own mail client doesn't need one. ===== -->
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <p class="footer-copyright">© 2026 Gig Herd</p>
+    <a class="footer-contact" href="mailto:dmurphy.dpm@gmail.com?subject=Gig%20Herd">Contact</a>
+  </div>
+</footer>
 
 <!-- Plain scripts, not modules — see supabase/client.js for why.
      Load order matters: client.js defines OTR.db before identity.js
@@ -195,8 +299,8 @@
 <script src="scripts/identity.js"></script>
 <script src="scripts/shows.js"></script>
 <script>
-  const { getPerson, createPerson, getMyGroups, getGroupMembers, createGroup, getGroupBySlug, joinGroup } = OTR;
-  const { getShowsForGroup, getResponsesForShows, overlapCount, setResponse, createShow, parseShowLink, searchShows, searchVenues } = OTR;
+  const { getPerson, createPerson, getMyGroups, getGroupMembers, getGroupMemberCounts, createGroup, getGroupBySlug, joinGroup, leaveGroup, updatePersonColor } = OTR;
+  const { getShowsForGroup, getResponsesForShows, overlapCount, setResponse, createShow, searchShows, searchVenues } = OTR;
 
   const nameGate = document.getElementById('name-gate');
   const nameGateForm = document.getElementById('name-gate-form');
@@ -215,158 +319,368 @@
   const siteHeader = document.getElementById('site-header');
   const mainContent = document.getElementById('main-content');
 
-  const viewToggle = document.getElementById('view-toggle');
+  const tabBar = document.getElementById('tab-bar');
+  const groupMenuBtn = document.getElementById('group-menu-btn');
+  const groupMenuName = document.getElementById('group-menu-name');
   const listContent = document.getElementById('show-list-content');
-  const calendarView = document.getElementById('calendar-view');
-  const calendarPrevBtn = document.getElementById('calendar-prev');
-  const calendarNextBtn = document.getElementById('calendar-next');
 
-  const showDetailView = document.getElementById('show-detail-view');
-  const showDetailBackBtn = document.getElementById('show-detail-back');
-  const showDetailCard = document.getElementById('show-detail-card');
+  const peopleModalOverlay = document.getElementById('people-modal-overlay');
+  const peopleModalTitle = document.getElementById('people-modal-title');
+  const peopleModalList = document.getElementById('people-modal-list');
+  const peopleModalCloseBtn = document.getElementById('people-modal-close-btn');
 
-  const switchBtn = document.getElementById('group-switch-btn');
-  const groupMenu = document.getElementById('group-menu');
-  const inviteLinkBtn = document.getElementById('invite-link-btn');
-  const avatarDots = document.getElementById('avatar-dots');
-  const avatarList = document.getElementById('avatar-list');
+  const groupModalOverlay = document.getElementById('group-modal-overlay');
+  const groupModalTitle = document.getElementById('group-modal-title');
+  const groupModalCloseBtn = document.getElementById('group-modal-close-btn');
+  const groupModalInviteBtn = document.getElementById('group-modal-invite-btn');
+  const groupModalMemberList = document.getElementById('group-modal-member-list');
+  const groupModalLeaveBtn = document.getElementById('group-modal-leave-btn');
+
+  // Nav drawer — identity + whole-crew list. Group switching lives in
+  // the always-visible group bar under the header instead (see below).
+  const hamburgerBtn = document.getElementById('hamburger-btn');
+  const headerAvatarInitials = document.getElementById('header-avatar-initials');
+  const avatarColorPicker = document.getElementById('avatar-color-picker');
+  const drawerOverlay = document.getElementById('drawer-overlay');
+  const navDrawer = document.getElementById('nav-drawer');
+  const drawerCloseBtn = document.getElementById('drawer-close-btn');
+  const drawerAvatar = document.getElementById('drawer-avatar');
+  const drawerName = document.getElementById('drawer-name');
+
+  // Group list — lives inside the drawer now (was a header dropdown).
+  const groupBar = document.getElementById('group-bar');
+  const drawerGroupList = document.getElementById('drawer-group-list');
+  const drawerNewGroupBtn = document.getElementById('drawer-new-group-btn');
+
+  const addShowCard = document.getElementById('add-show-card');
   const addShowBtn = document.getElementById('add-show-btn');
   const addShowPanel = document.getElementById('add-show-panel');
   const addShowForm = document.getElementById('add-show-form');
   const cancelAddShow = document.getElementById('cancel-add-show');
+
+  // One card the whole time — `.is-open` on the outer card is what
+  // drives both the icon's 45° rotation and the panel's grow/shrink
+  // (a CSS grid-rows trick, 0fr closed → 1fr open — see .add-show-panel
+  // in components.css), so opening/closing reads as this one card
+  // animating, not a second box appearing underneath it.
+  function openAddShowModal() {
+    addShowCard.classList.add('is-open');
+    addShowCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+  function closeAddShowModal() {
+    addShowCard.classList.remove('is-open');
+  }
 
   const artistSearchInput = document.getElementById('artist-search-input');
   const artistSearchBtn = document.getElementById('artist-search-btn');
   const artistSearchStatus = document.getElementById('artist-search-status');
   const artistSearchResults = document.getElementById('artist-search-results');
 
-  const showLinkMethodBtn = document.getElementById('show-link-method-btn');
   const showManualMethodBtn = document.getElementById('show-manual-method-btn');
-  const linkMethodRow = document.getElementById('link-method-row');
-  const showLinkInput = document.getElementById('show-link-input');
-  const linkAutofillBtn = document.getElementById('link-autofill-btn');
-  const linkAutofillStatus = document.getElementById('link-autofill-status');
 
   const venueNameInput = document.getElementById('show-venue-name');
   const venueSearchResults = document.getElementById('venue-search-results');
 
   let currentGroupId = null;
   let currentGroup = null;
+  let myGroups = [];
   let selectedVenueUrl = null;
   let selectedSourceUrl = null;
   let venueSearchTimer = null;
-  let viewMode = 'list';
-  let calendarMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  let activeTab = 'herd';
 
   function initials(name) {
     return name.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
   }
 
-  // Self-contained avatar stack: dots that expand to a plain name list.
-  // Used in the header (whole crew) and on each show card (who's in).
-  // Each instance manages its own open/closed state via closure, so
-  // multiple stacks on the page don't collide.
-  function buildAvatarStack(people) {
-    const wrap = document.createElement('div');
-    wrap.className = 'avatar-stack';
+  // Shared invite-link logic — was duplicated inline on the name-gate's
+  // "Copy invite link" button; now the one place any share control
+  // (name-gate, the tab-bar CTA, each drawer group row) builds the
+  // link and writes it to the clipboard. Placeholder ?g=<slug> link
+  // structure — real domain/slug work comes later once a real URL
+  // domain is set up; this just reuses what already existed. Returns
+  // whether the clipboard write succeeded, so callers can show their
+  // own success feedback (a text swap on the name-gate button, a
+  // brief icon swap on icon-only buttons) without duplicating the
+  // try/catch here.
+  async function copyInviteLink(slug) {
+    const link = `${window.location.origin}${window.location.pathname}?g=${slug}`;
+    try {
+      await navigator.clipboard.writeText(link);
+      return true;
+    } catch {
+      window.prompt('Copy this invite link:', link);
+      return false;
+    }
+  }
 
+  // Brief checkmark swap for icon-only share buttons (no text label to
+  // swap to "Copied!" the way the name-gate button does). Re-runs
+  // lucide.createIcons() scoped to the button itself so only its one
+  // icon gets replaced, not the whole page.
+  function flashShareSuccess(btn) {
+    btn.innerHTML = '<i data-lucide="check"></i>';
+    lucide.createIcons({ root: btn });
+    setTimeout(() => {
+      btn.innerHTML = '<i data-lucide="share"></i>';
+      lucide.createIcons({ root: btn });
+    }, 1500);
+  }
+
+  // Fixed palette for avatar dots — not a free color picker. Pink is
+  // deliberately excluded; it stays reserved for overlap/logo/hover
+  // (see tokens.css). First entry is the DB default — used to be
+  // charcoal (matched the old uniform dot on a light page), but that's
+  // invisible now that the page itself is charcoal, so the default
+  // became "Paper" instead: a neutral, un-chosen look that actually
+  // shows up against a dark background.
+  //
+  // The other seven are tuned to the logo's own tone/value — same
+  // saturation (~54%) and lightness (~51%) as --color-logo-green —
+  // just spread across different hues, so every avatar color reads as
+  // a sibling of the logo instead of an unrelated grab-bag (the old
+  // set mixed muted teal/slate/wine/mustard tones that didn't share
+  // any register with the wordmark). Green's own hue and the whole
+  // pink range are skipped so no swatch gets mistaken for the logo or
+  // the overlap marker.
+  const AVATAR_COLORS = [
+    { hex: '#ebe8e1', name: 'Paper' },
+    { hex: '#c66c3f', name: 'Rust' },
+    { hex: '#c6a43f', name: 'Amber' },
+    { hex: '#61c63f', name: 'Moss' },
+    { hex: '#3fc6a4', name: 'Jade' },
+    { hex: '#3fa4c6', name: 'Sky' },
+    { hex: '#3f56c6', name: 'Indigo' },
+    { hex: '#773fc6', name: 'Violet' },
+  ];
+
+  function avatarColor(p) {
+    return (p && p.avatar_color) || AVATAR_COLORS[0].hex;
+  }
+
+  // Picking a single fixed text color for every avatar dot doesn't
+  // work once "Paper" (near-white) is in the palette alongside dark
+  // swatches like Wine or Graphite — white-on-white and charcoal-on-
+  // charcoal are both real failure cases. This computes perceived
+  // luminance per swatch and returns whichever of charcoal/white
+  // actually reads on top of it.
+  function contrastTextFor(hex) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance > 0.6 ? '#211f1a' : '#ffffff';
+  }
+
+  // Plain row of avatar dots, each filled with that person's own
+  // chosen color (see AVATAR_COLORS) instead of a uniform charcoal, so
+  // who's who is legible at a glance. No click-to-expand here anymore
+  // — that's now a shared modal opened at the group level (see
+  // buildResponseGroup/openPeopleModal below), not a per-stack dropdown.
+  function buildAvatarDots(people) {
     const dots = document.createElement('div');
     dots.className = 'avatar-dots';
-    const list = document.createElement('div');
-    list.className = 'avatar-list';
-
     people.forEach((p) => {
       const dot = document.createElement('div');
       dot.className = 'avatar-dot';
+      const color = avatarColor(p);
+      dot.style.background = color;
+      dot.style.color = contrastTextFor(color);
       dot.textContent = initials(p.display_name);
       dots.appendChild(dot);
+    });
+    return dots;
+  }
 
+  // Shared avatar + name row builder — used by both the who's-in-this-
+  // response-group modal (below) and the group modal's member list, so
+  // the two don't drift into two slightly different "list of people"
+  // implementations.
+  function renderPersonList(container, people) {
+    container.innerHTML = '';
+    people.forEach((p) => {
       const item = document.createElement('div');
-      item.textContent = p.display_name;
-      list.appendChild(item);
-    });
+      item.className = 'person-list-item';
 
-    dots.addEventListener('click', (e) => {
-      e.stopPropagation();
-      list.classList.toggle('open');
-    });
-
-    wrap.appendChild(dots);
-    wrap.appendChild(list);
-    return wrap;
-  }
-
-  function renderGroupMenu(groups) {
-    groupMenu.innerHTML = '';
-    groups.forEach(g => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.textContent = g.name;
-      btn.addEventListener('click', () => selectGroup(g));
-      groupMenu.appendChild(btn);
-    });
-
-    const newBtn = document.createElement('button');
-    newBtn.type = 'button';
-    newBtn.textContent = '+ New group';
-    newBtn.addEventListener('click', handleNewGroup);
-    groupMenu.appendChild(newBtn);
-  }
-
-  async function renderAvatars(groupId) {
-    const members = await getGroupMembers(groupId);
-    avatarDots.innerHTML = '';
-    avatarList.innerHTML = '';
-    members.forEach(p => {
       const dot = document.createElement('div');
       dot.className = 'avatar-dot';
+      const color = avatarColor(p);
+      dot.style.background = color;
+      dot.style.color = contrastTextFor(color);
       dot.textContent = initials(p.display_name);
-      avatarDots.appendChild(dot);
+      item.appendChild(dot);
 
-      const item = document.createElement('div');
-      item.textContent = p.display_name;
-      avatarList.appendChild(item);
+      const name = document.createElement('div');
+      name.textContent = p.display_name;
+      item.appendChild(name);
+
+      container.appendChild(item);
     });
   }
+
+  // Who's in a group — avatar + name rows in a modal, opened by
+  // clicking either response group on a show card (see
+  // buildResponseGroup). Same list for every group; only the title and
+  // people differ per call.
+  function openPeopleModal(title, people) {
+    peopleModalTitle.textContent = title;
+    renderPersonList(peopleModalList, people);
+    peopleModalOverlay.style.display = 'flex';
+  }
+
+  function closePeopleModal() {
+    peopleModalOverlay.style.display = 'none';
+  }
+
+  peopleModalCloseBtn.addEventListener('click', closePeopleModal);
+  peopleModalOverlay.addEventListener('click', (e) => {
+    if (e.target === peopleModalOverlay) closePeopleModal();
+  });
+
+  // Group modal — the current group's own management surface: invite,
+  // full member list (not just who's responded to a show), leave.
+  // Opened from .group-menu-btn beside Add Show.
+  async function openGroupModal() {
+    if (!currentGroup) return;
+    groupModalTitle.textContent = currentGroup.name;
+    const members = await getGroupMembers(currentGroup.id);
+    renderPersonList(groupModalMemberList, members);
+    groupModalOverlay.style.display = 'flex';
+  }
+
+  function closeGroupModal() {
+    groupModalOverlay.style.display = 'none';
+  }
+
+  groupMenuBtn.addEventListener('click', openGroupModal);
+  groupModalCloseBtn.addEventListener('click', closeGroupModal);
+  groupModalOverlay.addEventListener('click', (e) => {
+    if (e.target === groupModalOverlay) closeGroupModal();
+  });
+
+  // Invite, from inside the group modal — same shared copyInviteLink()
+  // helper every other share affordance uses. Has a real text label
+  // (unlike the icon-only share buttons elsewhere), so success is a
+  // text swap, same pattern as the name-gate's own "Copy invite link".
+  groupModalInviteBtn.addEventListener('click', async () => {
+    const ok = await copyInviteLink(currentGroup.slug);
+    if (!ok) return;
+    const label = groupModalInviteBtn.querySelector('span');
+    const original = label.textContent;
+    label.textContent = 'Copied!';
+    setTimeout(() => { label.textContent = original; }, 1500);
+  });
+
+  // Leave group — confirms first (window.confirm(), same "reach for
+  // the browser's own primitive" approach as the clipboard fallback
+  // elsewhere), then removes the membership, drops the group from
+  // myGroups, and either lands on the next remaining group or falls
+  // back to the same zero-groups empty state afterPerson() shows a
+  // brand-new person.
+  groupModalLeaveBtn.addEventListener('click', async () => {
+    if (!currentGroup) return;
+    const confirmed = window.confirm(`Leave ${currentGroup.name}? You can rejoin later with an invite link.`);
+    if (!confirmed) return;
+
+    const left = await leaveGroup(person.id, currentGroup.id);
+    if (!left) return;
+
+    closeGroupModal();
+    myGroups = myGroups.filter((g) => g.id !== currentGroup.id);
+
+    if (myGroups.length === 0) {
+      currentGroup = null;
+      currentGroupId = null;
+      drawerGroupList.innerHTML = '';
+      groupBar.style.display = 'none';
+      groupMenuBtn.style.display = 'none';
+      tabBar.style.display = 'none';
+      addShowCard.style.display = 'none';
+      renderEmptyState(document.getElementById('show-list-content'), 'Create a group to start adding shows.');
+      return;
+    }
+
+    await selectGroup(myGroups[0]);
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    if (peopleModalOverlay.style.display === 'flex') closePeopleModal();
+    if (groupModalOverlay.style.display === 'flex') closeGroupModal();
+  });
+
+  // Group list — lives inside the drawer, plain always-visible rows
+  // (not a dropdown; that got tried in the header and then moved back
+  // here, where a second click-to-open step was redundant on top of
+  // already opening the drawer). Active group gets a tonal highlight,
+  // never the pink accent, which stays reserved for overlap and
+  // nowhere else. Each row shows a small "N members" subtitle. Re-run
+  // any time groups or the current group changes.
+  async function renderGroupSwitcher(groups) {
+    const counts = await getGroupMemberCounts(groups.map((g) => g.id));
+
+    drawerGroupList.innerHTML = '';
+    groups.forEach(g => {
+      // Row is a plain div now, not a button — it needs to hold two
+      // independent controls (select group / share that group's
+      // invite link), and a button can't contain a nested button.
+      // The row keeps the card shape (border, radius, padding) that
+      // used to live on the button itself.
+      const row = document.createElement('div');
+      row.className = 'drawer-group-row';
+      if (g.id === currentGroupId) row.classList.add('active');
+
+      const selectBtn = document.createElement('button');
+      selectBtn.type = 'button';
+      selectBtn.className = 'drawer-group-select';
+
+      const name = document.createElement('span');
+      name.className = 'group-switch-item-name';
+      name.textContent = g.name;
+      selectBtn.appendChild(name);
+
+      const count = counts[g.id] || 0;
+      const subtitle = document.createElement('span');
+      subtitle.className = 'group-switch-item-count';
+      subtitle.textContent = `${count} member${count === 1 ? '' : 's'}`;
+      selectBtn.appendChild(subtitle);
+
+      selectBtn.addEventListener('click', () => selectGroup(g));
+      row.appendChild(selectBtn);
+
+      const shareBtn = document.createElement('button');
+      shareBtn.type = 'button';
+      shareBtn.className = 'drawer-group-share';
+      shareBtn.setAttribute('aria-label', `Share invite link for ${g.name}`);
+      shareBtn.innerHTML = '<i data-lucide="share"></i>';
+      shareBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const ok = await copyInviteLink(g.slug);
+        if (ok) flashShareSuccess(shareBtn);
+      });
+      row.appendChild(shareBtn);
+
+      drawerGroupList.appendChild(row);
+    });
+
+    lucide.createIcons({ root: drawerGroupList });
+  }
+
+  drawerNewGroupBtn.addEventListener('click', handleNewGroup);
 
   async function selectGroup(group) {
     currentGroup = group;
-    switchBtn.textContent = `${group.name} ▾`;
-    groupMenu.classList.remove('open');
     currentGroupId = group.id;
-    addShowBtn.style.display = 'inline-block';
-    viewToggle.style.display = 'inline-flex';
-    inviteLinkBtn.style.display = 'inline-block';
-    await renderAvatars(group.id);
+    groupBar.style.display = 'block';
+    await renderGroupSwitcher(myGroups);
+    closeDrawer();
+    tabBar.style.display = 'flex';
+    groupMenuName.textContent = group.name;
+    groupMenuBtn.style.display = 'flex';
     await renderCurrentView(group.id);
   }
 
-  inviteLinkBtn.addEventListener('click', async () => {
-    if (!currentGroup) return;
-    const link = `${window.location.origin}${window.location.pathname}?g=${currentGroup.slug}`;
-    try {
-      await navigator.clipboard.writeText(link);
-      inviteLinkBtn.textContent = 'Copied!';
-      setTimeout(() => { inviteLinkBtn.textContent = 'Invite a friend'; }, 1500);
-    } catch {
-      // Clipboard API needs a secure context (https, or localhost —
-      // not file://). Fall back to a prompt so it's still copyable.
-      window.prompt('Copy this invite link:', link);
-    }
-  });
-
   let person = null;
-
-  // "$45", "$45–$120" — null if there's no price data at all, so the
-  // caller can just skip the price line entirely rather than show a
-  // misleading "$0" or an empty range.
-  function formatPriceRange(min, max, currency) {
-    if (min == null) return null;
-    const symbol = !currency || currency === 'USD' ? '$' : `${currency} `;
-    const fmt = (n) => (Number.isInteger(n) ? n : Number(n).toFixed(2));
-    if (max == null || max === min) return `${symbol}${fmt(min)}`;
-    return `${symbol}${fmt(min)}–${symbol}${fmt(max)}`;
-  }
 
   function formatDate(dateStr, timeStr) {
     const d = new Date(`${dateStr}T${timeStr || '00:00'}`);
@@ -385,61 +699,188 @@
     return { shows, responsesByShow };
   }
 
+  // "Herd Picks" is the full group list; "My Shows" filters down to
+  // shows this person has personally marked curious — resolves what
+  // had been a flagged-but-unbuilt feature (see component-map.md).
   async function renderCurrentView(groupId) {
     const { shows, responsesByShow } = await loadGroupData(groupId);
-    if (viewMode === 'calendar') {
-      renderCalendarView(shows, responsesByShow);
-    } else {
-      renderListView(shows, responsesByShow);
-    }
+    const visibleShows = activeTab === 'mine'
+      ? shows.filter((s) => (responsesByShow[s.id] || []).some((r) => r.person_id === person.id && r.status === 'curious'))
+      : shows;
+    const emptyMessage = activeTab === 'mine' ? "You haven't marked any shows yet." : 'No shows yet.';
+    // Adding a show is a Herd Picks action — My Shows is a personal
+    // filter over the same list, not a place to create new shows from.
+    // The group menu (invite/members/leave) rides along with it — both
+    // are "manage the group" actions, not something My Shows needs.
+    addShowCard.style.display = activeTab === 'herd' ? 'block' : 'none';
+    groupMenuBtn.style.display = activeTab === 'herd' ? 'flex' : 'none';
+    renderListView(visibleShows, responsesByShow, emptyMessage);
   }
 
-  // Shared between the list card and the show detail view — title,
-  // venue, openers, who's-in avatars, and the response control. Kept
-  // in one place so the two surfaces can't drift apart.
+  // One labeled avatar group — reused for both "Heck yeah!" (curious)
+  // and "Can't make it" (out), same shape either way: a small header
+  // label, everyone in that group except me, and a fixed slot for my
+  // own status that's either a ghost "+" (tap to join this list) or my
+  // filled dot (if I'm already in it). Symmetric by design: whichever
+  // list I haven't joined shows its ghost, so I can always switch.
+  // Clicking anywhere else on the group (label, avatars, my own dot)
+  // opens a modal with everyone in it, name + avatar — the ghost "+"
+  // stops that click from bubbling up, since tapping it is a different
+  // action (joining), not "show me who's here."
+  function buildResponseGroup(label, peopleExceptMe, amIIn, joinAriaLabel, onJoin, allPeople) {
+    const group = document.createElement('div');
+    group.className = 'avatar-group';
+
+    const labelEl = document.createElement('div');
+    labelEl.className = 'avatar-group-label';
+    labelEl.textContent = label;
+    group.appendChild(labelEl);
+
+    const row = document.createElement('div');
+    row.className = 'avatar-group-row';
+
+    if (peopleExceptMe.length > 0) {
+      row.appendChild(buildAvatarDots(peopleExceptMe));
+    }
+
+    const mySlot = document.createElement('div');
+    mySlot.className = 'avatar-my-slot';
+
+    if (amIIn) {
+      const myDot = document.createElement('div');
+      myDot.className = 'avatar-dot';
+      const myColor = avatarColor(person);
+      myDot.style.background = myColor;
+      myDot.style.color = contrastTextFor(myColor);
+      myDot.textContent = initials(person.display_name);
+      mySlot.appendChild(myDot);
+    } else {
+      const ghostAdd = document.createElement('button');
+      ghostAdd.type = 'button';
+      ghostAdd.className = 'avatar-ghost-add';
+      ghostAdd.textContent = '+';
+      ghostAdd.setAttribute('aria-label', joinAriaLabel);
+      ghostAdd.addEventListener('click', (e) => {
+        e.stopPropagation();
+        onJoin();
+      });
+      mySlot.appendChild(ghostAdd);
+    }
+    row.appendChild(mySlot);
+
+    group.appendChild(row);
+
+    if (allPeople.length > 0) {
+      group.classList.add('avatar-group-clickable');
+      group.addEventListener('click', () => openPeopleModal(label, allPeople));
+    }
+
+    return group;
+  }
+
+  // No drill-down page yet — the detail-arrow/onViewDetails hook that
+  // used to sit on the headline (and the separate detail page it
+  // opened) was cut. Everything worth seeing lives right on the card;
+  // revisit a real detail page if that stops being true.
   function renderShowInteractiveBody(container, show, responses, onResponseChange) {
     const mine = responses.find((r) => r.person_id === person.id);
     const interested = responses.filter((r) => r.status === 'curious');
 
-    container.innerHTML = `
-      <div class="show-title">${show.source_url ? `<a href="${show.source_url}" target="_blank" rel="noopener">${show.title}</a>` : show.title}</div>
-      ${show.venue_name ? `<div class="show-venue">${show.venue_url ? `<a href="${show.venue_url}" target="_blank" rel="noopener">${show.venue_name}</a>` : show.venue_name}</div>` : ''}
-      ${show.openers ? `<div class="show-openers">with ${show.openers}</div>` : ''}
-    `;
+    container.innerHTML = '';
 
-    if (interested.length > 0) {
-      const avatarRow = document.createElement('div');
-      avatarRow.className = 'show-card-avatars';
-      avatarRow.appendChild(buildAvatarStack(interested.map((r) => r.people)));
-      container.appendChild(avatarRow);
+    const titleRow = document.createElement('div');
+    titleRow.className = 'show-title-row';
+    const titleEl = document.createElement('div');
+    titleEl.className = 'show-title';
+    titleEl.innerHTML = show.source_url
+      ? `<a href="${show.source_url}" target="_blank" rel="noopener">${show.title}</a>`
+      : show.title;
+    titleRow.appendChild(titleEl);
+    container.appendChild(titleRow);
+
+    if (show.venue_name) {
+      const venue = document.createElement('div');
+      venue.className = 'show-venue';
+      venue.innerHTML = show.venue_url
+        ? `<a href="${show.venue_url}" target="_blank" rel="noopener">${show.venue_name}</a>`
+        : show.venue_name;
+      container.appendChild(venue);
     }
 
-    const responseRow = document.createElement('div');
-    responseRow.className = 'show-responses';
+    if (show.openers) {
+      const openers = document.createElement('div');
+      openers.className = 'show-openers';
+      openers.textContent = `with ${show.openers}`;
+      container.appendChild(openers);
+    }
 
-    [['curious', 'Curious'], ['out', "I'm out"]].forEach(([status, label]) => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'resp-btn';
-      btn.dataset.status = status;
-      btn.textContent = label;
-      if (mine && mine.status === status) btn.classList.add('active');
-      btn.addEventListener('click', async () => {
-        const ok = await setResponse(show.id, person.id, status);
+    // Two labeled groups, side by side: who's curious ("Heck yeah!")
+    // and who can't make it ("Can't make it") — each with its own
+    // ghost "+" slot, so joining either list is the same gesture in
+    // the same shape, not a stack of avatars plus a separate text
+    // button. Replaces the old single row + "Can't make it" button.
+    const avatarRow = document.createElement('div');
+    avatarRow.className = 'show-card-avatars';
+
+    const curiousExceptMe = interested.filter((r) => r.person_id !== person.id).map((r) => r.people);
+    const declined = responses.filter((r) => r.status === 'out');
+    const declinedExceptMe = declined.filter((r) => r.person_id !== person.id).map((r) => r.people);
+
+    avatarRow.appendChild(buildResponseGroup(
+      'Heck yeah!',
+      curiousExceptMe,
+      !!(mine && mine.status === 'curious'),
+      "I'm curious",
+      async () => {
+        const ok = await setResponse(show.id, person.id, 'curious');
         if (ok) await onResponseChange();
-      });
-      responseRow.appendChild(btn);
-    });
+      },
+      interested.map((r) => r.people)
+    ));
 
-    container.appendChild(responseRow);
+    const cantMakeItGroup = buildResponseGroup(
+      "Can't make it",
+      declinedExceptMe,
+      !!(mine && mine.status === 'out'),
+      "Can't make it",
+      async () => {
+        const ok = await setResponse(show.id, person.id, 'out');
+        if (ok) await onResponseChange();
+      },
+      declined.map((r) => r.people)
+    );
+    cantMakeItGroup.classList.add('avatar-group-declined');
+    avatarRow.appendChild(cantMakeItGroup);
+
+    container.appendChild(avatarRow);
   }
 
-  function renderListView(shows, responsesByShow) {
+  // Plain text, no pill — see .show-date-badge in components.css.
+  function buildDateBadge(show) {
+    const badge = document.createElement('div');
+    badge.className = 'show-date-badge';
+    badge.textContent = formatDate(show.show_date, show.show_time);
+    return badge;
+  }
+
+  // Empty stage, waiting for a show — a flat, single-color guitar
+  // silhouette (headstock, neck, figure-8 body from two overlapping
+  // filled circles, soundhole punched through with the page's own
+  // background color), used for every "nothing here yet" moment: no
+  // shows, no shows in this tab, no group yet. Flat fill, no
+  // gradient/shadow, per the brand's flat-full-stop rule.
+  const EMPTY_STATE_ICON = '<svg viewBox="0 0 64 64"><rect x="27" y="2" width="10" height="9" rx="2" fill="currentColor"/><rect x="30" y="10" width="4" height="24" fill="currentColor"/><circle cx="32" cy="37" r="9" fill="currentColor"/><circle cx="32" cy="50" r="12" fill="currentColor"/><circle cx="32" cy="43" r="3.5" fill="var(--color-bg)"/></svg>';
+
+  function renderEmptyState(container, message) {
+    container.className = 'show-list-empty';
+    container.innerHTML = `<div class="show-list-empty-icon">${EMPTY_STATE_ICON}</div><div>${message}</div>`;
+  }
+
+  function renderListView(shows, responsesByShow, emptyMessage) {
     const content = listContent;
 
     if (shows.length === 0) {
-      content.className = 'show-list-empty';
-      content.textContent = 'No shows yet.';
+      renderEmptyState(content, emptyMessage || 'No shows yet.');
       return;
     }
 
@@ -455,247 +896,42 @@
       card.className = 'show-card';
       if (mine && mine.status === 'out') card.classList.add('is-out');
 
-      const top = document.createElement('div');
-      top.className = 'show-card-top';
-      const dateEl = document.createElement('div');
-      dateEl.className = 'show-date';
-      dateEl.textContent = formatDate(show.show_date, show.show_time);
-      top.appendChild(dateEl);
+      card.appendChild(buildDateBadge(show));
+
       if (overlap >= 2) {
+        const top = document.createElement('div');
+        top.className = 'show-card-top';
         const badge = document.createElement('div');
         badge.className = 'show-overlap';
         badge.textContent = `${overlap} overlap`;
         top.appendChild(badge);
+        card.appendChild(top);
       }
-      card.appendChild(top);
 
       const body = document.createElement('div');
       card.appendChild(body);
       renderShowInteractiveBody(body, show, responses, () => renderCurrentView(currentGroupId));
 
-      const detailBtn = document.createElement('button');
-      detailBtn.type = 'button';
-      detailBtn.className = 'link-btn show-detail-link';
-      detailBtn.textContent = 'View details';
-      detailBtn.addEventListener('click', () => openShowDetail(show.id));
-      card.appendChild(detailBtn);
-
       content.appendChild(card);
     });
   }
 
-  // Formats show_time ("19:30:00") down to something that fits a
-  // calendar cell — "7:30 PM" rather than a full date+time string.
-  function formatTimeShort(timeStr) {
-    const d = new Date(`2000-01-01T${timeStr}`);
-    return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-  }
-
-  async function openShowDetail(showId) {
-    if (!currentGroupId) return;
-    const { shows, responsesByShow } = await loadGroupData(currentGroupId);
-    const show = shows.find((s) => s.id === showId);
-    if (!show) return;
-
-    viewToggle.style.display = 'none';
-    addShowBtn.style.display = 'none';
-    listContent.style.display = 'none';
-    calendarView.style.display = 'none';
-    showDetailView.style.display = 'block';
-
-    renderShowDetail(show, responsesByShow[show.id] || []);
-  }
-
-  function renderShowDetail(show, responses) {
-    const mine = responses.find((r) => r.person_id === person.id);
-    const overlap = overlapCount(responses);
-
-    showDetailCard.className = 'show-card';
-    if (mine && mine.status === 'out') showDetailCard.classList.add('is-out');
-    showDetailCard.innerHTML = '';
-
-    const top = document.createElement('div');
-    top.className = 'show-card-top';
-    const dateEl = document.createElement('div');
-    dateEl.className = 'show-date';
-    dateEl.textContent = formatDate(show.show_date, show.show_time);
-    top.appendChild(dateEl);
-    if (overlap >= 2) {
-      const badge = document.createElement('div');
-      badge.className = 'show-overlap';
-      badge.textContent = `${overlap} overlap`;
-      top.appendChild(badge);
-    }
-    showDetailCard.appendChild(top);
-
-    if (show.price_min != null || show.source_url || show.spotify_url) {
-      const meta = document.createElement('div');
-      meta.className = 'show-detail-meta';
-
-      const priceText = formatPriceRange(show.price_min, show.price_max, show.price_currency);
-      if (priceText) {
-        const price = document.createElement('div');
-        price.className = 'show-detail-price';
-        price.textContent = priceText;
-        meta.appendChild(price);
-      }
-
-      if (show.source_url) {
-        const buyBtn = document.createElement('a');
-        buyBtn.href = show.source_url;
-        buyBtn.target = '_blank';
-        buyBtn.rel = 'noopener';
-        buyBtn.className = 'btn-solid show-detail-buy';
-        buyBtn.textContent = 'Buy tickets';
-        meta.appendChild(buyBtn);
-      }
-
-      if (show.spotify_url) {
-        const spotifyLink = document.createElement('a');
-        spotifyLink.href = show.spotify_url;
-        spotifyLink.target = '_blank';
-        spotifyLink.rel = 'noopener';
-        spotifyLink.className = 'link-btn';
-        spotifyLink.textContent = 'Listen on Spotify';
-        meta.appendChild(spotifyLink);
-      }
-
-      showDetailCard.appendChild(meta);
-    }
-
-    const body = document.createElement('div');
-    showDetailCard.appendChild(body);
-
-    renderShowInteractiveBody(body, show, responses, async () => {
-      const { shows, responsesByShow } = await loadGroupData(currentGroupId);
-      const updated = shows.find((s) => s.id === show.id);
-      if (updated) renderShowDetail(updated, responsesByShow[updated.id] || []);
-    });
-  }
-
-  function closeShowDetail() {
-    showDetailView.style.display = 'none';
-    viewToggle.style.display = 'inline-flex';
-    addShowBtn.style.display = 'inline-block';
-    listContent.style.display = viewMode === 'list' ? '' : 'none';
-    calendarView.style.display = viewMode === 'calendar' ? 'block' : 'none';
-  }
-
-  showDetailBackBtn.addEventListener('click', closeShowDetail);
-
-  const CALENDAR_WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-  const CALENDAR_MAX_VISIBLE = 2;
-
-  function renderCalendarView(shows, responsesByShow) {
-    const grid = document.getElementById('calendar-grid');
-    const label = document.getElementById('calendar-month-label');
-
-    const year = calendarMonth.getFullYear();
-    const month = calendarMonth.getMonth();
-    label.textContent = calendarMonth
-      .toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-      .toUpperCase();
-
-    const showsByDate = {};
-    shows.forEach((show) => {
-      if (!showsByDate[show.show_date]) showsByDate[show.show_date] = [];
-      showsByDate[show.show_date].push(show);
-    });
-
-    grid.innerHTML = '';
-    CALENDAR_WEEKDAYS.forEach((wd) => {
-      const cell = document.createElement('div');
-      cell.className = 'calendar-weekday';
-      cell.textContent = wd;
-      grid.appendChild(cell);
-    });
-
-    const firstOfMonth = new Date(year, month, 1);
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const startWeekday = firstOfMonth.getDay();
-
-    for (let i = 0; i < startWeekday; i++) {
-      const blank = document.createElement('div');
-      blank.className = 'calendar-day is-empty';
-      grid.appendChild(blank);
-    }
-
-    for (let day = 1; day <= daysInMonth; day++) {
-      const cell = document.createElement('div');
-      cell.className = 'calendar-day';
-
-      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-
-      const num = document.createElement('div');
-      num.className = 'calendar-day-number';
-      num.textContent = day;
-      cell.appendChild(num);
-
-      const dayShows = showsByDate[dateStr] || [];
-      if (dayShows.length > 0) cell.classList.add('has-shows');
-
-      dayShows.slice(0, CALENDAR_MAX_VISIBLE).forEach((show) => {
-        const responses = responsesByShow[show.id] || [];
-        const overlap = overlapCount(responses);
-
-        // Bubble = something's happening (Google/Apple-calendar style),
-        // not the full title — the title lives on the detail page a
-        // tap away, since a cell this small can't hold it legibly.
-        const row = document.createElement('button');
-        row.type = 'button';
-        row.className = 'calendar-show' + (overlap >= 2 ? ' has-overlap' : '');
-        row.innerHTML = `<span class="calendar-show-dot"></span><span class="calendar-show-label">${show.show_time ? formatTimeShort(show.show_time) : show.title}</span>`;
-        row.addEventListener('click', () => openShowDetail(show.id));
-        cell.appendChild(row);
-      });
-
-      if (dayShows.length > CALENDAR_MAX_VISIBLE) {
-        const more = document.createElement('div');
-        more.className = 'calendar-more';
-        more.textContent = `+${dayShows.length - CALENDAR_MAX_VISIBLE} more`;
-        cell.appendChild(more);
-      }
-
-      grid.appendChild(cell);
-    }
-
-    const totalCells = startWeekday + daysInMonth;
-    const trailing = (7 - (totalCells % 7)) % 7;
-    for (let i = 0; i < trailing; i++) {
-      const blank = document.createElement('div');
-      blank.className = 'calendar-day is-empty';
-      grid.appendChild(blank);
-    }
-  }
-
-  viewToggle.querySelectorAll('.view-toggle-btn').forEach((btn) => {
+  // Herd Picks / My Shows tab switch — bold label + underline handled
+  // purely by the .active class, no fill/background swap.
+  tabBar.querySelectorAll('.tab-btn').forEach((btn) => {
     btn.addEventListener('click', async () => {
-      viewMode = btn.dataset.view;
-      viewToggle.querySelectorAll('.view-toggle-btn').forEach((b) => b.classList.toggle('active', b === btn));
-      listContent.style.display = viewMode === 'list' ? '' : 'none';
-      calendarView.style.display = viewMode === 'calendar' ? 'block' : 'none';
+      activeTab = btn.dataset.tab;
+      tabBar.querySelectorAll('.tab-btn').forEach((b) => b.classList.toggle('active', b === btn));
       if (currentGroupId) await renderCurrentView(currentGroupId);
     });
   });
 
-  calendarPrevBtn.addEventListener('click', async () => {
-    calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1);
-    if (currentGroupId) await renderCurrentView(currentGroupId);
-  });
-
-  calendarNextBtn.addEventListener('click', async () => {
-    calendarMonth = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1);
-    if (currentGroupId) await renderCurrentView(currentGroupId);
-  });
-
   async function handleNewGroup() {
-    groupMenu.classList.remove('open');
     const name = window.prompt('Name this group:', '')?.trim();
     if (!name) return;
     const group = await createGroup(person.id, name);
     if (!group) return;
-    const groups = await getMyGroups(person.id);
-    renderGroupMenu(groups);
+    myGroups = await getMyGroups(person.id);
     await selectGroup(group);
   }
 
@@ -717,19 +953,56 @@
     return group;
   }
 
-  async function afterPerson() {
-    const joinedGroup = await handleGroupJoinFromUrl(person.id);
-    const groups = await getMyGroups(person.id);
+  // Colors both places "you" show up as a filled dot (drawer avatar,
+  // header trigger) with your chosen color, and (re)builds the swatch
+  // picker with the current choice ringed. Called on load and again
+  // any time the color changes, since a change also has to ripple out
+  // to every show card's avatar row (handled by the caller re-running
+  // renderCurrentView after this).
+  function renderMyAvatarChrome() {
+    const color = avatarColor(person);
+    const textColor = contrastTextFor(color);
+    drawerAvatar.style.setProperty('--avatar-color', color);
+    drawerAvatar.style.color = textColor;
+    drawerAvatar.textContent = initials(person.display_name);
+    hamburgerBtn.style.setProperty('--avatar-color', color);
+    hamburgerBtn.style.color = textColor;
+    headerAvatarInitials.textContent = initials(person.display_name);
 
-    if (groups.length === 0) {
-      switchBtn.textContent = 'No groups yet ▾';
-      renderGroupMenu([]);
-      document.getElementById('show-list-content').textContent = 'Create a group to start adding shows.';
+    avatarColorPicker.innerHTML = '';
+    AVATAR_COLORS.forEach((c) => {
+      const swatch = document.createElement('button');
+      swatch.type = 'button';
+      swatch.className = 'avatar-color-swatch' + (color === c.hex ? ' active' : '');
+      swatch.style.background = c.hex;
+      swatch.setAttribute('aria-label', c.name);
+      swatch.addEventListener('click', async () => {
+        if (avatarColor(person) === c.hex) return;
+        const ok = await updatePersonColor(person.id, c.hex);
+        if (!ok) return;
+        person.avatar_color = c.hex;
+        renderMyAvatarChrome();
+        if (currentGroupId) await renderCurrentView(currentGroupId);
+      });
+      avatarColorPicker.appendChild(swatch);
+    });
+  }
+
+  async function afterPerson() {
+    drawerName.textContent = person.display_name;
+    renderMyAvatarChrome();
+
+    const joinedGroup = await handleGroupJoinFromUrl(person.id);
+    myGroups = await getMyGroups(person.id);
+
+    if (myGroups.length === 0) {
+      groupBar.style.display = 'none';
+      groupMenuBtn.style.display = 'none';
+      renderEmptyState(document.getElementById('show-list-content'), 'Create a group to start adding shows.');
       return;
     }
 
-    const targetGroup = groups.find((g) => g.id === joinedGroup?.id) || groups[0];
-    renderGroupMenu(groups);
+    const targetGroup = myGroups.find((g) => g.id === joinedGroup?.id) || myGroups[0];
     await selectGroup(targetGroup);
   }
 
@@ -788,44 +1061,57 @@
   });
 
   nameGateCopyLinkBtn.addEventListener('click', async () => {
-    const link = `${window.location.origin}${window.location.pathname}?g=${pendingNewGroup.slug}`;
-    try {
-      await navigator.clipboard.writeText(link);
+    const ok = await copyInviteLink(pendingNewGroup.slug);
+    if (ok) {
       nameGateCopyLinkBtn.textContent = 'Copied!';
       setTimeout(() => { nameGateCopyLinkBtn.textContent = 'Copy invite link'; }, 1500);
-    } catch {
-      window.prompt('Copy this invite link:', link);
     }
   });
 
   nameGateAddShowBtn.addEventListener('click', async () => {
     await enterAppFromGate();
-    addShowPanel.style.display = 'block';
-    addShowBtn.style.display = 'none';
+    openAddShowModal();
   });
 
   nameGateContinueBtn.addEventListener('click', enterAppFromGate);
 
+  // Swaps every static <i data-lucide="..."> placeholder already in
+  // the initial HTML (drawer close, modal close, tab-bar share) for
+  // its real inline SVG. Dynamically-rendered icons (the per-group
+  // share buttons in the drawer) get their own scoped call inside
+  // renderGroupSwitcher(), since createIcons() only sees elements
+  // that exist in the DOM at the moment it runs.
+  lucide.createIcons();
+
   init();
 
-  // Menu toggling
-  switchBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    groupMenu.classList.toggle('open');
-  });
-  avatarDots.addEventListener('click', (e) => {
-    e.stopPropagation();
-    avatarList.classList.toggle('open');
-  });
-  // Closes every open menu/avatar-list on the page, not just the
-  // header's — show cards each have their own avatar stack now.
-  document.addEventListener('click', () => {
-    groupMenu.classList.remove('open');
-    document.querySelectorAll('.avatar-list.open').forEach((el) => el.classList.remove('open'));
+  // Nav drawer open/close — hamburger, close button, overlay click,
+  // and Escape all close it; body scroll locks while it's open so
+  // background content doesn't scroll behind it.
+  function openDrawer() {
+    navDrawer.classList.add('open');
+    drawerOverlay.classList.add('open');
+    navDrawer.setAttribute('aria-hidden', 'false');
+    hamburgerBtn.setAttribute('aria-expanded', 'true');
+    document.body.classList.add('drawer-open');
+  }
+  function closeDrawer() {
+    navDrawer.classList.remove('open');
+    drawerOverlay.classList.remove('open');
+    navDrawer.setAttribute('aria-hidden', 'true');
+    hamburgerBtn.setAttribute('aria-expanded', 'false');
+    document.body.classList.remove('drawer-open');
+  }
+  hamburgerBtn.addEventListener('click', openDrawer);
+  drawerCloseBtn.addEventListener('click', closeDrawer);
+  drawerOverlay.addEventListener('click', closeDrawer);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeDrawer();
   });
 
-  // ===== Add show: three entry methods (search, link, manual), all
-  // funneling into the same manual form for review before submit. =====
+  // ===== Add show: two entry methods (search, manual), funneling into
+  // the same manual form for review before submit. "Paste a link" was
+  // cut — one fewer entry point, search covers the common case. =====
 
   function resetAddShowPanel() {
     addShowForm.reset();
@@ -836,10 +1122,6 @@
     artistSearchResults.innerHTML = '';
     artistSearchResults.style.display = 'none';
 
-    showLinkInput.value = '';
-    linkAutofillStatus.textContent = '';
-    linkMethodRow.style.display = 'none';
-
     venueSearchResults.innerHTML = '';
     venueSearchResults.style.display = 'none';
     selectedVenueUrl = null;
@@ -847,8 +1129,7 @@
 
     document.getElementById('search-method-row').style.display = 'block';
 
-    addShowPanel.style.display = 'none';
-    addShowBtn.style.display = 'inline-block';
+    closeAddShowModal();
   }
 
   function revealManualForm(prefill) {
@@ -861,9 +1142,9 @@
     addShowForm.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
-  // Used when search or link autofill already has enough to create the
-  // show outright (title + date) — no review form, just add it. Falls
-  // back to the form if the data turns out to be incomplete.
+  // Used when search already has enough to create the show outright
+  // (title + date) — no review form, just add it. Falls back to the
+  // form if the data turns out to be incomplete.
   async function submitShowDirectly(fields) {
     if (!currentGroupId) return;
     if (!fields.title || !fields.show_date) {
@@ -872,24 +1153,32 @@
     }
     const show = await createShow(currentGroupId, person.id, fields);
     if (show) {
+      // Adding a show is itself a "curious" signal — without this the
+      // person who just added it would see their own ghost add-slot
+      // (the dashed + circle) on a card they created themselves,
+      // which reads as if the app didn't notice they're in.
+      await setResponse(show.id, person.id, 'curious');
       resetAddShowPanel();
       await renderCurrentView(currentGroupId);
     }
   }
 
+  // Same button both opens and closes now — toggle based on whether
+  // the card's already open.
   addShowBtn.addEventListener('click', () => {
-    addShowPanel.style.display = 'block';
-    addShowBtn.style.display = 'none';
+    if (addShowCard.classList.contains('is-open')) {
+      resetAddShowPanel();
+    } else {
+      openAddShowModal();
+    }
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && addShowCard.classList.contains('is-open')) resetAddShowPanel();
   });
 
   cancelAddShow.addEventListener('click', resetAddShowPanel);
 
   // Method switching
-  showLinkMethodBtn.addEventListener('click', () => {
-    document.getElementById('search-method-row').style.display = 'none';
-    linkMethodRow.style.display = 'block';
-  });
-
   showManualMethodBtn.addEventListener('click', () => {
     revealManualForm(null);
   });
@@ -906,7 +1195,7 @@
     const results = await searchShows(keyword);
 
     if (results.length === 0) {
-      artistSearchStatus.textContent = 'No shows found — try a link or add manually.';
+      artistSearchStatus.textContent = 'No shows found — try adding manually.';
       return;
     }
 
@@ -924,29 +1213,6 @@
       item.addEventListener('click', () => submitShowDirectly(show));
       artistSearchResults.appendChild(item);
     });
-  });
-
-  // Method 2: paste a link, autofill via server-side scrape. A usable
-  // result (title + date) gets added straight away; anything less
-  // falls back to the manual form with whatever was found pre-filled.
-  linkAutofillBtn.addEventListener('click', async () => {
-    const url = showLinkInput.value.trim();
-    if (!url) return;
-
-    linkAutofillStatus.textContent = 'Reading link…';
-    const result = await parseShowLink(url);
-    // source_url (the show's own ticket page) is always the pasted
-    // link itself; venue_url stays whatever the page's own structured
-    // data said (a real venue site), or nothing — the two aren't the
-    // same thing, so don't collapse one into the other.
-    const fields = { ...result, source_url: result.source_url || url };
-
-    if (fields.title && fields.show_date) {
-      await submitShowDirectly(fields);
-    } else {
-      linkAutofillStatus.textContent = "Couldn't read that link — add the details manually below.";
-      revealManualForm(fields);
-    }
   });
 
   // Venue-name autocomplete — debounced lookup against Ticketmaster's
@@ -993,9 +1259,8 @@
     }, 300);
   });
 
-  // Method 3: manual submit — used for plain manual entry, and as the
-  // fallback when search/link autofill didn't have enough to add the
-  // show outright.
+  // Method 2: manual submit — used for plain manual entry, and as the
+  // fallback when search didn't have enough to add the show outright.
   addShowForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const fields = {

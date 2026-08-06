@@ -23,6 +23,25 @@ body {
   line-height: var(--text-body-lh);
 }
 
+/* A real gap until now: nothing in the app ever reset native button
+   chrome. Every button class sets its own visible background/border,
+   so it mostly didn't matter — except on a big, borderless, fully-
+   transparent button like .add-show-toggle, where the browser's own
+   (invisible) native control padding/appearance can sit on top of our
+   box model and throw off centering in a way `padding: 0` alone
+   doesn't fix, since it's inset baked into the native control itself,
+   not a CSS box property. `appearance: none` removes that native
+   rendering entirely so our own CSS is the only thing sizing the
+   button — this is the actual fix for "Add a show" reading off-center;
+   the icon-sizing pass earlier addressed a real but smaller issue,
+   not this one. */
+button, input {
+  font: inherit;
+  color: inherit;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
 .container {
   width: 100%;
   max-width: calc(var(--grid-max-width) + (var(--grid-margin) * 2));
