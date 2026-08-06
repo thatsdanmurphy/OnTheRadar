@@ -325,11 +325,14 @@
    Rows used to carry a `--color-border` outline at rest, on the
    reasoning that an inactive row with no visible edge at all read as
    broken. Cut per direct feedback ("remove the outline from the
-   containers in the nav, they're not cool") — the row's own padding
-   plus the --space-8 gap between rows already reads as a list without
-   needing a drawn line around each item; hover/active states still
-   have real shape (a tonal fill), just no border underneath them at
-   rest. */
+   containers in the nav, they're not cool"). Went back and forth once
+   more after that: with only one group the padding + --space-8 gap
+   between rows read fine as a list on its own, but with several
+   groups it lost definition — no border, but also no fill, so rows
+   ran together without one. Settled here: a resting `--tint-hover`
+   fill gives every row a real container shape, same tonal language
+   the app already uses everywhere else, without reintroducing a drawn
+   line. */
 .drawer-group-list {
   display: flex;
   flex-direction: column;
@@ -345,17 +348,20 @@
   gap: var(--space-8);
   border-radius: var(--radius);
   padding: var(--space-8) var(--space-8) var(--space-8) var(--space-16);
+  background: var(--tint-hover);
   transition: background 0.15s ease;
 }
 
 .drawer-group-row:hover {
-  background: var(--tint-hover);
+  background: var(--tint-active);
 }
 
 /* Tonal fill — no border, no color change. Pink still means overlap,
    nowhere else, so "this is your current group" reads through a
    filled tint plus bolder text weight instead of reaching for the
-   accent or drawing an edge around it. */
+   accent or drawing an edge around it. Same --tint-active a row gets
+   on hover, so the active row reads as "permanently hovered," a
+   deliberate reuse rather than a third, unique tone. */
 .drawer-group-row.active {
   background: var(--tint-active);
 }
@@ -530,17 +536,27 @@
 /* Mixed case now, matching the member-count fix above — same reasoning,
    a plain descriptive line shouldn't read as shouty uppercase. Copy
    itself also simplified ("Everything you're in, across groups" read
-   awkwardly as a sentence) to describe what actually rolls up here. */
+   awkwardly as a sentence) to describe what actually rolls up here.
+   line-height explicitly set to --text-meta-lh — this line wraps to
+   two rows at typical drawer width, and without its own line-height it
+   was inheriting body copy's --text-body-lh (24px), way too loose for
+   12px text and the actual source of the uneven gap between lines. */
 .drawer-my-shows-sub {
   display: block;
   font-family: var(--font-data);
   font-size: var(--text-meta-size);
+  line-height: var(--text-meta-lh);
   opacity: 0.55;
   margin-top: var(--space-4);
 }
 
 /* Sized via container + svg, same Lucide convention as every other
-   icon button in the app (see .drawer-name-btn svg above). */
+   icon button in the app (see .drawer-name-btn svg above). Same
+   --icon-size token .drawer-close-btn/.drawer-group-share/the group
+   modal's icons all use, so it reads as one consistent icon language
+   rather than a one-off. Centered against the button's full height
+   (.drawer-my-shows-btn's own align-items: center), the same way
+   those other icon buttons center a single icon against their row. */
 .drawer-my-shows-btn svg {
   flex-shrink: 0;
   width: var(--icon-size);
@@ -718,7 +734,11 @@ body.drawer-open {
    group's own page. */
 .show-card-content-fading {
   opacity: 0.4;
-  transition: opacity 0.3s ease;
+  /* Slowed from 0.3s to 0.8s, per direct feedback — this is a "you
+     have a moment to reconsider" transition, not a snappy UI-state
+     swap, so it should visibly take its time rather than blink to its
+     dimmed state. */
+  transition: opacity 0.8s ease;
 }
 
 /* Plain text + a text-button "Undo," same quiet meta-line register as
