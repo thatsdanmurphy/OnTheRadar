@@ -4,6 +4,37 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Gig Herd</title>
+<meta name="description" content="Line up shows with your pals.">
+<!-- Favicon — a tight "GH" monogram, same wordmark colors/weight as
+     the header (Big Shoulders Display 900, pink "G"/green "H") on the
+     app's own charcoal, so the browser tab reads as the same brand as
+     the page itself. .ico first (broadest legacy support, includes
+     16/32/48px), PNGs after for browsers/platforms that prefer a
+     specific size — apple-touch-icon for iOS home-screen bookmarks,
+     the 192/512 pair for Android/PWA-style "add to home screen". All
+     five generated from one 512px master, not drawn separately, so
+     they can't drift out of sync with each other. -->
+<link rel="icon" href="assets/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="assets/icon-512.png">
+<!-- Open Graph / Twitter card — a plain link share preview: the
+     wordmark + tagline on the app's own charcoal, same "GigHerd" that
+     appears everywhere else, not a screenshot of the UI. Image paths
+     are relative — resolve correctly once this is deployed to a real
+     domain (still TODO, see component-map.md's invite-link notes);
+     og:url is left off rather than hardcoding a domain that doesn't
+     exist yet. -->
+<meta property="og:title" content="Gig Herd">
+<meta property="og:description" content="Line up shows with your pals.">
+<meta property="og:image" content="assets/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Gig Herd">
+<meta name="twitter:description" content="Line up shows with your pals.">
+<meta name="twitter:image" content="assets/og-image.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@900&family=Public+Sans:wght@400;600;700&display=swap" rel="stylesheet">
