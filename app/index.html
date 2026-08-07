@@ -1334,6 +1334,14 @@
     siteHeader.style.display = '';
     mainContent.style.display = '';
     siteFooter.style.display = '';
+    // Whatever scroll position the page was at while the name gate was
+    // showing (e.g. the on-screen keyboard nudging things around while
+    // typing a group name) doesn't reset itself just because the DOM
+    // underneath it changed — the browser keeps the same scrollY, which
+    // can leave the header out of view the instant the real app
+    // appears. Explicit reset, not a guess: per direct feedback, the
+    // header should never load out of view on first entry.
+    window.scrollTo(0, 0);
     await afterPerson();
   }
 
