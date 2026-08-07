@@ -722,9 +722,12 @@ body.drawer-open {
 /* ---------- Show list / show card ---------- */
 
 /* flex: 1 — the one stretchy piece in body's flex column (see
-   grid.css), so this is what absorbs the leftover space on a short
-   page (empty group, one or two shows) and the footer stays pinned
-   to the bottom of the viewport instead of riding up right under it. */
+   grid.css), so this absorbs the leftover space on a short page
+   (empty group, one or two shows) and the page's own background
+   still fills the full viewport height instead of stopping short
+   under the content. No longer pinning a footer — that content
+   moved into the nav drawer — but the same stretch still keeps a
+   short page from reading as a half-height sliver. */
 .show-list {
   padding-block: var(--space-32);
   flex: 1;
@@ -799,6 +802,53 @@ body.drawer-open {
   width: 100%;
   height: 100%;
   display: block;
+}
+
+/* ---------- Show list loading state ---------- */
+
+/* Initial-fetch state, not the empty state — see index.html's note on
+   #show-list-content. Same centered-row shell as .show-list-empty so
+   the page doesn't visibly shift once real content (or the real empty
+   state) replaces it, just a smaller mark since this is meant to read
+   as brief, not as a real resting screen. */
+.show-list-loading {
+  display: flex;
+  justify-content: center;
+  padding-block: var(--space-64);
+}
+
+/* Same dimmed currentColor language as the empty-state icon/message —
+   quiet, not a loud loading moment. Spins via a plain CSS keyframe,
+   not a Lucide icon: the icon-font CDN can silently fail to load with
+   no visible error (bit us once already on the favicon font), so a
+   hand-authored inline SVG stays dependency-free, same reasoning as
+   the empty-state guitar icon. */
+.show-list-loading-icon {
+  width: var(--space-40);
+  height: var(--space-40);
+  color: var(--color-text);
+  opacity: 0.35;
+  animation: show-list-loading-spin 0.9s linear infinite;
+}
+
+.show-list-loading-icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+@keyframes show-list-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Respect the OS-level motion preference — a spinning icon is
+   decoration, not information, so it's fine to just hold it still. */
+@media (prefers-reduced-motion: reduce) {
+  .show-list-loading-icon {
+    animation: none;
+  }
 }
 
 /* color set here so anything inside without its own explicit color
@@ -1077,20 +1127,25 @@ body.drawer-open {
   margin-left: 0;
 }
 
-/* Dotted circle + plus — tap it to join this group (curious in "Heck
-   yeah!", out in "Can't make it"). Only rendered for whichever group
-   the current person hasn't already responded into — the other slot
-   shows their real filled dot instead. Deliberately not pink on hover
-   — pink stays overlap-only; this fills solid paper instead, same
-   "active chip" language as buttons elsewhere. */
+/* Translucent tint circle + plus — tap it to join this group (curious
+   in "Heck yeah!", out in "Can't make it"). Only rendered for
+   whichever group the current person hasn't already responded into —
+   the other slot shows their real filled dot instead. Used to be a
+   dashed outline; per direct feedback ("i dont like the dotted
+   lines") it's now a soft filled circle instead — reuses
+   --tint-hover, the same translucent-fill language already used for
+   .drawer-my-shows-btn's resting background, rather than inventing a
+   new token. Deliberately not pink on hover — pink stays
+   overlap-only; this fills solid paper instead, same "active chip"
+   language as buttons elsewhere. */
 .avatar-ghost-add {
   width: var(--space-40);
   height: var(--space-40);
   border-radius: 50%;
-  border: 2px dashed var(--color-border);
-  background: none;
+  border: none;
+  background: var(--tint-hover);
   color: var(--color-surface-text);
-  opacity: 0.5;
+  opacity: 0.7;
   font-family: var(--font-data);
   font-size: var(--text-sub-size);
   font-weight: 600;
@@ -1105,7 +1160,6 @@ body.drawer-open {
   opacity: 1;
   background: var(--color-chip-bg);
   color: var(--color-chip-text);
-  border-style: solid;
 }
 
 /* Whole group is one tap target that opens the "who's in" modal (see
@@ -1240,13 +1294,14 @@ body.drawer-open {
   gap: var(--space-8);
 }
 
-/* "Ghost circle" now — same dashed-border-circle language as
+/* "Ghost circle" now — same translucent-tint-circle language as
    .avatar-ghost-add elsewhere on the page (join a response group),
-   reused here per direct feedback rather than inventing a second
-   "outlined circle" treatment. Dimmed at rest, solid paper fill on
-   hover/press — a quieter resting state than the old plain
-   transparent-fill-on-hover version, but a clearer "this is a tappable
-   circle" shape even before you touch it. */
+   reused here rather than inventing a second "circle button" treatment.
+   Used to be a dashed outline like that one; per direct feedback ("i
+   dont like the dotted lines") both moved to a soft filled circle
+   together. Dimmed at rest, solid paper fill on hover/press — a
+   quieter resting state, but still a clear "this is a tappable circle"
+   shape even before you touch it. */
 .group-heading-btn {
   width: var(--space-40);
   height: var(--space-40);
@@ -1254,20 +1309,19 @@ body.drawer-open {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: none;
-  border: 2px dashed var(--color-border);
+  background: var(--tint-hover);
+  border: none;
   color: var(--color-surface-text);
-  opacity: 0.5;
+  opacity: 0.7;
   padding: 0;
   cursor: pointer;
-  transition: opacity 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  transition: opacity 0.15s ease, background 0.15s ease;
 }
 
 .group-heading-btn:hover {
   opacity: 1;
   background: var(--color-chip-bg);
   color: var(--color-chip-text);
-  border-style: solid;
 }
 
 .group-heading-btn svg {
@@ -1663,55 +1717,47 @@ body.drawer-open {
   margin-top: var(--space-4);
 }
 
-/* ---------- Footer ---------- */
+/* ---------- Drawer footer (was a page footer — see index.html's note
+   where the old <footer> used to sit) ---------- */
 
-/* A hairline border-top was tried first and cut — too subtle to read
-   as a real boundary. Went through a darker --color-fill-dim recess
-   treatment after that (a genuine color band, no border needed to
-   mark where it starts) — reverted back to --color-footer-bg aliasing
-   --color-bg directly, per direct feedback that matching the page
-   background reads better. Quiet inside it either way — copyright + a
-   contact link, nothing else. */
-.site-footer {
-  background: var(--color-footer-bg);
-  margin-top: var(--space-32);
-  padding-block: var(--space-32);
-}
-
-.footer-inner {
+/* Sits inside .nav-drawer now, not a full-width page band, so no
+   background/margin-top treatment of its own — it's just the drawer's
+   own last .drawer-section (picks up drawer-section-last: no bottom
+   border, flush with the drawer's own bottom padding). Left-aligned,
+   stacked, same as everything else in the drawer — the old page
+   footer's centered-column layout doesn't apply to a narrow drawer
+   column. */
+.drawer-footer-section {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: var(--space-8);
-  text-align: center;
+  gap: var(--space-4);
 }
 
-/* Plain, quiet — same meta-line treatment as other small print in the
-   app (drawer labels, date badge), not a sign-off moment. Margin
-   zeroed explicitly — same <p> default-margin leak as .header-tagline
-   (see there); .footer-inner's own `gap` already owns the spacing
-   around this, so any unreset browser default would just double up. */
-.footer-copyright {
+/* Plain, quiet — same meta-line register .drawer-label already uses
+   elsewhere in the drawer, not a sign-off moment. No explicit color:
+   inherits --color-surface-text from .nav-drawer itself, same as
+   .drawer-label does. */
+.drawer-footer-copyright {
   font-family: var(--font-body);
   font-size: var(--text-meta-size);
   line-height: var(--text-meta-lh);
-  color: var(--color-text);
   opacity: 0.45;
   margin: 0;
 }
 
 /* Same opacity-brightens-on-hover language as the rest of the app's
    text-only controls (Add Show, decline) — no underline, no border. */
-.footer-contact {
+.drawer-footer-contact {
+  display: inline-block;
   font-family: var(--font-data);
   font-weight: 600;
   font-size: var(--text-control-size);
   line-height: var(--text-control-lh);
-  color: var(--color-text);
+  color: inherit;
   text-decoration: none;
   opacity: 0.7;
 }
 
-.footer-contact:hover {
+.drawer-footer-contact:hover {
   opacity: 1;
 }

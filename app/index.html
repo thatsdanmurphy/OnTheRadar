@@ -194,7 +194,7 @@
        group switcher's own "N members" subtitle, and it was the one
        section in the drawer that didn't actually do anything when
        tapped. -->
-  <div class="drawer-section drawer-section-last" id="group-bar" style="display:none;">
+  <div class="drawer-section" id="group-bar" style="display:none;">
     <!-- Cross-group view — everything you've marked curious, across
          every group you're in, not scoped to whichever one happens to
          be selected right now. Sits above the group list itself since
@@ -222,6 +222,19 @@
       <span class="drawer-new-group-icon">+</span>
       <span>New group</span>
     </button>
+  </div>
+
+  <!-- Copyright + contact — used to be a standalone page footer,
+       moved in here per direct feedback. Now the drawer's own last
+       section (picks up drawer-section-last: no bottom border/margin,
+       sits flush against the drawer's own bottom padding) instead of
+       a separate element the whole page had to make room for and keep
+       pinned to the viewport bottom. Reuses .drawer-label's quiet
+       small-print register rather than the old page-footer's own
+       (now-removed) styling. -->
+  <div class="drawer-section drawer-section-last drawer-footer-section">
+    <p class="drawer-footer-copyright">© 2026 GigHerd</p>
+    <a class="drawer-footer-contact" href="mailto:dmurphy.dpm@gmail.com?subject=Gig%20Herd">Contact</a>
   </div>
 </aside>
 
@@ -318,7 +331,21 @@
     </div>
   </div>
 
-  <div id="show-list-content" class="show-list-empty">Loading…</div>
+  <!-- Initial-fetch state only — always gets replaced by renderShows()
+       or renderEmptyState() once data comes back, so it's its own
+       .show-list-loading class rather than reusing .show-list-empty
+       (a real "no shows" state and a few-hundred-ms fetch state
+       shouldn't share styling just because both are momentarily
+       contentless). Hand-authored spinner SVG, same reasoning as the
+       empty-state guitar icon above — no dependency on an icon font
+       resolving. -->
+  <div id="show-list-content" class="show-list-loading">
+    <div class="show-list-loading-icon">
+      <svg viewBox="0 0 50 50" aria-hidden="true">
+        <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-dasharray="90 150"/>
+      </svg>
+    </div>
+  </div>
 </main>
 
 <!-- ===== Who's in a group — avatar + name for everyone in either
@@ -363,21 +390,12 @@
   </div>
 </div>
 
-<!-- ===== Footer — plain copyright + a way to reach out, nothing else.
-     No social icons, no legal boilerplate, no "About" page — the app
-     is friend-group scale, not a commercial product. A "Got an idea?
-     Tell us" feedback line was tried and cut as too cute for what's
-     really just a contact link. Solid black band (--color-footer-bg),
-     not a hairline on the page's own charcoal — a real separation, not
-     a suggestion of one. Contact is a bare mailto: link, not a form —
-     there's no email service or backend for one in this app's stack,
-     and a link that just opens your own mail client doesn't need one. ===== -->
-<footer class="site-footer" id="site-footer">
-  <div class="container footer-inner">
-    <p class="footer-copyright">© 2026 GigHerd</p>
-    <a class="footer-contact" href="mailto:dmurphy.dpm@gmail.com?subject=Gig%20Herd">Contact</a>
-  </div>
-</footer>
+<!-- The page footer that used to live here (copyright + a mailto:
+     contact link) moved into the nav drawer per direct feedback — see
+     .drawer-footer-section at the bottom of #nav-drawer above. Contact
+     is still a bare mailto: link, not a form — there's no email
+     service or backend for one in this app's stack, and a link that
+     just opens your own mail client doesn't need one. -->
 
 <!-- Plain scripts, not modules — see supabase/client.js for why.
      Load order matters: client.js defines OTR.db before identity.js
@@ -402,7 +420,6 @@
   const nameGateInviteMessage = document.getElementById('name-gate-invite-message');
   const siteHeader = document.getElementById('site-header');
   const mainContent = document.getElementById('main-content');
-  const siteFooter = document.getElementById('site-footer');
 
   const groupHeadingRow = document.getElementById('group-heading-row');
   const groupHeadingName = document.getElementById('group-heading-name');
@@ -1302,7 +1319,6 @@
     if (!person) {
       siteHeader.style.display = 'none';
       mainContent.style.display = 'none';
-      siteFooter.style.display = 'none';
       nameGate.style.display = 'block';
       nameGateGroupRow.style.display = hasInviteSlug ? 'none' : 'block';
 
@@ -1333,7 +1349,6 @@
     nameGate.style.display = 'none';
     siteHeader.style.display = '';
     mainContent.style.display = '';
-    siteFooter.style.display = '';
     // Whatever scroll position the page was at while the name gate was
     // showing (e.g. the on-screen keyboard nudging things around while
     // typing a group name) doesn't reset itself just because the DOM
@@ -1455,7 +1470,7 @@
     if (show) {
       // Adding a show is itself a "curious" signal — without this the
       // person who just added it would see their own ghost add-slot
-      // (the dashed + circle) on a card they created themselves,
+      // (the tinted + circle) on a card they created themselves,
       // which reads as if the app didn't notice they're in.
       await setResponse(show.id, person.id, 'curious');
       resetAddShowPanel();
