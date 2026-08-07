@@ -845,22 +845,14 @@ body.drawer-open {
   opacity: 0.85;
 }
 
-/* Holds the date badge (left) and overlap badge (right, only when
-   there's one to show — 2+ curious). */
-.show-card-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--space-16);
-  margin-bottom: var(--space-8);
-}
-
 /* Plain text now — the pill/tag treatment (first a clip-path flag,
-   then a ghosted pink chip) got cut entirely. This also quietly
-   un-bends the "pink means overlap, nowhere else" rule for dates —
-   there's no pink here anymore at all, so the overlap badge goes back
-   to being the only pink UI marker (the wordmark is now the only
-   other exception — see brand-brief.md). */
+   then a ghosted pink chip) got cut entirely, same as the "N overlap"
+   badge (.show-overlap) that used to sit above it, cut per direct
+   feedback — who's actually curious still shows in the "Heck yeah!"
+   avatar row below, this was a second count of the same thing. No
+   pink UI marker is left on a show card at all now — the wordmark's
+   "Gig" is the only place the accent color still appears anywhere in
+   the app. */
 .show-date-badge {
   display: inline-block;
   color: var(--color-surface-text);
@@ -1001,20 +993,6 @@ body.drawer-open {
   color: var(--color-surface-text);
   opacity: 0.7;
   margin-bottom: var(--space-8);
-}
-
-/* Filled, not just colored text — overlap should read as a marker,
-   not a label. Still the only place the accent color appears. */
-.show-overlap {
-  font-family: var(--font-data);
-  font-size: var(--text-meta-size);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  background: var(--color-accent);
-  color: var(--color-text-inverse);
-  padding: var(--space-4) var(--space-8);
-  white-space: nowrap;
-  flex-shrink: 0;
 }
 
 /* Bigger now — this is the primary interaction, not a passive

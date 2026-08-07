@@ -228,7 +228,7 @@
 <!-- ===== Body container ===== -->
 <!-- Show cards for the current group's shows — real data, wired to
      Supabase. Curious/out buttons write to the responses table
-     immediately on click. Overlap count only counts curious. -->
+     immediately on click. -->
 <main class="container show-list" id="main-content">
   <!-- Which group am I looking at — the one thing that was missing
        once the secondary action moved out of the Add Show row (see
@@ -387,7 +387,7 @@
 <script src="scripts/shows.js"></script>
 <script>
   const { getPerson, createPerson, getMyGroups, getGroupMembers, getGroupMemberCounts, createGroup, getGroupBySlug, joinGroup, leaveGroup, updatePersonColor, updatePersonName } = OTR;
-  const { getShowsForGroup, getResponsesForShows, overlapCount, setResponse, createShow, searchShows, searchVenues } = OTR;
+  const { getShowsForGroup, getResponsesForShows, setResponse, createShow, searchShows, searchVenues } = OTR;
 
   const nameGate = document.getElementById('name-gate');
   const nameGateForm = document.getElementById('name-gate-form');
@@ -1080,7 +1080,6 @@
     shows.forEach((show) => {
       const responses = responsesByShow[show.id] || [];
       const mine = responses.find((r) => r.person_id === person.id);
-      const overlap = overlapCount(responses);
 
       const card = document.createElement('div');
       card.className = 'show-card';
@@ -1099,15 +1098,12 @@
         card.appendChild(tag);
       }
 
-      if (overlap >= 2) {
-        const top = document.createElement('div');
-        top.className = 'show-card-top';
-        const badge = document.createElement('div');
-        badge.className = 'show-overlap';
-        badge.textContent = `${overlap} overlap`;
-        top.appendChild(badge);
-        card.appendChild(top);
-      }
+      // The "N overlap" badge (.show-overlap/.show-card-top) that used
+      // to sit here — cut per direct feedback. Who's actually curious
+      // still shows up in the "Heck yeah!" avatar row below; this was
+      // a second, redundant count of the same thing sitting above it.
+      // overlapCount() itself stays in scripts/shows.js — small, still
+      // documented, not wired to any UI right now.
 
       const body = document.createElement('div');
       card.appendChild(body);
