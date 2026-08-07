@@ -485,21 +485,30 @@
 
   // Shared invite-link logic — was duplicated inline on the name-gate's
   // "Copy invite link" button; now the one place any share control
-  // (name-gate, the group heading row, each drawer group row) builds
-  // the link and writes it to the clipboard. Placeholder ?g=<slug> link
-  // structure — real domain/slug work comes later once a real URL
-  // domain is set up; this just reuses what already existed. Returns
-  // whether the clipboard write succeeded, so callers can show their
-  // own success feedback (a text swap on the name-gate button, a
-  // brief icon swap on icon-only buttons) without duplicating the
-  // try/catch here.
-  async function copyInviteLink(slug) {
+  // (the group heading row, each drawer group row, the group modal)
+  // builds the link and writes it to the clipboard. Placeholder
+  // ?g=<slug> link structure — real domain/slug work comes later once
+  // a real URL domain is set up; this just reuses what already
+  // existed. Returns whether the clipboard write succeeded, so
+  // callers can show their own success feedback (a text swap on the
+  // group modal's invite button, a brief icon swap on icon-only
+  // buttons) without duplicating the try/catch here.
+  //
+  // Copies a full sentence, not just the bare URL — a raw link pasted
+  // into a text thread carries no context on its own about what it
+  // even is. `groupName` is required (every current call site already
+  // has the group object in hand) so the message can name the actual
+  // group, not just the app in the abstract. Voice matches the app's
+  // own tagline everywhere else — direct, no exclamation points, no
+  // manufactured urgency (see brand-brief.md's Voice section).
+  async function copyInviteLink(slug, groupName) {
     const link = `${window.location.origin}${window.location.pathname}?g=${slug}`;
+    const message = `Join ${groupName} on GigHerd — line up shows with your pals: ${link}`;
     try {
-      await navigator.clipboard.writeText(link);
+      await navigator.clipboard.writeText(message);
       return true;
     } catch {
-      window.prompt('Copy this invite link:', link);
+      window.prompt('Copy this invite message:', message);
       return false;
     }
   }
@@ -669,7 +678,7 @@
   // since there's no label here to swap).
   groupShareBtn.addEventListener('click', async () => {
     if (!currentGroup) return;
-    const ok = await copyInviteLink(currentGroup.slug);
+    const ok = await copyInviteLink(currentGroup.slug, currentGroup.name);
     if (ok) flashShareSuccess(groupShareBtn);
   });
 
@@ -678,7 +687,7 @@
   // (unlike the icon-only share buttons elsewhere), so success is a
   // text swap, same pattern as the name-gate's own "Copy invite link".
   groupModalInviteBtn.addEventListener('click', async () => {
-    const ok = await copyInviteLink(currentGroup.slug);
+    const ok = await copyInviteLink(currentGroup.slug, currentGroup.name);
     if (!ok) return;
     const label = groupModalInviteBtn.querySelector('span');
     const original = label.textContent;
@@ -769,7 +778,7 @@
       shareBtn.innerHTML = '<i data-lucide="share"></i>';
       shareBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
-        const ok = await copyInviteLink(g.slug);
+        const ok = await copyInviteLink(g.slug, g.name);
         if (ok) flashShareSuccess(shareBtn);
       });
       row.appendChild(shareBtn);
