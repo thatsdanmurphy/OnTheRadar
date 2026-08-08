@@ -124,6 +124,10 @@
      own edges next to the roomier margins the rest of the app now
      uses (grid margins, card padding). */
   padding: var(--space-24);
+  /* Extra bottom padding so scrolled content never sits behind the
+     footer, which is now locked to the drawer's bottom edge (see
+     .drawer-footer-section) instead of ending the in-flow content. */
+  padding-bottom: calc(var(--space-48) * 2);
   /* Right-edge corners only — the left edge sits flush against the
      screen edge (there's nothing to round it against), but the right
      edge was a hard vertical line the whole height of the screen.
@@ -1720,16 +1724,25 @@ body.drawer-open {
 /* ---------- Drawer footer (was a page footer — see index.html's note
    where the old <footer> used to sit) ---------- */
 
-/* Sits inside .nav-drawer now, not a full-width page band, so no
-   background/margin-top treatment of its own — it's just the drawer's
-   own last .drawer-section (picks up drawer-section-last: no bottom
-   border, flush with the drawer's own bottom padding). Left-aligned,
-   stacked, same as everything else in the drawer — the old page
-   footer's centered-column layout doesn't apply to a narrow drawer
-   column. */
+/* Locked to the drawer's own bottom edge per direct feedback ("center
+   and lock the footer content, 48px above the bottom") rather than
+   sitting in normal flow after the herds section. .nav-drawer is the
+   positioned ancestor (position: fixed) and the scroll container
+   (overflow-y: auto) at once, so an absolutely-positioned child here
+   is anchored to the drawer's own box and stays put as the content
+   above it scrolls -- not carried along with the scroll like a normal
+   in-flow child would be. left/right match .nav-drawer's own
+   --space-24 padding so it lines up with everything else instead of
+   running to the drawer's true edges. */
 .drawer-footer-section {
+  position: absolute;
+  left: var(--space-24);
+  right: var(--space-24);
+  bottom: var(--space-48);
   display: flex;
   flex-direction: column;
+  align-items: center;
+  text-align: center;
   gap: var(--space-4);
 }
 

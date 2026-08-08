@@ -4,6 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GigHerd</title>
+<!-- Google tag (gtag.js) — product analytics only (no Vercel/PostHog,
+     see 01_Strategy analytics plan). Loaded as high in <head> as
+     reasonable so it's ready before any user interaction fires an
+     event. trackEvent() wrapper lives in the main script below and
+     no-ops safely if gtag hasn't loaded yet (e.g. ad blockers). -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BMYHXEGNHE"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-BMYHXEGNHE');
+</script>
 <!-- Search-engine + share-preview copy — one shared tagline
      ("Line up shows with your pals.") everywhere it appears, same as
      the header/name-gate, rather than writing separate marketing copy
@@ -194,16 +206,23 @@
        group switcher's own "N members" subtitle, and it was the one
        section in the drawer that didn't actually do anything when
        tapped. -->
-  <div class="drawer-section" id="group-bar" style="display:none;">
+  <!-- drawer-section-last added per direct feedback ("remove the
+       stroke at the bottom") — this was the only plain .drawer-section
+       left with a border-bottom stroke once the identity section moved
+       to its own fill-band treatment; the footer below is now locked
+       to the drawer's bottom edge (see .drawer-footer-section) rather
+       than sitting immediately after this in flow, so the stroke was
+       the last leftover divider line in the drawer. -->
+  <div class="drawer-section drawer-section-last" id="group-bar" style="display:none;">
     <!-- Cross-group view — everything you've marked curious, across
-         every group you're in, not scoped to whichever one happens to
-         be selected right now. Sits above the group list itself since
-         it's not really "one more group," it's the other way of
+         every herd you're in, not scoped to whichever one happens to
+         be selected right now. Sits above the herd list itself since
+         it's not really "one more herd," it's the other way of
          looking at the same shows. -->
     <button type="button" class="drawer-my-shows-btn" id="drawer-my-shows-btn">
       <span class="drawer-my-shows-text">
         <span class="drawer-my-shows-label">My Shows</span>
-        <span class="drawer-my-shows-sub">Everything you've marked, across your groups</span>
+        <span class="drawer-my-shows-sub">Everything you've marked, across your herds</span>
       </span>
       <!-- Same --space-32 circular hit-area as .drawer-group-share
            (the per-group share icon) — the bare chevron alone read
@@ -213,28 +232,34 @@
         <i data-lucide="chevron-right"></i>
       </span>
     </button>
-    <div class="drawer-label">Your groups</div>
+    <!-- "Your groups" -> "Herds" per direct feedback: lean into the
+         app's own name/metaphor instead of the generic term. "Group"
+         still appears elsewhere (name-gate's "Group name" field, "View
+         group"/"Leave group" in the group modal) -- not touched here,
+         worth a consistency pass later. -->
+    <div class="drawer-label">Herds</div>
     <div class="drawer-group-list" id="drawer-group-list"></div>
     <!-- Same visual weight as Add Show's own card now, per direct
          feedback — a real surface, centered icon + label, not a quiet
          row-shaped button underneath the list. -->
     <button type="button" class="drawer-new-group-btn" id="drawer-new-group-btn">
       <span class="drawer-new-group-icon">+</span>
-      <span>New group</span>
+      <span>Herd</span>
     </button>
   </div>
 
   <!-- Copyright + contact — used to be a standalone page footer,
-       moved in here per direct feedback. Now the drawer's own last
-       section (picks up drawer-section-last: no bottom border/margin,
-       sits flush against the drawer's own bottom padding) instead of
-       a separate element the whole page had to make room for and keep
-       pinned to the viewport bottom. Reuses .drawer-label's quiet
-       small-print register rather than the old page-footer's own
-       (now-removed) styling. -->
-  <div class="drawer-section drawer-section-last drawer-footer-section">
+       moved in here per direct feedback. Now locked to the drawer's
+       own bottom edge (position:absolute, 48px up, centered) instead
+       of sitting in normal flow at the end of the section list, so it
+       reads as a fixed sign-off rather than "the last thing you
+       scroll to." Reuses .drawer-label's quiet small-print register
+       rather than the old page-footer's own (now-removed) styling.
+       Contact link reworded from a bare "Contact" to an actual prompt
+       per direct feedback. -->
+  <div class="drawer-footer-section">
     <p class="drawer-footer-copyright">© 2026 GigHerd</p>
-    <a class="drawer-footer-contact" href="mailto:dmurphy.dpm@gmail.com?subject=Gig%20Herd">Contact</a>
+    <a class="drawer-footer-contact" href="mailto:dmurphy.dpm@gmail.com?subject=Gig%20Herd">Questions? Comments? Email us.</a>
   </div>
 </aside>
 
@@ -407,6 +432,19 @@
   const { getPerson, createPerson, getMyGroups, getGroupMembers, getGroupMemberCounts, createGroup, getGroupBySlug, joinGroup, leaveGroup, updatePersonColor, updatePersonName } = OTR;
   const { getShowsForGroup, getResponsesForShows, setResponse, createShow, searchShows, searchVenues } = OTR;
 
+  // Thin GA4 wrapper — every product event in the app funnels through
+  // here rather than calling gtag() directly, so there's one place to
+  // see the full event list and one place that no-ops safely if gtag
+  // never loaded (ad blockers, offline). Events are named after the
+  // underlying data (curious/out status, etc.), not on-screen button
+  // copy, so UI wording can keep changing without breaking historical
+  // data. See 01_Strategy's analytics plan for the full taxonomy and
+  // why overlap_reached (the north star) only fires once per show.
+  function trackEvent(name, params) {
+    if (typeof gtag !== 'function') return;
+    gtag('event', name, params || {});
+  }
+
   const nameGate = document.getElementById('name-gate');
   const nameGateForm = document.getElementById('name-gate-form');
   const nameGateStepName = document.getElementById('name-gate-step-name');
@@ -518,9 +556,10 @@
   // group, not just the app in the abstract. Voice matches the app's
   // own tagline everywhere else — direct, no exclamation points, no
   // manufactured urgency (see brand-brief.md's Voice section).
-  async function copyInviteLink(slug, groupName) {
+  async function copyInviteLink(slug, groupName, groupId) {
     const link = `${window.location.origin}${window.location.pathname}?g=${slug}`;
     const message = `Join ${groupName} on GigHerd — line up shows with your pals: ${link}`;
+    trackEvent('invite_sent', { group_id: groupId || null });
     try {
       await navigator.clipboard.writeText(message);
       return true;
@@ -695,7 +734,7 @@
   // since there's no label here to swap).
   groupShareBtn.addEventListener('click', async () => {
     if (!currentGroup) return;
-    const ok = await copyInviteLink(currentGroup.slug, currentGroup.name);
+    const ok = await copyInviteLink(currentGroup.slug, currentGroup.name, currentGroup.id);
     if (ok) flashShareSuccess(groupShareBtn);
   });
 
@@ -704,7 +743,7 @@
   // (unlike the icon-only share buttons elsewhere), so success is a
   // text swap, same pattern as the name-gate's own "Copy invite link".
   groupModalInviteBtn.addEventListener('click', async () => {
-    const ok = await copyInviteLink(currentGroup.slug, currentGroup.name);
+    const ok = await copyInviteLink(currentGroup.slug, currentGroup.name, currentGroup.id);
     if (!ok) return;
     const label = groupModalInviteBtn.querySelector('span');
     const original = label.textContent;
@@ -795,7 +834,7 @@
       shareBtn.innerHTML = '<i data-lucide="share"></i>';
       shareBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
-        const ok = await copyInviteLink(g.slug, g.name);
+        const ok = await copyInviteLink(g.slug, g.name, g.id);
         if (ok) flashShareSuccess(shareBtn);
       });
       row.appendChild(shareBtn);
@@ -940,6 +979,19 @@
       ? `<a href="${show.source_url}" target="_blank" rel="noopener">${show.title}</a>`
       : show.title;
     titleRow.appendChild(titleEl);
+
+    // Ticket-intent signal — the show title *is* the buy-tickets link
+    // (no separate "Buy Tickets" button exists in this UI), so that's
+    // where buy_tickets_clicked lives. Doesn't block the navigation,
+    // just observes it.
+    if (show.source_url) {
+      const ticketLink = titleEl.querySelector('a');
+      if (ticketLink) {
+        ticketLink.addEventListener('click', () => {
+          trackEvent('buy_tickets_clicked', { group_id: show.group_id, show_id: show.id });
+        });
+      }
+    }
     container.appendChild(titleRow);
 
     if (show.venue_name) {
@@ -977,7 +1029,20 @@
       "I'm curious",
       async () => {
         const ok = await setResponse(show.id, person.id, 'curious');
-        if (ok) await onResponseChange();
+        if (ok) {
+          // interested.length is the curious count *before* this tap,
+          // and excludes the actor (they weren't in it — the ghost "+"
+          // slot only shows when they aren't curious yet). So the new
+          // total is interested.length + 1; overlap_reached fires only
+          // on the exact 1→2 transition, never again for this show, so
+          // it's a true one-time-per-show north-star signal, not a
+          // running counter.
+          trackEvent('curious_tapped', { group_id: show.group_id, show_id: show.id });
+          if (interested.length === 1) {
+            trackEvent('overlap_reached', { group_id: show.group_id, show_id: show.id, overlap_count: 2 });
+          }
+          await onResponseChange();
+        }
       },
       interested.map((r) => r.people)
     ));
@@ -989,7 +1054,10 @@
       "Can't make it",
       onDeclineOverride || (async () => {
         const ok = await setResponse(show.id, person.id, 'out');
-        if (ok) await onResponseChange();
+        if (ok) {
+          trackEvent('out_tapped', { group_id: show.group_id, show_id: show.id });
+          await onResponseChange();
+        }
       }),
       declined.map((r) => r.people)
     );
@@ -1047,6 +1115,7 @@
     return async () => {
       const ok = await setResponse(show.id, person.id, 'out');
       if (!ok) return;
+      trackEvent('out_tapped', { group_id: show.group_id, show_id: show.id, via: 'my_shows' });
 
       // Reflect the new status locally so the avatar re-renders into
       // the "Can't make it" slot immediately, instead of waiting on a
@@ -1077,6 +1146,10 @@
         clearTimeout(timer);
         const restored = await setResponse(show.id, person.id, 'curious');
         if (!restored) return;
+        // Deliberately no trackEvent here — this is undoing an
+        // accidental decline, not a fresh curious signal, so it
+        // shouldn't count toward curious_tapped/overlap_reached (see
+        // analytics plan's "undo-guard" note).
         card.classList.remove('show-card-content-fading');
         const restoredResponses = updatedResponses.filter((r) => r.person_id !== person.id);
         restoredResponses.push({ person_id: person.id, status: 'curious', people: person });
@@ -1148,6 +1221,7 @@
   // client-side, and this only runs when someone actually opens the
   // view, not on every render.
   async function renderMyShowsView() {
+    trackEvent('my_shows_viewed', {});
     currentGroupId = null;
     currentGroup = null;
     drawerMyShowsBtn.classList.add('active');
@@ -1191,6 +1265,7 @@
     if (!name) return;
     const group = await createGroup(person.id, name);
     if (!group) return;
+    trackEvent('group_created', { group_id: group.id });
     myGroups = await getMyGroups(person.id);
     await selectGroup(group);
   }
@@ -1210,6 +1285,13 @@
     if (!group) return null;
 
     await joinGroup(personId, group.id);
+    // Note: joinGroup upserts with ignoreDuplicates, so this fires on
+    // every visit via an invite link, not just the first — Supabase
+    // doesn't tell us whether the upsert actually inserted a new row.
+    // Slightly overcounts if the same person reopens an old invite
+    // link, but undercounting a first join would be worse; revisit if
+    // invite_accepted volume looks inflated relative to invite_sent.
+    trackEvent('invite_accepted', { group_id: group.id });
     return group;
   }
 
@@ -1296,6 +1378,14 @@
   });
 
   async function afterPerson() {
+    // person_id as a GA4 user property (not group_id — a person moves
+    // between groups over time, so group_id travels as a per-event
+    // param instead; see analytics plan). Cookie identity is already
+    // the source of truth here, this just lets us segment by it in GA.
+    if (typeof gtag === 'function') {
+      gtag('set', 'user_properties', { person_id: person.id });
+    }
+
     drawerName.textContent = person.display_name;
     renderMyAvatarChrome();
 
@@ -1384,7 +1474,8 @@
     // forced first stop.
     const groupName = document.getElementById('name-gate-group-input').value.trim();
     if (groupName) {
-      await createGroup(person.id, groupName);
+      const group = await createGroup(person.id, groupName);
+      if (group) trackEvent('group_created', { group_id: group.id, via: 'cold_start' });
     }
     await enterAppFromGate();
   });
@@ -1460,7 +1551,7 @@
   // Used when search already has enough to create the show outright
   // (title + date) — no review form, just add it. Falls back to the
   // form if the data turns out to be incomplete.
-  async function submitShowDirectly(fields) {
+  async function submitShowDirectly(fields, source) {
     if (!currentGroupId) return;
     if (!fields.title || !fields.show_date) {
       revealManualForm(fields);
@@ -1468,11 +1559,17 @@
     }
     const show = await createShow(currentGroupId, person.id, fields);
     if (show) {
+      trackEvent('show_added', { group_id: show.group_id, show_id: show.id, source: source || 'manual' });
       // Adding a show is itself a "curious" signal — without this the
       // person who just added it would see their own ghost add-slot
       // (the tinted + circle) on a card they created themselves,
-      // which reads as if the app didn't notice they're in.
+      // which reads as if the app didn't notice they're in. Not
+      // counted toward overlap_reached here since nobody else can
+      // possibly be curious yet on a show that was just created —
+      // the 1→2 transition logic in renderShowInteractiveBody only
+      // applies there, not to this auto-join.
       await setResponse(show.id, person.id, 'curious');
+      trackEvent('curious_tapped', { group_id: show.group_id, show_id: show.id, via: 'show_creation' });
       resetAddShowPanel();
       await renderCurrentView(currentGroupId);
     }
@@ -1525,7 +1622,7 @@
         <div class="result-title">${show.title || 'Untitled show'}</div>
         <div class="result-meta">${show.show_date || 'No date'}${show.venue_name ? ' · ' + show.venue_name : ''}</div>
       `;
-      item.addEventListener('click', () => submitShowDirectly(show));
+      item.addEventListener('click', () => submitShowDirectly(show, 'ticketmaster'));
       artistSearchResults.appendChild(item);
     });
   });
@@ -1585,7 +1682,7 @@
       venue_url: selectedVenueUrl,
       source_url: selectedSourceUrl,
     };
-    await submitShowDirectly(fields);
+    await submitShowDirectly(fields, 'manual');
   });
 </script>
 
