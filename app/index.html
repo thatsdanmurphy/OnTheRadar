@@ -109,7 +109,13 @@
             <input type="text" id="name-gate-input" required placeholder="Your name" autocomplete="name">
           </div>
           <div class="form-row" id="name-gate-group-row" style="display:none;">
-            <label for="name-gate-group-input">Group name</label>
+            <!-- Label reads "Herd name" now, not "Group name" -- per
+                 direct feedback, closing the last gap in "herd"
+                 terminology (nav drawer already said "Herds"/"Add a
+                 herd"; this and the group modal below were the two
+                 remaining spots still saying "group"). id/for stay as
+                 name-gate-group-input -- internal, not user-visible. -->
+            <label for="name-gate-group-input">Herd name</label>
             <input type="text" id="name-gate-group-input" placeholder="e.g. The Usual Suspects" autocomplete="off">
           </div>
           <button type="submit" class="btn-solid">Continue</button>
@@ -234,9 +240,13 @@
     </button>
     <!-- "Your groups" -> "Herds" per direct feedback: lean into the
          app's own name/metaphor instead of the generic term. "Group"
-         still appears elsewhere (name-gate's "Group name" field, "View
-         group"/"Leave group" in the group modal) -- not touched here,
-         worth a consistency pass later. -->
+         used to still show up at the name-gate ("Group name") and in
+         the group modal ("View group"/"Leave group") -- a later pass
+         ("make sure herd is consistent across") caught those too, see
+         name-gate-group-row and #group-view-btn/#group-modal-leave-btn
+         below. Internal ids/classes/functions (group.name, .group-
+         modal-*, createGroup(), etc.) are deliberately untouched --
+         this is a copy pass, not a data-model rename. -->
     <div class="drawer-label">Herds</div>
     <div class="drawer-group-list" id="drawer-group-list"></div>
     <!-- Same visual weight as Add Show's own card now, per direct
@@ -290,7 +300,7 @@
       <button type="button" class="group-heading-btn" id="group-share-btn" aria-label="Share invite link">
         <i data-lucide="share"></i>
       </button>
-      <button type="button" class="group-heading-btn" id="group-view-btn" aria-label="View group">
+      <button type="button" class="group-heading-btn" id="group-view-btn" aria-label="View herd">
         <i data-lucide="users"></i>
       </button>
     </div>
@@ -419,7 +429,7 @@
     <div class="group-modal-label">Members</div>
     <div class="person-list" id="group-modal-member-list"></div>
 
-    <button type="button" class="group-modal-leave-btn" id="group-modal-leave-btn">Leave group</button>
+    <button type="button" class="group-modal-leave-btn" id="group-modal-leave-btn">Leave herd</button>
   </div>
 </div>
 
