@@ -238,17 +238,23 @@
    decoration. */
 .drawer-identity-section {
   border-bottom: none;
-  /* Toned way down per direct feedback ("more subtle, it's not
-     ambient enough") — the first pass read as a distinct glowing
-     blob with a hard visible edge, not a wash of light. Mix strength
-     cut roughly in half (42% -> 18%, 15% -> 6%) and the ellipses/
-     circles sized up with a much longer fade-out (transparent moved
-     from 65% to 90%+) so there's no perceptible boundary, just a
-     gradual lightening toward the avatar. */
+  /* Went through two rounds of toning down. First pass (42%/15% mix,
+     fixed-size shapes, transparent at 65%) read as a distinct glowing
+     blob with a hard edge. Second pass halved the mix and stretched
+     the fade, but was still a bounded shape with a perceptible edge
+     within the box. Per direct feedback ("fill the whole space and
+     [a] subtler gradient, then we can put this to bed") — dropped the
+     fixed pixel sizes entirely; with no explicit size, each
+     radial-gradient defaults to farthest-corner, so it scales to
+     cover the section's entire box (any width, any height) rather
+     than sitting as an island within it, and going straight to
+     transparent with only two stops (no plateau) means there's no
+     ring or boundary anywhere, just one continuous fade edge to edge.
+     Mix strength cut again (18% -> 12%, 6% -> 4%). */
   background:
-    radial-gradient(ellipse 320px 260px at 15% 70%, color-mix(in srgb, var(--avatar-color, var(--color-chip-bg)) 18%, transparent) 0%, transparent 90%),
-    radial-gradient(circle 220px at 8% -15%, color-mix(in srgb, var(--color-accent) 6%, transparent) 0%, transparent 90%),
-    radial-gradient(circle 220px at 96% -15%, color-mix(in srgb, var(--color-logo-green) 6%, transparent) 0%, transparent 90%),
+    radial-gradient(at 15% 70%, color-mix(in srgb, var(--avatar-color, var(--color-chip-bg)) 12%, transparent), transparent),
+    radial-gradient(at 0% 0%, color-mix(in srgb, var(--color-accent) 4%, transparent), transparent),
+    radial-gradient(at 100% 0%, color-mix(in srgb, var(--color-logo-green) 4%, transparent), transparent),
     var(--color-fill-dim);
   margin: calc(var(--space-24) * -1) calc(var(--space-24) * -1) var(--space-24) calc(var(--space-24) * -1);
   padding: var(--space-24);
