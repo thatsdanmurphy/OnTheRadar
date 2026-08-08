@@ -47,15 +47,22 @@
 <!-- Open Graph / Twitter card — a plain link share preview: the
      wordmark + tagline on the app's own charcoal, same "GigHerd" that
      appears everywhere else, not a screenshot of the UI. Image paths
-     are relative — resolve correctly once this is deployed to a real
-     domain (still TODO, see component-map.md's invite-link notes);
-     og:url is left off rather than hardcoding a domain that doesn't
-     exist yet. -->
+     are relative, resolved against the page's own URL. Now that the
+     app is live at a real domain, og:url and a canonical tag are both
+     filled in -- previously left off deliberately since there was no
+     real domain yet to hardcode (see git history). Both pin to the
+     clean root "https://www.gigherd.com/", not "/index.html" -- same
+     "one canonical URL, not two that happen to serve the same page"
+     fix as the wordmark link and copyInviteLink() (see .wordmark and
+     copyInviteLink() below). Lets share previews and search engines
+     treat this as one page instead of two possible URLs for it. -->
+<link rel="canonical" href="https://www.gigherd.com/">
 <meta property="og:title" content="GigHerd">
 <meta property="og:description" content="Line up shows with your pals.">
 <meta property="og:site_name" content="GigHerd">
 <meta property="og:image" content="assets/og-image.png">
 <meta property="og:type" content="website">
+<meta property="og:url" content="https://www.gigherd.com/">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="GigHerd">
 <meta name="twitter:description" content="Line up shows with your pals.">
@@ -143,7 +150,13 @@
     <button type="button" class="header-avatar-btn" id="hamburger-btn" aria-label="Open menu" aria-expanded="false" aria-controls="nav-drawer">
       <span id="header-avatar-initials"></span>
     </button>
-    <a href="index.html" class="wordmark"><span class="wordmark-gig">Gig</span><span class="wordmark-herd">Herd</span></a>
+    <!-- "/" not "index.html" -- the relative filename put the literal
+         /index.html in the address bar on click, exposing a
+         different-looking URL than the clean root visitors normally
+         land on (and than copyInviteLink() generates -- see below).
+         Absolute root path always resolves to the same page either
+         way, so there's no behavior change, just a consistent URL. -->
+    <a href="/" class="wordmark"><span class="wordmark-gig">Gig</span><span class="wordmark-herd">Herd</span></a>
   </div>
   <!-- Same one-liner as the name gate, so the value prop shows up
        everywhere the wordmark does, not just the first screen someone
@@ -602,7 +615,14 @@
   // own tagline everywhere else — direct, no exclamation points, no
   // manufactured urgency (see brand-brief.md's Voice section).
   async function copyInviteLink(slug, groupName, groupId) {
-    const link = `${window.location.origin}${window.location.pathname}?g=${slug}`;
+    // "/" not window.location.pathname -- pathname reflects whatever
+    // URL the sharer happens to be on (e.g. "/index.html" after
+    // clicking the wordmark, or a stale cached hit), which produced
+    // inconsistent, ugly invite links depending on where someone was
+    // standing when they hit share. The invite always points at the
+    // same single-page app either way, so it should always look the
+    // same too -- hardcoded to the clean root path.
+    const link = `${window.location.origin}/?g=${slug}`;
     const message = `Join ${groupName} on GigHerd — line up shows with your pals: ${link}`;
     trackEvent('invite_sent', { group_id: groupId || null });
     try {
@@ -1356,7 +1376,12 @@
     const slug = params.get('g');
     if (!slug) return null;
 
-    window.history.replaceState({}, '', window.location.pathname);
+    // Cleans up to "/" specifically, not window.location.pathname --
+    // same reasoning as copyInviteLink() above, so an invite visitor
+    // lands on the clean canonical URL after the ?g= param is
+    // stripped, regardless of whether the link they clicked pointed
+    // at "/" or "/index.html".
+    window.history.replaceState({}, '', '/');
 
     const group = await getGroupBySlug(slug);
     if (!group) return null;
