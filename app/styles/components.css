@@ -238,10 +238,17 @@
    decoration. */
 .drawer-identity-section {
   border-bottom: none;
+  /* Toned way down per direct feedback ("more subtle, it's not
+     ambient enough") — the first pass read as a distinct glowing
+     blob with a hard visible edge, not a wash of light. Mix strength
+     cut roughly in half (42% -> 18%, 15% -> 6%) and the ellipses/
+     circles sized up with a much longer fade-out (transparent moved
+     from 65% to 90%+) so there's no perceptible boundary, just a
+     gradual lightening toward the avatar. */
   background:
-    radial-gradient(ellipse 180px 130px at 15% 70%, color-mix(in srgb, var(--avatar-color, var(--color-chip-bg)) 42%, transparent) 0%, transparent 65%),
-    radial-gradient(circle 120px at 8% -15%, color-mix(in srgb, var(--color-accent) 15%, transparent) 0%, transparent 65%),
-    radial-gradient(circle 120px at 96% -15%, color-mix(in srgb, var(--color-logo-green) 15%, transparent) 0%, transparent 65%),
+    radial-gradient(ellipse 320px 260px at 15% 70%, color-mix(in srgb, var(--avatar-color, var(--color-chip-bg)) 18%, transparent) 0%, transparent 90%),
+    radial-gradient(circle 220px at 8% -15%, color-mix(in srgb, var(--color-accent) 6%, transparent) 0%, transparent 90%),
+    radial-gradient(circle 220px at 96% -15%, color-mix(in srgb, var(--color-logo-green) 6%, transparent) 0%, transparent 90%),
     var(--color-fill-dim);
   margin: calc(var(--space-24) * -1) calc(var(--space-24) * -1) var(--space-24) calc(var(--space-24) * -1);
   padding: var(--space-24);
