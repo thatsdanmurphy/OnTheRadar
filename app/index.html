@@ -1373,11 +1373,12 @@
     hamburgerBtn.style.setProperty('--avatar-color', color);
     hamburgerBtn.style.color = textColor;
     headerAvatarInitials.textContent = initials(person.display_name);
-    // Feeds .site-header::before's dual-tone glow (see components.css) —
-    // same custom property, just also set on the header itself now so
-    // the background gradient behind the wordmark tracks whichever
-    // color is currently chosen, not just the avatar dot and trigger.
-    siteHeader.style.setProperty('--avatar-color', color);
+    // Feeds .drawer-identity-section::before's dual-tone glow (see
+    // components.css) — same custom property already applied to the
+    // drawer avatar and header trigger, just also set on the identity
+    // section itself now so its background gradient tracks whichever
+    // color is currently chosen.
+    document.querySelector('.drawer-identity-section').style.setProperty('--avatar-color', color);
 
     avatarColorPicker.innerHTML = '';
     AVATAR_COLORS.forEach((c) => {

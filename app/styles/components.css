@@ -15,39 +15,6 @@
    hard edge. */
 .site-header {
   padding-block: var(--space-24);
-  position: relative;
-}
-
-/* Dual-tone radial glow, echoing whoever's currently signed in — per
-   direct feedback on a set of mockups (radial glow > horizontal wash /
-   crossing beams, both read "too cheesy"; then "should we add another
-   color highlight for a more nuanced gradient mapping" once radial was
-   picked). --avatar-color is set on this element in
-   renderMyAvatarChrome() (same custom property already used on the
-   drawer avatar and header trigger, just also applied here now) — a
-   fresh person before any color is chosen falls back to
-   --color-chip-bg, same fallback .header-avatar-btn already uses.
-   Center glow is the person's own color; two faint corner glows use
-   the wordmark's own two tokens (--color-accent "Gig" pink,
-   --color-logo-green "Herd" green) rather than new one-off hex values —
-   personal color as the dominant light, brand duotone as a faint edge
-   bleed, same relationship the wordmark itself has between "you" and
-   "the app." z-index: -1 (not overflow/clip tricks) keeps it behind
-   .header-row/.header-tagline while still living inside this element's
-   own box, so it's clipped to the header's bounds automatically. Flat
-   per the brand's "no glow, full stop" rule everywhere else in the
-   app — this is the one deliberate exception, reserved for identity,
-   not decoration. */
-.site-header::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    radial-gradient(ellipse 220px 140px at 50% 10%, color-mix(in srgb, var(--avatar-color, var(--color-chip-bg)) 42%, transparent) 0%, transparent 62%),
-    radial-gradient(circle 160px at 15% -20%, color-mix(in srgb, var(--color-accent) 15%, transparent) 0%, transparent 65%),
-    radial-gradient(circle 160px at 85% -20%, color-mix(in srgb, var(--color-logo-green) 15%, transparent) 0%, transparent 65%);
 }
 
 /* Nav chrome, not body content — deliberately not using .row/.col-*.
@@ -246,9 +213,36 @@
    margin now pulls the close button up into the band too — the fill
    covers the whole top of the panel, flush to the top border, not just
    the identity content beneath it. */
+/* Dual-tone radial glow, echoing whoever's currently signed in — moved
+   here from the site header per direct feedback ("no gradient in the
+   header, I want it in the nav drawer header instead"). Came out of a
+   round of mockups (radial glow picked over a horizontal wash and
+   crossing beams, both "too cheesy"), then a follow-up pass adding a
+   second color highlight for "a more nuanced gradient mapping."
+   --avatar-color is set on this element in renderMyAvatarChrome() —
+   same custom property already applied to the drawer avatar and
+   header trigger, just also set here; falls back to --color-chip-bg
+   for a fresh person with no color chosen yet, same fallback
+   .header-avatar-btn uses. Center glow sits near the avatar itself
+   (bottom-left of the band, where .drawer-identity actually renders);
+   two faint corner glows use the wordmark's own two tokens
+   (--color-accent "Gig" pink, --color-logo-green "Herd" green) rather
+   than new one-off hex values. Layered as extra background gradients
+   on top of the section's own --color-fill-dim (the last layer in the
+   list) rather than a separate pseudo-element — background paint sits
+   behind child content automatically, no z-index needed the way the
+   header attempt required. Clips to this element's own
+   border-top-right-radius the same way any background does. Flat per
+   the brand's "no glow, full stop" rule everywhere else in the app —
+   this is the one deliberate exception, reserved for identity, not
+   decoration. */
 .drawer-identity-section {
   border-bottom: none;
-  background: var(--color-fill-dim);
+  background:
+    radial-gradient(ellipse 180px 130px at 15% 70%, color-mix(in srgb, var(--avatar-color, var(--color-chip-bg)) 42%, transparent) 0%, transparent 65%),
+    radial-gradient(circle 120px at 8% -15%, color-mix(in srgb, var(--color-accent) 15%, transparent) 0%, transparent 65%),
+    radial-gradient(circle 120px at 96% -15%, color-mix(in srgb, var(--color-logo-green) 15%, transparent) 0%, transparent 65%),
+    var(--color-fill-dim);
   margin: calc(var(--space-24) * -1) calc(var(--space-24) * -1) var(--space-24) calc(var(--space-24) * -1);
   padding: var(--space-24);
   border-top-right-radius: var(--radius);
