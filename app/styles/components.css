@@ -1458,9 +1458,7 @@ body.drawer-open {
   width: 100%;
   margin-top: var(--space-32);
   background: none;
-  border-left: none;
-  border-right: none;
-  border-bottom: none;
+  border: none;
   color: var(--color-surface-text);
   font-family: var(--font-data);
   font-weight: 600;
