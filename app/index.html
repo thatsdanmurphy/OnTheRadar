@@ -259,7 +259,11 @@
        per direct feedback. -->
   <div class="drawer-footer-section">
     <p class="drawer-footer-copyright">© 2026 GigHerd</p>
-    <a class="drawer-footer-contact" href="mailto:dmurphy.dpm@gmail.com?subject=Gig%20Herd">Questions? Comments? Email us.</a>
+    <!-- Real support address now, not a personal inbox — shown outright
+         rather than hidden behind generic link text, per direct
+         feedback ("i think we show the email"). -->
+    <p class="drawer-footer-prompt">Questions or comments?</p>
+    <a class="drawer-footer-contact" href="mailto:hello@gigherd.com">hello@gigherd.com</a>
   </div>
 </aside>
 
@@ -415,6 +419,28 @@
   </div>
 </div>
 
+<!-- ===== New herd — used to be a bare window.prompt(), which per
+     direct feedback "feels weird" (native browser chrome, no scrim,
+     inconsistent look across Safari/Chrome). Same modal-overlay/
+     modal-box pattern as the group and people modals above, so it
+     picks up the app's own flat scrim and surface styling instead of
+     falling back to the OS's own dialog box. ===== -->
+<div class="modal-overlay" id="new-group-modal-overlay" style="display:none;">
+  <div class="modal-box" id="new-group-modal-box">
+    <div class="modal-top">
+      <div class="modal-title">New herd</div>
+      <button type="button" class="modal-close-btn" id="new-group-modal-close-btn" aria-label="Close"><i data-lucide="x"></i></button>
+    </div>
+    <form id="new-group-form">
+      <div class="form-row">
+        <label for="new-group-input">Herd name</label>
+        <input type="text" id="new-group-input" required placeholder="e.g. The Jimmys" autocomplete="off">
+      </div>
+      <button type="submit" class="btn-solid new-group-submit-btn">Create herd</button>
+    </form>
+  </div>
+</div>
+
 <!-- The page footer that used to live here (copyright + a mailto:
      contact link) moved into the nav drawer per direct feedback — see
      .drawer-footer-section at the bottom of #nav-drawer above. Contact
@@ -477,6 +503,11 @@
   const groupModalInviteBtn = document.getElementById('group-modal-invite-btn');
   const groupModalMemberList = document.getElementById('group-modal-member-list');
   const groupModalLeaveBtn = document.getElementById('group-modal-leave-btn');
+
+  const newGroupModalOverlay = document.getElementById('new-group-modal-overlay');
+  const newGroupModalCloseBtn = document.getElementById('new-group-modal-close-btn');
+  const newGroupForm = document.getElementById('new-group-form');
+  const newGroupInput = document.getElementById('new-group-input');
 
   // Nav drawer — identity + whole-crew list. Group switching lives in
   // the always-visible group bar under the header instead (see below).
@@ -606,7 +637,7 @@
     { hex: '#ebe8e1', name: 'Paper' },
     { hex: '#c66c3f', name: 'Rust' },
     { hex: '#c6a43f', name: 'Amber' },
-    { hex: '#61c63f', name: 'Moss' },
+    { hex: '#c53fb4', name: 'Berry' },
     { hex: '#3fc6a4', name: 'Jade' },
     { hex: '#3fa4c6', name: 'Sky' },
     { hex: '#3f56c6', name: 'Indigo' },
@@ -782,10 +813,42 @@
     await selectGroup(myGroups[0]);
   });
 
+  // New herd modal — opened from the drawer's "+ Herd" button (see
+  // handleNewGroup below), replacing what used to be a bare
+  // window.prompt(). Same open/close/overlay-click/Escape conventions
+  // as the group and people modals above.
+  function openNewGroupModal() {
+    newGroupInput.value = '';
+    newGroupModalOverlay.style.display = 'flex';
+    newGroupInput.focus();
+  }
+
+  function closeNewGroupModal() {
+    newGroupModalOverlay.style.display = 'none';
+  }
+
+  newGroupModalCloseBtn.addEventListener('click', closeNewGroupModal);
+  newGroupModalOverlay.addEventListener('click', (e) => {
+    if (e.target === newGroupModalOverlay) closeNewGroupModal();
+  });
+
+  newGroupForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = newGroupInput.value.trim();
+    if (!name) return;
+    closeNewGroupModal();
+    const group = await createGroup(person.id, name);
+    if (!group) return;
+    trackEvent('group_created', { group_id: group.id });
+    myGroups = await getMyGroups(person.id);
+    await selectGroup(group);
+  });
+
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
     if (peopleModalOverlay.style.display === 'flex') closePeopleModal();
     if (groupModalOverlay.style.display === 'flex') closeGroupModal();
+    if (newGroupModalOverlay.style.display === 'flex') closeNewGroupModal();
   });
 
   // Group list — lives inside the drawer, plain always-visible rows
@@ -1260,14 +1323,14 @@
 
   drawerMyShowsBtn.addEventListener('click', renderMyShowsView);
 
-  async function handleNewGroup() {
-    const name = window.prompt('Name this group:', '')?.trim();
-    if (!name) return;
-    const group = await createGroup(person.id, name);
-    if (!group) return;
-    trackEvent('group_created', { group_id: group.id });
-    myGroups = await getMyGroups(person.id);
-    await selectGroup(group);
+  // Opens the New herd modal (see openNewGroupModal above) — actual
+  // group creation now happens in that modal's own form submit
+  // handler, not here. Kept as a named function (rather than wiring
+  // openNewGroupModal directly to the button) so the click listener
+  // below reads the same way every other drawerNewGroupBtn-adjacent
+  // handler in this file does.
+  function handleNewGroup() {
+    openNewGroupModal();
   }
 
   // Processes ?g=<slug> from a shared invite link: looks up the group
@@ -1310,6 +1373,11 @@
     hamburgerBtn.style.setProperty('--avatar-color', color);
     hamburgerBtn.style.color = textColor;
     headerAvatarInitials.textContent = initials(person.display_name);
+    // Feeds .site-header::before's dual-tone glow (see components.css) —
+    // same custom property, just also set on the header itself now so
+    // the background gradient behind the wordmark tracks whichever
+    // color is currently chosen, not just the avatar dot and trigger.
+    siteHeader.style.setProperty('--avatar-color', color);
 
     avatarColorPicker.innerHTML = '';
     AVATAR_COLORS.forEach((c) => {

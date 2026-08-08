@@ -15,6 +15,39 @@
    hard edge. */
 .site-header {
   padding-block: var(--space-24);
+  position: relative;
+}
+
+/* Dual-tone radial glow, echoing whoever's currently signed in — per
+   direct feedback on a set of mockups (radial glow > horizontal wash /
+   crossing beams, both read "too cheesy"; then "should we add another
+   color highlight for a more nuanced gradient mapping" once radial was
+   picked). --avatar-color is set on this element in
+   renderMyAvatarChrome() (same custom property already used on the
+   drawer avatar and header trigger, just also applied here now) — a
+   fresh person before any color is chosen falls back to
+   --color-chip-bg, same fallback .header-avatar-btn already uses.
+   Center glow is the person's own color; two faint corner glows use
+   the wordmark's own two tokens (--color-accent "Gig" pink,
+   --color-logo-green "Herd" green) rather than new one-off hex values —
+   personal color as the dominant light, brand duotone as a faint edge
+   bleed, same relationship the wordmark itself has between "you" and
+   "the app." z-index: -1 (not overflow/clip tricks) keeps it behind
+   .header-row/.header-tagline while still living inside this element's
+   own box, so it's clipped to the header's bounds automatically. Flat
+   per the brand's "no glow, full stop" rule everywhere else in the
+   app — this is the one deliberate exception, reserved for identity,
+   not decoration. */
+.site-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 220px 140px at 50% 10%, color-mix(in srgb, var(--avatar-color, var(--color-chip-bg)) 42%, transparent) 0%, transparent 62%),
+    radial-gradient(circle 160px at 15% -20%, color-mix(in srgb, var(--color-accent) 15%, transparent) 0%, transparent 65%),
+    radial-gradient(circle 160px at 85% -20%, color-mix(in srgb, var(--color-logo-green) 15%, transparent) 0%, transparent 65%);
 }
 
 /* Nav chrome, not body content — deliberately not using .row/.col-*.
@@ -1356,6 +1389,21 @@ body.drawer-open {
   margin-bottom: var(--space-16);
 }
 
+/* ---------- New herd modal ---------- */
+
+/* Replaces the old window.prompt() flow — per direct feedback that a
+   native browser dialog "feels weird" and looks/behaves differently
+   across Safari/Chrome. Reuses .modal-overlay/.modal-box (same scrim,
+   same surface) and .form-row (same filled-field treatment as the
+   name-gate's own "Group name" input) rather than inventing anything
+   new. Button spans the field's full width, same as the name-gate's
+   own Continue button, since this modal is effectively that same
+   micro-form in a different frame. */
+.new-group-submit-btn {
+  width: 100%;
+  text-align: center;
+}
+
 /* ---------- Group modal ---------- */
 
 /* Invite people — the most common reason to open this modal, so it
@@ -1390,14 +1438,18 @@ body.drawer-open {
    one rare action didn't seem worth introducing one for — a
    window.confirm() before the actual leave (see the click handler)
    covers the "don't do this by accident" need instead of a loud
-   button. Top border + margin separate it from the member list above,
-   so it doesn't read as just one more row in that list. */
+   button. Separated from the member list above by space alone now,
+   not a border-top stroke — per direct feedback ("I don't love the
+   stroke above leave group, let's just use a little space instead"),
+   same "separation through room, not a line" call already made for
+   the drawer's identity section and footer. Margin bumped from
+   --space-24 to --space-32 since there's no line doing any of the
+   separating work anymore — needs a bit more air to read as its own
+   zone instead of a slightly-loose list item. */
 .group-modal-leave-btn {
   display: block;
   width: 100%;
-  margin-top: var(--space-24);
-  padding-top: var(--space-16);
-  border-top: 1px solid var(--color-border);
+  margin-top: var(--space-32);
   background: none;
   border-left: none;
   border-right: none;
@@ -1755,6 +1807,18 @@ body.drawer-open {
   font-size: var(--text-meta-size);
   line-height: var(--text-meta-lh);
   opacity: 0.45;
+  margin: 0;
+}
+
+/* "Questions or comments?" — sits between the copyright line and the
+   actual mailto address, same quiet register as the copyright line
+   itself (not the brighter, hover-interactive treatment the link
+   below gets). */
+.drawer-footer-prompt {
+  font-family: var(--font-body);
+  font-size: var(--text-meta-size);
+  line-height: var(--text-meta-lh);
+  opacity: 0.55;
   margin: 0;
 }
 

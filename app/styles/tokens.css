@@ -70,8 +70,14 @@
      which read too bright/pale on a solid button, almost white.
      color-mix()'d a touch darker off the same warm base rather than
      picking a colder gray, so it reads as a slightly deeper cream, not
-     gold and not neutral gray. */
-  --color-chip-bg: color-mix(in srgb, #ebe8e1 92%, black);
+     gold and not neutral gray. Dialed back further, 92% -> 82%, per
+     direct feedback that the invite button still felt too intense — a
+     near-white filled shape sitting on the charcoal page reads like a
+     flash of light rather than a calm primary action. Still clearly
+     the lightest fill in the app (nothing else gets this close to
+     white), just a warmer, quieter version of it; --color-chip-text
+     stays legible against it either way. */
+  --color-chip-bg: color-mix(in srgb, #ebe8e1 82%, black);
   --color-chip-text: #211f1a;       /* charcoal text on the light chip */
   /* One shared "recessed" fill — a shade darker than --color-bg,
      color-mix()'d from it rather than a hand-picked hex, so it moves
