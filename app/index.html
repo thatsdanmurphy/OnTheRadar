@@ -181,7 +181,7 @@
        --color-fill-dim band covers the true top of the drawer, flush to
        the top border, instead of stopping short and leaving the close
        button sitting on the lighter drawer surface above it. -->
-  <div class="drawer-section drawer-identity-section">
+  <div class="drawer-section drawer-identity-section" id="drawer-identity-section">
     <div class="drawer-top">
       <button type="button" class="drawer-close-btn" id="drawer-close-btn" aria-label="Close menu"><i data-lucide="x"></i></button>
     </div>
@@ -543,6 +543,7 @@
   const avatarColorPicker = document.getElementById('avatar-color-picker');
   const drawerOverlay = document.getElementById('drawer-overlay');
   const navDrawer = document.getElementById('nav-drawer');
+  const drawerIdentitySection = document.getElementById('drawer-identity-section');
   const drawerCloseBtn = document.getElementById('drawer-close-btn');
   const drawerAvatar = document.getElementById('drawer-avatar');
   const drawerName = document.getElementById('drawer-name');
@@ -1412,12 +1413,12 @@
     hamburgerBtn.style.setProperty('--avatar-color', color);
     hamburgerBtn.style.color = textColor;
     headerAvatarInitials.textContent = initials(person.display_name);
-    // Feeds .drawer-identity-section::before's dual-tone glow (see
+    // Feeds .drawer-identity-section's dual-tone glow (see
     // components.css) — same custom property already applied to the
     // drawer avatar and header trigger, just also set on the identity
     // section itself now so its background gradient tracks whichever
     // color is currently chosen.
-    document.querySelector('.drawer-identity-section').style.setProperty('--avatar-color', color);
+    drawerIdentitySection.style.setProperty('--avatar-color', color);
 
     avatarColorPicker.innerHTML = '';
     AVATAR_COLORS.forEach((c) => {
