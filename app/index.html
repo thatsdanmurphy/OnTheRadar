@@ -1035,8 +1035,9 @@
     return `${date} · ${time}`;
   }
 
-  // Fetches once, both views render from the same data — keeps List
-  // and Calendar guaranteed in sync regardless of which is showing.
+  // Single fetch per group — shared by the group view and (via
+  // renderMyShowsView's parallel calls) the cross-group My Shows view,
+  // so both always read from the same underlying data.
   async function loadGroupData(groupId) {
     const shows = await getShowsForGroup(groupId);
     const showIds = shows.map((s) => s.id);
