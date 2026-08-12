@@ -430,8 +430,27 @@
 <div class="modal-overlay" id="group-modal-overlay" style="display:none;">
   <div class="modal-box" id="group-modal-box">
     <div class="modal-top">
-      <div class="modal-title" id="group-modal-title"></div>
+      <!-- Name + pencil, same toggle-to-edit pattern as the drawer's
+           own .drawer-name-btn — click to reveal the plain text input
+           below. Any member can rename the herd (groups have no owner
+           concept — see schema.sql), same as any member can already
+           leave it. -->
+      <button type="button" class="group-modal-title-btn" id="group-modal-title-btn" aria-label="Edit herd name" aria-expanded="false">
+        <span class="modal-title" id="group-modal-title"></span>
+        <i data-lucide="pencil" class="group-modal-title-edit-icon"></i>
+      </button>
       <button type="button" class="modal-close-btn" id="group-modal-close-btn" aria-label="Close"><i data-lucide="x"></i></button>
+    </div>
+
+    <!-- Hidden until the title's clicked — collapsed by default, same
+         reasoning as .drawer-identity-edit: opening it should always
+         start from the current name, not whatever was left typed in
+         last time. -->
+    <div class="group-modal-name-edit" id="group-modal-name-edit" style="display:none;">
+      <div class="form-row">
+        <label for="group-modal-name-input">Herd name</label>
+        <input type="text" id="group-modal-name-input" autocomplete="off">
+      </div>
     </div>
 
     <button type="button" class="btn-solid group-modal-invite-btn" id="group-modal-invite-btn">
@@ -482,7 +501,7 @@
 <script src="scripts/identity.js"></script>
 <script src="scripts/shows.js"></script>
 <script>
-  const { getPerson, createPerson, getMyGroups, getGroupMembers, getGroupMemberCounts, createGroup, getGroupBySlug, joinGroup, leaveGroup, updatePersonColor, updatePersonName } = OTR;
+  const { getPerson, createPerson, getMyGroups, getGroupMembers, getGroupMemberCounts, createGroup, getGroupBySlug, joinGroup, leaveGroup, updatePersonColor, updatePersonName, updateGroupName } = OTR;
   const { getShowsForGroup, getResponsesForShows, setResponse, createShow, searchShows, searchVenues } = OTR;
 
   // Thin GA4 wrapper — every product event in the app funnels through
@@ -526,6 +545,9 @@
 
   const groupModalOverlay = document.getElementById('group-modal-overlay');
   const groupModalTitle = document.getElementById('group-modal-title');
+  const groupModalTitleBtn = document.getElementById('group-modal-title-btn');
+  const groupModalNameEdit = document.getElementById('group-modal-name-edit');
+  const groupModalNameInput = document.getElementById('group-modal-name-input');
   const groupModalCloseBtn = document.getElementById('group-modal-close-btn');
   const groupModalInviteBtn = document.getElementById('group-modal-invite-btn');
   const groupModalMemberList = document.getElementById('group-modal-member-list');
@@ -776,6 +798,7 @@
   async function openGroupModal() {
     if (!currentGroup) return;
     groupModalTitle.textContent = currentGroup.name;
+    setGroupNameEditOpen(false);
     const members = await getGroupMembers(currentGroup.id);
     renderPersonList(groupModalMemberList, members);
     groupModalOverlay.style.display = 'flex';
@@ -784,6 +807,50 @@
   function closeGroupModal() {
     groupModalOverlay.style.display = 'none';
   }
+
+  // Same toggle-to-edit shape as setIdentityEditOpen/toggleIdentityEdit
+  // below — opening always starts from the current name rather than
+  // whatever was left typed in from last time.
+  function setGroupNameEditOpen(open) {
+    groupModalNameEdit.style.display = open ? 'block' : 'none';
+    groupModalTitleBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open) groupModalNameInput.value = currentGroup.name;
+  }
+
+  function toggleGroupNameEdit() {
+    const isOpen = groupModalNameEdit.style.display !== 'none';
+    setGroupNameEditOpen(!isOpen);
+    if (!isOpen) groupModalNameInput.focus();
+  }
+
+  // Saves on blur, not on every keystroke — Enter just blurs, same
+  // "commit on leave" pattern as the drawer's own name field.
+  // Mutates currentGroup directly rather than refetching: currentGroup
+  // is the same object reference sitting inside myGroups (selectGroup
+  // is always called with an element from that array), so this also
+  // keeps the drawer's group switcher in sync once it's re-rendered.
+  async function saveGroupNameIfChanged() {
+    const newName = groupModalNameInput.value.trim();
+    if (!newName || newName === currentGroup.name) {
+      groupModalNameInput.value = currentGroup.name;
+      return;
+    }
+    const ok = await updateGroupName(currentGroup.id, newName);
+    if (!ok) return;
+    currentGroup.name = newName;
+    groupModalTitle.textContent = newName;
+    groupHeadingName.textContent = newName;
+    await renderGroupSwitcher(myGroups);
+  }
+
+  groupModalTitleBtn.addEventListener('click', toggleGroupNameEdit);
+  groupModalNameInput.addEventListener('blur', saveGroupNameIfChanged);
+  groupModalNameInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      groupModalNameInput.blur();
+    }
+  });
 
   // "View" in the group heading row opens the group modal (member list
   // + leave — invite lives there too, redundant with the direct share
@@ -1179,6 +1246,37 @@
     return badge;
   }
 
+  // Remove a show entirely — only ever rendered for the person who
+  // added it (see the created_by check above). Confirms via a plain
+  // window.confirm() before deleting, same "reach for the browser's
+  // own primitive" approach the Leave herd button already uses — this
+  // app has no destructive-red token anywhere, so a ghost icon button
+  // plus a native confirm is the whole affordance, no custom modal.
+  function buildDeleteButton(show, refresh) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'show-delete-btn';
+    btn.setAttribute('aria-label', 'Remove show');
+    btn.innerHTML = '<i data-lucide="trash-2"></i>';
+    lucide.createIcons({ root: btn });
+
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      if (!window.confirm(`Remove "${show.title}"? This can't be undone.`)) return;
+
+      btn.disabled = true;
+      const ok = await OTR.deleteShow(show.id);
+      if (!ok) {
+        btn.disabled = false;
+        return;
+      }
+      trackEvent('show_deleted', { group_id: show.group_id, show_id: show.id });
+      refresh();
+    });
+
+    return btn;
+  }
+
   // Empty stage, waiting for a show — a flat, single-color guitar
   // silhouette (headstock, neck, figure-8 body from two overlapping
   // filled circles, soundhole punched through with the page's own
@@ -1283,6 +1381,15 @@
       if (mine && mine.status === 'out') card.classList.add('is-out');
 
       card.appendChild(buildDateBadge(show));
+
+      // Only the person who added a show can remove it — same
+      // "creator owns it" rule the delete already enforces server-side
+      // in OTR.deleteShow. Top-right corner, same spot .modal-close-btn
+      // uses for its own dismiss action elsewhere in the app, rather
+      // than crowding the avatar row at the bottom of the card.
+      if (show.created_by === person.id) {
+        card.appendChild(buildDeleteButton(show, refresh));
+      }
 
       // Only set in the cross-group My Shows view (see
       // renderMyShowsView) — a quiet reminder of which group this show

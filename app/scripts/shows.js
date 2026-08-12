@@ -120,6 +120,23 @@ window.OTR = window.OTR || {};
     return data?.venues || [];
   };
 
+  // Only the person who added a show can remove it (index.html only
+  // renders the delete button when show.created_by === person.id, but
+  // 'open access' RLS means the check has to actually be enforced
+  // client-side rather than assumed from a hidden button).
+  OTR.deleteShow = async function (showId) {
+    const { error } = await OTR.db
+      .from('shows')
+      .delete()
+      .eq('id', showId);
+
+    if (error) {
+      console.error('Failed to delete show:', error);
+      return false;
+    }
+    return true;
+  };
+
   OTR.setResponse = async function (showId, personId, status) {
     const { error } = await OTR.db
       .from('responses')

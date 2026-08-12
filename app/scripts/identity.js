@@ -154,6 +154,26 @@ window.OTR = window.OTR || {};
     return true;
   };
 
+  // Renames a group. Deliberately leaves groups.slug untouched — the
+  // slug is baked into every invite link already sent out (and the
+  // ?g= URL of the group itself), so re-slugifying on every rename
+  // would silently break links that already went out. Same "trimmed,
+  // no-op on empty" guard as updatePersonName above.
+  OTR.updateGroupName = async function (groupId, name) {
+    const trimmed = (name || '').trim();
+    if (!trimmed) return false;
+    const { error } = await OTR.db
+      .from('groups')
+      .update({ name: trimmed })
+      .eq('id', groupId);
+
+    if (error) {
+      console.error('Failed to update group name:', error);
+      return false;
+    }
+    return true;
+  };
+
   // Turns a group name into a URL-safe slug — lowercase, spaces/
   // punctuation collapsed to single hyphens, no leading/trailing
   // hyphens. Falls back to a plain "group" if the name has nothing

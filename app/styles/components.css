@@ -899,12 +899,45 @@ body.drawer-open {
    (show-date, show-title...) inherits charcoal by default, instead of
    the page's light text bleeding into the card. */
 .show-card {
+  position: relative;
   background: var(--color-surface);
   color: var(--color-surface-text);
   border-radius: var(--radius);
   padding: var(--space-16);
   margin-bottom: var(--space-16);
   transition: opacity 0.15s;
+}
+
+/* Top-right corner, same spot .modal-close-btn occupies in its own
+   context — only ever rendered for the show's creator (see
+   buildDeleteButton in index.html). Ghost icon button, no red: this
+   app has no destructive-red token anywhere, matching the plain-text
+   treatment Leave herd already uses for its own confirm()-gated
+   destructive action. */
+.show-delete-btn {
+  position: absolute;
+  top: var(--space-16);
+  right: var(--space-16);
+  background: none;
+  border: none;
+  color: var(--color-surface-text);
+  opacity: 0.4;
+  cursor: pointer;
+  padding: var(--space-4);
+}
+
+.show-delete-btn:hover {
+  opacity: 0.9;
+}
+
+.show-delete-btn:disabled {
+  opacity: 0.2;
+  cursor: default;
+}
+
+.show-delete-btn svg {
+  width: var(--icon-size);
+  height: var(--icon-size);
 }
 
 /* Person has marked themselves out — deprioritize visually without
@@ -1258,6 +1291,45 @@ body.drawer-open {
   font-weight: 600;
   font-size: var(--text-sub-size);
   line-height: var(--text-sub-lh);
+}
+
+/* Name + pencil, same shape as .drawer-name-btn — the pencil is the
+   actual point of this button existing, so "you can rename this" is
+   visible at a glance rather than only discoverable by clicking the
+   title and seeing what happens. */
+.group-modal-title-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--color-surface-text);
+  opacity: 0.85;
+  transition: opacity 0.15s ease;
+}
+
+.group-modal-title-btn:hover {
+  opacity: 1;
+}
+
+/* Sized via the parent + svg, same convention as every other Lucide
+   icon in the app (.drawer-name-btn svg etc.) — createIcons() swaps
+   the <i data-lucide> placeholder for an inline <svg> sibling, so
+   sizing targets the resulting svg rather than the placeholder's own
+   class. */
+.group-modal-title-btn svg {
+  width: var(--space-16);
+  height: var(--space-16);
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+/* Collapsed by default (see index.html) — opened by clicking the
+   title. Same bottom rhythm the invite button below already sits at. */
+.group-modal-name-edit {
+  margin-bottom: var(--space-16);
 }
 
 .modal-close-btn {
