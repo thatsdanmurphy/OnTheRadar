@@ -103,13 +103,14 @@
 
     // Only the first notable show surfaces on the card — a running
     // bulleted list read as clutter; anyone curious enough for the
-    // rest can follow the calendar link.
+    // rest can follow the calendar link. Used to also append a
+    // "+N more" counter next to that one fact, but that read as
+    // strange bookkeeping tacked onto a piece of trivia (per direct
+    // feedback, "why does one show fact say +2 more... one fact is
+    // enough") — cut it. The card commits to a single fact and stops.
     let notable = '';
     if (v.notableShows && v.notableShows.length) {
-      const more = v.notableShows.length > 1
-        ? ` <span style="opacity:.7;">+${v.notableShows.length - 1} more</span>`
-        : '';
-      notable = `<div class="venue-notable">${v.notableShows[0]}${more}</div>`;
+      notable = `<div class="venue-notable">${v.notableShows[0]}</div>`;
     }
 
     return `

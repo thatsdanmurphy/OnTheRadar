@@ -356,3 +356,10 @@ Rough capacity bands used for the primary categories: **Tiny venues** ≲250, **
 **Why:** Requested directly, in three follow-up messages across this session.
 **Verified:** Node script confirms 82 venues, zero duplicate names, no bad categories, no missing required fields. Playwright screenshot of the drawer (with fake herd rows injected) confirms the corrected spacing reads as intentional, not just numerically equal.
 **Revisit if:** None expected for the spacing fix. For the venue list, worth periodically re-checking whether any other city's batch has grown into a name collision as new metros or venues get added — the Shubert Theatre collision here is a preview of a class of bug this schema is exposed to as long as Favorites key off display name rather than a stable id.
+
+## 2026-08-15 — Browse venue cards: cut the "+N more" counter next to notable shows
+
+**What:** Venue cards show only the first `notableShows` entry (unchanged) — but used to append a "+N more" counter right next to it (e.g. "...before they were well known +2 more"). Cut the counter; the card now just shows the one fact and stops.
+**Why:** Called out directly — "why does one show fact say and two more... that sounds weird one fact i enough - i think its paradise rock club." Fair: tacking a bookkeeping count onto a single piece of trivia read odd, and the card was already deliberately choosing to show just one fact rather than a running list — the counter undercut that choice by announcing what it was leaving out.
+**Verified:** Playwright — every card with `notableShows` now renders exactly one fact, no "more" text anywhere in the rendered output.
+**Revisit if:** None expected — this is a straightforward cut, not a tradeoff.
