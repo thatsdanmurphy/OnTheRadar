@@ -589,6 +589,25 @@
   transition: background 0.15s ease;
 }
 
+/* My Shows specifically gets a touch more room below it than the
+   --space-8 every other row in the drawer uses. Purely optical: an 8px
+   gap between two solid, same-color filled rows (My Shows → Browse
+   Venues) reads visibly tighter than the same 8px gap next to a plain
+   text label (Browse Venues → the "HERDS" label) or between two herd
+   rows — a filled-color edge to filled-color edge gap has much higher
+   contrast than a filled edge to text gap, so identical geometry ends
+   up looking uneven. The token scale jumps straight from --space-8 to
+   --space-16 (no --space-12), so this goes to --space-16 rather than
+   inventing an off-scale value — a full step up reads clearly
+   intentional next to --space-8 rather than a half-step that could
+   still read as a rounding error. Scoped to the ID rather than the
+   shared class, which would also affect Browse Venues → Herds and the
+   Browse landing page's own reuse of this same button style, neither
+   of which had this problem. */
+#drawer-my-shows-btn {
+  margin-bottom: var(--space-16);
+}
+
 /* --tint-active-strong, not --tint-active — --tint-hover (8%) and
    --tint-active (10%) are only 2 percentage points apart, close enough
    to read as no change at all next to the arrow circle's own
