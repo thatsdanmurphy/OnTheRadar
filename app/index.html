@@ -73,17 +73,23 @@
 <link rel="stylesheet" href="styles/tokens.css">
 <link rel="stylesheet" href="styles/grid.css">
 <link rel="stylesheet" href="styles/components.css">
+<link rel="stylesheet" href="styles/browse.css">
 <!-- Supabase UMD build — plain global script, not a module, so this
      keeps working when the file is opened directly (file://). -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<!-- Lucide — the app's standard iconset going forward. Pinned to a
-     specific version rather than @latest per Lucide's own docs, so an
-     upstream release can't silently change/rename glyphs out from
-     under us. Usage: <i data-lucide="name"></i> placeholders, swapped
+<!-- Icons — self-hosted (scripts/icons.js), not the Lucide CDN. Used
+     to load lucide@1.29.0 from unpkg.com; that meant any user whose
+     network or ad-blocker blocked unpkg.com would see the *whole app*
+     break (the inline script's unguarded lucide.createIcons() call
+     would throw and halt execution), not just missing icons. This app
+     only uses ~19 of Lucide's several hundred glyphs, so scripts/icons.js
+     inlines just those, pinned to the same lucide-static@1.29.0 source
+     the CDN script was — no visual change, no more CDN dependency.
+     Usage is unchanged: <i data-lucide="name"></i> placeholders, swapped
      for inline SVG by lucide.createIcons() — called once for static
      icons and again after any dynamic render that adds new
-     data-lucide elements (see script below). -->
-<script src="https://unpkg.com/lucide@1.29.0/dist/umd/lucide.min.js"></script>
+     data-lucide elements (see script below). See decision log. -->
+<script src="scripts/icons.js"></script>
 </head>
 <body>
 
@@ -251,6 +257,22 @@
         <i data-lucide="chevron-right"></i>
       </span>
     </button>
+
+    <!-- Browse Venues — curated link-out venue directory, not
+         Supabase-backed (see decision log). Directly under My Shows,
+         same row treatment, per direct spec ("nav item under my
+         shows"). Click handler + view logic live in scripts/browse.js;
+         hidden again in selectGroup()/renderMyShowsView() below when
+         leaving Browse for the regular shows UI. -->
+    <button type="button" class="drawer-my-shows-btn" id="drawer-browse-btn">
+      <span class="drawer-my-shows-text">
+        <span class="drawer-my-shows-label">Browse Venues</span>
+        <span class="drawer-my-shows-sub">Find a venue by size, region, or type</span>
+      </span>
+      <span class="drawer-my-shows-arrow-circle">
+        <i data-lucide="chevron-right"></i>
+      </span>
+    </button>
     <!-- "Your groups" -> "Herds" per direct feedback: lean into the
          app's own name/metaphor instead of the generic term. "Group"
          used to still show up at the name-gate ("Group name") and in
@@ -403,6 +425,97 @@
     </div>
   </div>
 </main>
+
+<!-- ===== Browse Venues — merged in from app/browse-prototype.html
+     (see decision log). Sibling to #main-content, not nested inside
+     it: toggled between the two wholesale in scripts/browse.js rather
+     than trying to coexist with the group heading / Add Show card /
+     show list DOM. Curated link-out directory (data/venues.js), not
+     Supabase-backed — see the venues-batch decision log entries. ===== -->
+<div class="container browse-view" id="browse-view" style="display:none;">
+
+  <!-- LANDING — Favorites, then 3 big chips -->
+  <section id="browse-landing-view" style="display:none;">
+    <div class="browse-header-row">
+      <h2 class="browse-heading">Browse Venues</h2>
+    </div>
+    <button type="button" class="drawer-my-shows-btn landing-row" data-mode="favorites">
+      <span class="drawer-my-shows-text">
+        <span class="drawer-my-shows-label">Favorites</span>
+        <span class="drawer-my-shows-sub" id="landing-favorites-sub">Venues you've saved</span>
+      </span>
+      <span class="drawer-my-shows-arrow-circle"><i data-lucide="heart"></i></span>
+    </button>
+    <button type="button" class="drawer-my-shows-btn landing-row" data-mode="size">
+      <span class="drawer-my-shows-text">
+        <span class="drawer-my-shows-label">By Size</span>
+        <span class="drawer-my-shows-sub">Tiny, small, arenas &amp; stadiums</span>
+      </span>
+      <span class="drawer-my-shows-arrow-circle"><i data-lucide="ruler"></i></span>
+    </button>
+    <button type="button" class="drawer-my-shows-btn landing-row" data-mode="region">
+      <span class="drawer-my-shows-text">
+        <span class="drawer-my-shows-label">By State / Region</span>
+        <span class="drawer-my-shows-sub" id="landing-region-sub"></span>
+      </span>
+      <span class="drawer-my-shows-arrow-circle"><i data-lucide="map-pin"></i></span>
+    </button>
+    <button type="button" class="drawer-my-shows-btn landing-row" data-mode="type">
+      <span class="drawer-my-shows-text">
+        <span class="drawer-my-shows-label">By Type</span>
+        <span class="drawer-my-shows-sub">Outdoor, classic theatres, legendary, festivals</span>
+      </span>
+      <span class="drawer-my-shows-arrow-circle"><i data-lucide="tags"></i></span>
+    </button>
+  </section>
+
+  <!-- FAVORITES — no filter chips, just the venues you've hearted.
+       Persisted to localStorage (per-browser) — see scripts/browse.js. -->
+  <section id="browse-favorites-view" style="display:none;">
+    <div class="browse-view-header">
+      <button type="button" class="browse-back-btn" back-to="landing" aria-label="Back to Browse"><i data-lucide="chevron-left"></i></button>
+      <h2 class="browse-heading">Favorites</h2>
+    </div>
+    <p class="results-count" id="favorites-count"></p>
+    <div id="favorites-results"></div>
+  </section>
+
+  <!-- BY SIZE — horizontal scroll strip up top, results below, live -->
+  <section id="browse-size-view" style="display:none;">
+    <div class="browse-view-header">
+      <button type="button" class="browse-back-btn" back-to="landing" aria-label="Back to Browse"><i data-lucide="chevron-left"></i></button>
+      <h2 class="browse-heading">By Size</h2>
+    </div>
+    <div class="chip-strip" id="size-strip"></div>
+    <p class="results-count" id="size-count"></p>
+    <div id="size-results"></div>
+  </section>
+
+  <!-- BY STATE/REGION — same treatment, alphabetical -->
+  <section id="browse-region-view" style="display:none;">
+    <div class="browse-view-header">
+      <button type="button" class="browse-back-btn" back-to="landing" aria-label="Back to Browse"><i data-lucide="chevron-left"></i></button>
+      <h2 class="browse-heading">By State / Region</h2>
+    </div>
+    <div class="chip-strip" id="region-strip"></div>
+    <p class="results-count" id="region-count"></p>
+    <div id="region-results"></div>
+  </section>
+
+  <!-- BY TYPE — horizontal scroll strip, multi-select (a venue can be
+       Legendary AND Outdoor at once, so tapping one chip doesn't
+       deselect the others). -->
+  <section id="browse-type-view" style="display:none;">
+    <div class="browse-view-header">
+      <button type="button" class="browse-back-btn" back-to="landing" aria-label="Back to Browse"><i data-lucide="chevron-left"></i></button>
+      <h2 class="browse-heading">By Type</h2>
+    </div>
+    <div class="chip-strip" id="type-strip"></div>
+    <p class="results-count" id="type-count"></p>
+    <div id="type-results"></div>
+  </section>
+
+</div>
 
 <!-- ===== Toast — brief, dismissing-itself confirmation. Currently
      one use: "Nice, X added that too!" when Add Show turns out to be
@@ -1037,6 +1150,13 @@
     myShowsHeadingRow.style.display = 'none';
     groupBar.style.display = 'block';
     drawerMyShowsBtn.classList.remove('active');
+    // Leaving Browse (if it was open) for a specific herd — see
+    // scripts/browse.js, which owns everything *inside* #browse-view
+    // but not this hide-it-and-restore-the-shows-UI step, since that's
+    // this function's job everywhere else too (drawerMyShowsBtn etc.).
+    document.getElementById('browse-view').style.display = 'none';
+    document.getElementById('drawer-browse-btn').classList.remove('active');
+    mainContent.style.display = '';
     await renderGroupSwitcher(myGroups);
     closeDrawer();
     groupHeadingName.textContent = group.name;
@@ -1450,6 +1570,11 @@
     currentGroupId = null;
     currentGroup = null;
     drawerMyShowsBtn.classList.add('active');
+    // Leaving Browse (if it was open) — see the matching comment in
+    // selectGroup() above.
+    document.getElementById('browse-view').style.display = 'none';
+    document.getElementById('drawer-browse-btn').classList.remove('active');
+    mainContent.style.display = '';
     await renderGroupSwitcher(myGroups);
     closeDrawer();
 
@@ -1962,6 +2087,14 @@
     await submitShowDirectly(fields, 'manual');
   });
 </script>
+
+<!-- Browse Venues — loaded after the main script above so it can
+     reference that script's top-level consts/functions directly
+     (mainContent, trackEvent, openDrawer, closeDrawer), the same way
+     every classic <script> tag here shares one global scope. venues.js
+     just defines OTR.VENUES (static data); browse.js does the rest. -->
+<script src="data/venues.js"></script>
+<script src="scripts/browse.js"></script>
 
 </body>
 </html>

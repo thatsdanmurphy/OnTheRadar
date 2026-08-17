@@ -1,0 +1,177 @@
+/* ============================================================
+   On the Radar — Browse Venues
+   Merged in from app/browse-prototype.html (see decision log,
+   "Browse merged into the live app"). Same rule as every other
+   stylesheet here: everything traces back to a token in tokens.css,
+   nothing hardcoded.
+   ============================================================ */
+
+/* Container for the whole Browse feature — sibling to #main-content
+   (the shows UI), toggled between the two in scripts/browse.js rather
+   than living inside #main-content itself, so Browse never has to
+   coexist with the group heading / Add Show card / show list DOM at
+   the same time. Reuses .container for width/margin, not .show-list —
+   .show-list's flex:1 is meant for the shows UI's own short-page
+   stretch behavior; Browse gets the same treatment here directly
+   scoped to itself instead of borrowing (and permanently changing)
+   .show-list's padding for the whole app. */
+.browse-view {
+  flex: 1;
+  padding-top: var(--space-16);
+  padding-bottom: var(--space-32);
+}
+
+.browse-header-row { margin-bottom: var(--space-24); }
+
+.browse-heading {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: var(--text-head-size);
+  line-height: var(--text-head-lh);
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+}
+
+.browse-sub {
+  font-family: var(--font-data);
+  font-size: var(--text-meta-size);
+  line-height: var(--text-meta-lh);
+  opacity: 0.6;
+  margin: var(--space-4) 0 0;
+}
+
+/* Compact sub-view header: icon-only back button + heading in one
+   tight row (not stacked with separate margins) — per direct feedback
+   that the original stacked treatment read as "floaty." Landing page
+   keeps its own stacked heading treatment above; this is for the four
+   sub-views (Favorites/Size/Region/Type) only. */
+.browse-view-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  margin-bottom: var(--space-16);
+}
+.browse-back-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: var(--space-32);
+  height: var(--space-32);
+  background: var(--tint-hover);
+  border: none;
+  border-radius: 50%;
+  color: var(--color-text);
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s ease;
+}
+.browse-back-btn:hover { background: var(--tint-active); }
+.browse-back-btn svg { width: var(--icon-size); height: var(--icon-size); }
+.browse-view-header .browse-heading { margin: 0; }
+
+/* Landing page: reuses .drawer-my-shows-btn's row pattern (see
+   components.css) instead of a bespoke "big tile" — one nav-row
+   language for "go somewhere else in the app," whether that's the
+   drawer or here. Only addition is the bottom margin between rows,
+   matching the drawer's own --space-16 rhythm. */
+.landing-row { margin-bottom: var(--space-8); }
+
+/* Horizontal scrollable chip strip (Size, State/Region, Type) */
+.chip-strip {
+  display: flex;
+  gap: var(--space-8);
+  overflow-x: auto;
+  padding-bottom: var(--space-8);
+  margin-bottom: var(--space-24);
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+.chip-strip-item {
+  flex: 0 0 auto;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--text-control-size);
+  background: var(--color-surface);
+  color: var(--color-surface-text);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: var(--space-8) var(--space-16);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-8);
+  white-space: nowrap;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.chip-strip-item:hover { background: var(--tint-active); }
+.chip-strip-item svg { width: 16px; height: 16px; opacity: 0.7; }
+/* Selected state — same tonal-fill language as .drawer-my-shows-btn.active
+   (--tint-active-strong), not pink. Pink means overlap and nowhere
+   else, per tokens.css; a filter chip being "on" isn't an overlap
+   signal. Weight bump instead of color carries the "selected" read. */
+.chip-strip-item.is-selected {
+  background: var(--tint-active-strong);
+  border-color: transparent;
+  font-weight: 700;
+}
+
+/* Venue cards — deliberately light: name, one-line address, a compact
+   meta row, transit if any, and a single preview line of notable
+   history rather than the full list. Categories aren't repeated here
+   at all; you already filtered by one to get to this list. */
+.venue-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-8); }
+.venue-name {
+  font-family: var(--font-body); font-weight: 700;
+  font-size: var(--text-sub-size); line-height: var(--text-sub-lh);
+  display: flex; align-items: center; gap: var(--space-4);
+}
+.venue-legendary-icon { width: 14px; height: 14px; opacity: 0.5; flex-shrink: 0; }
+
+/* Favorite toggle — solid-vs-outline carries the "on" state, not
+   color. Pink is reserved for overlap only (tokens.css); the usual
+   red-heart convention would be exactly that misuse, so this uses the
+   same neutral --color-text fill language as every other "active"
+   state in the app (chip strips, .drawer-my-shows-btn.active). */
+.venue-fav-btn {
+  flex-shrink: 0; background: none; border: none; cursor: pointer;
+  padding: var(--space-4); margin: calc(-1 * var(--space-4));
+  color: var(--color-text); opacity: 0.4;
+  display: flex; align-items: center; justify-content: center;
+  transition: opacity 0.15s ease;
+}
+.venue-fav-btn:hover { opacity: 0.75; }
+.venue-fav-btn svg { width: 20px; height: 20px; }
+.venue-fav-btn.is-favorited { opacity: 1; }
+.venue-fav-btn.is-favorited svg { fill: var(--color-text); }
+
+.venue-location {
+  font-family: var(--font-data); font-weight: 600;
+  font-size: var(--text-control-size); line-height: var(--text-control-lh);
+  opacity: 0.7; margin-top: var(--space-4);
+}
+.venue-meta {
+  font-family: var(--font-data); font-size: var(--text-meta-size); line-height: var(--text-meta-lh);
+  opacity: 0.55; margin-top: var(--space-8);
+  display: flex; flex-wrap: wrap; gap: var(--space-4) var(--space-8);
+}
+.venue-meta span:not(:last-child)::after { content: '·'; margin-left: var(--space-8); }
+.venue-transit {
+  font-family: var(--font-data); font-size: var(--text-meta-size); opacity: 0.5;
+  margin-top: var(--space-4); display: flex; align-items: center; gap: var(--space-4);
+}
+.venue-transit svg { width: 14px; height: 14px; flex-shrink: 0; }
+.venue-notable {
+  font-family: var(--font-body); font-style: italic;
+  font-size: var(--text-control-size); line-height: 1.4; opacity: 0.75;
+  margin-top: var(--space-8); padding-top: var(--space-8); border-top: 1px solid var(--color-border);
+}
+.venue-card-actions { margin-top: var(--space-16); display: flex; justify-content: flex-end; }
+.venue-card-actions a { text-decoration: none; display: inline-flex; align-items: center; gap: var(--space-4); }
+
+.results-count {
+  font-family: var(--font-data);
+  font-size: var(--text-meta-size);
+  opacity: 0.55;
+  margin: calc(-1 * var(--space-16)) 0 var(--space-16);
+}

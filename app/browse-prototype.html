@@ -12,27 +12,43 @@
      UI: landing chips + three distinct sub-pages" entry.
 
      Structure, per direct spec:
-     - Landing page: 3 big chips — By Size / By State-Region / By Type
-       (State and Region combined into one, per direct feedback).
+     - Landing page: Favorites at the top, then 3 big chips — By Size /
+       By State-Region / By Type (State and Region combined into one,
+       per direct feedback).
+     - Favorites: the venues you've hearted (venue-card heart button,
+       top right of every card, everywhere in Browse). No filter chips
+       — just the saved list. Prototype-only in-memory Set, resets on
+       reload; nothing to persist to yet since this file isn't wired to
+       Supabase (a real build needs its own per-person storage, likely
+       a new table — not decided yet, see decision log).
      - By Size: horizontal scrollable chip strip across the top
        (Tiny, Small, Arenas & Stadiums — 3, starting with Tiny),
        results list below, updates live.
      - By State/Region: same horizontal-scroll-strip treatment,
        alphabetical, one chip per region (region already implies its
        state in this data, so no separate state list).
-     - By Type: a vertical list, not a horizontal strip — starting
-       with Outdoor, then the rest of the 4 types. All ages/21+ was
-       tried folded in as a 5th row and then cut entirely per direct
-       feedback ("too complicated") — Type is multi-select (a venue
-       can be Legendary AND Outdoor), everything else in this file is
-       single-select. There's currently no ages filter anywhere in
-       Browse; the allAges field still shows on each venue card. -->
+     - By Type: same horizontal chip-strip treatment as Size/Region now
+       (was a vertical list — made consistent per direct feedback),
+       starting with Outdoor, then the rest of the 4 types. Only
+       difference from Size/Region: Type is multi-select (a venue can
+       be Legendary AND Outdoor at once), so tapping a chip toggles it
+       without deselecting the others. All ages/21+ was tried folded
+       in as a 5th chip and then cut entirely per direct feedback
+       ("too complicated") — there's currently no ages filter anywhere
+       in Browse; the allAges field still shows on each venue card. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@900&family=Public+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles/tokens.css">
 <link rel="stylesheet" href="styles/grid.css">
 <link rel="stylesheet" href="styles/components.css">
-<script src="https://unpkg.com/lucide@1.29.0/dist/umd/lucide.min.js"></script>
+<!-- Self-hosted icons — see scripts/icons.js and the decision log
+     entry on it. Replaces the unpkg.com Lucide CDN script this
+     prototype used to load (same fragility as index.html had: an
+     unguarded lucide.createIcons() call meant a blocked CDN broke the
+     whole page, not just the icons — this is what surfaced during
+     Playwright testing, since the cloud sandbox has no route to
+     unpkg.com). -->
+<script src="scripts/icons.js"></script>
 
 <style>
   /* Prototype-only additions — built out of existing tokens, nothing
@@ -70,66 +86,50 @@
     margin: var(--space-4) 0 0;
   }
 
+  /* ---- Compact sub-view header: icon-only back button + heading in
+     one tight row, not stacked with its own margins — per direct
+     feedback that the back button + heading read as "floaty," too
+     much loose vertical space between two things that are really one
+     unit ("where am I, how do I leave"). Landing page keeps its own
+     stacked heading+sub treatment below; this is for the three
+     sub-views only. */
+  .browse-view-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-8);
+    margin-bottom: var(--space-16);
+  }
   .browse-back-btn {
     display: inline-flex;
     align-items: center;
-    gap: var(--space-4);
-    background: none;
+    justify-content: center;
+    flex-shrink: 0;
+    width: var(--space-32);
+    height: var(--space-32);
+    background: var(--tint-hover);
     border: none;
+    border-radius: 50%;
     color: var(--color-text);
-    font-family: var(--font-data);
-    font-size: var(--text-control-size);
-    font-weight: 600;
-    opacity: 0.7;
     cursor: pointer;
     padding: 0;
-    margin-bottom: var(--space-16);
-  }
-  .browse-back-btn:hover { opacity: 1; }
-  .browse-back-btn svg { width: var(--icon-size); height: var(--icon-size); }
-
-  /* ---- Landing page: 3 big chips ---- */
-  .landing-tile {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-8);
-    background: var(--color-surface);
-    color: var(--color-surface-text);
-    border-radius: var(--radius);
-    padding: var(--space-24);
-    text-align: left;
-    border: none;
-    cursor: pointer;
-    width: 100%;
     transition: background 0.15s ease;
-    margin-bottom: var(--space-16);
   }
-  .landing-tile:hover { background: var(--tint-active); }
+  .browse-back-btn:hover { background: var(--tint-active); }
+  .browse-back-btn svg { width: var(--icon-size); height: var(--icon-size); }
+  .browse-view-header .browse-heading { margin: 0; }
 
-  .landing-tile-icon {
-    width: var(--space-40);
-    height: var(--space-40);
-    border-radius: 50%;
-    background: var(--tint-hover);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .landing-tile-icon svg { width: var(--icon-size); height: var(--icon-size); }
+  /* Pulls the whole page up slightly — the default --space-32 top
+     padding from .show-list (components.css) plus the header/back-row
+     above was reading as too much dead air before anything useful
+     starts. Prototype-only override; components.css itself untouched. */
+  .show-list { padding-top: var(--space-16); }
 
-  .landing-tile-label {
-    font-family: var(--font-display);
-    font-weight: 900;
-    font-size: var(--text-head-size);
-    line-height: var(--text-head-lh);
-    text-transform: uppercase;
-  }
-
-  .landing-tile-sub {
-    font-family: var(--font-data);
-    font-size: var(--text-meta-size);
-    opacity: 0.55;
-  }
+  /* ---- Landing page: reuses .drawer-my-shows-btn's row pattern
+     (see components.css) instead of a bespoke "big tile" — one nav-row
+     language for "go somewhere else in the app," whether that's the
+     drawer or here. Only addition is the bottom margin between rows,
+     matching the drawer's own --space-16 rhythm. */
+  .landing-row { margin-bottom: var(--space-8); }
 
   /* ---- Horizontal scrollable chip strip (Size, State/Region) ---- */
   .chip-strip {
@@ -160,44 +160,68 @@
   }
   .chip-strip-item:hover { background: var(--tint-active); }
   .chip-strip-item svg { width: 16px; height: 16px; opacity: 0.7; }
+  /* Selected state — same tonal-fill language as .drawer-my-shows-btn.active
+     (--tint-active-strong), not pink. Pink means overlap and nowhere
+     else, per tokens.css; a filter chip being "on" isn't an overlap
+     signal. Weight bump instead of color carries the "selected" read. */
   .chip-strip-item.is-selected {
-    background: color-mix(in srgb, var(--color-accent) 18%, transparent);
-    border-color: var(--color-accent);
-    color: var(--color-accent);
+    background: var(--tint-active-strong);
+    border-color: transparent;
+    font-weight: 700;
   }
 
-  /* ---- Vertical type list ---- */
-  .type-row.is-selected {
-    background: var(--tint-active);
+  /* ---- Venue cards ----
+     Deliberately light on the card: name, one-line address, a compact
+     meta row, transit if any, and — the one thing worth keeping full
+     attention on — a single preview line of notable history rather
+     than the full list. Categories aren't repeated here at all; you
+     already filtered by one to get to this list. */
+  .venue-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-8); }
+  .venue-name {
+    font-family: var(--font-body); font-weight: 700;
+    font-size: var(--text-sub-size); line-height: var(--text-sub-lh);
+    display: flex; align-items: center; gap: var(--space-4);
   }
-  .type-row.is-selected .drawer-my-shows-arrow-circle {
-    background: color-mix(in srgb, var(--color-accent) 25%, transparent);
+  .venue-legendary-icon { width: 14px; height: 14px; opacity: 0.5; flex-shrink: 0; }
+  /* Favorite toggle — solid-vs-outline carries the "on" state, not
+     color. Pink is reserved for overlap only (tokens.css); the usual
+     red-heart convention would be exactly the misuse the redesign
+     pass already fixed elsewhere in this file, so this uses the same
+     neutral --color-text fill language as everything else that has an
+     "active" state (chip strips, .drawer-my-shows-btn.active). */
+  .venue-fav-btn {
+    flex-shrink: 0; background: none; border: none; cursor: pointer;
+    padding: var(--space-4); margin: calc(-1 * var(--space-4));
+    color: var(--color-text); opacity: 0.4;
+    display: flex; align-items: center; justify-content: center;
+    transition: opacity 0.15s ease;
   }
-  .type-row.is-selected .drawer-my-shows-arrow-circle svg { opacity: 1; color: var(--color-accent); }
-
-  /* ---- Venue cards ---- */
-  .venue-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-16); }
-  .venue-name { font-family: var(--font-body); font-weight: 600; font-size: var(--text-sub-size); line-height: var(--text-sub-lh); }
-  .venue-tags { display: flex; flex-wrap: wrap; gap: var(--space-4); margin-top: var(--space-4); }
-  .venue-tag {
+  .venue-fav-btn:hover { opacity: 0.75; }
+  .venue-fav-btn svg { width: 20px; height: 20px; }
+  .venue-fav-btn.is-favorited { opacity: 1; }
+  .venue-fav-btn.is-favorited svg { fill: var(--color-text); }
+  .venue-location {
+    font-family: var(--font-data); font-weight: 600;
+    font-size: var(--text-control-size); line-height: var(--text-control-lh);
+    opacity: 0.7; margin-top: var(--space-4);
+  }
+  .venue-meta {
     font-family: var(--font-data); font-size: var(--text-meta-size); line-height: var(--text-meta-lh);
-    text-transform: uppercase; letter-spacing: 0.04em; background: var(--tint-hover);
-    border-radius: 999px; padding: 2px var(--space-8); opacity: 0.75;
+    opacity: 0.55; margin-top: var(--space-8);
+    display: flex; flex-wrap: wrap; gap: var(--space-4) var(--space-8);
   }
-  .venue-tag.is-legendary {
-    background: color-mix(in srgb, var(--color-accent) 20%, transparent);
-    color: var(--color-accent);
-    opacity: 1;
+  .venue-meta span:not(:last-child)::after { content: '·'; margin-left: var(--space-8); }
+  .venue-transit {
+    font-family: var(--font-data); font-size: var(--text-meta-size); opacity: 0.5;
+    margin-top: var(--space-4); display: flex; align-items: center; gap: var(--space-4);
   }
-  .venue-meta { font-family: var(--font-data); font-size: var(--text-meta-size); line-height: var(--text-meta-lh); opacity: 0.6; margin-top: var(--space-8); }
-  .venue-meta div { margin-top: var(--space-4); }
+  .venue-transit svg { width: 14px; height: 14px; flex-shrink: 0; }
   .venue-notable {
-    font-family: var(--font-body); font-size: var(--text-meta-size); line-height: 1.5; opacity: 0.8;
+    font-family: var(--font-body); font-style: italic;
+    font-size: var(--text-control-size); line-height: 1.4; opacity: 0.75;
     margin-top: var(--space-8); padding-top: var(--space-8); border-top: 1px solid var(--color-border);
   }
-  .venue-notable ul { margin: var(--space-4) 0 0; padding-left: 18px; }
-  .venue-notable li { margin-bottom: var(--space-4); }
-  .venue-card-actions { margin-top: var(--space-16); }
+  .venue-card-actions { margin-top: var(--space-16); display: flex; justify-content: flex-end; }
   .venue-card-actions a { text-decoration: none; display: inline-flex; align-items: center; gap: var(--space-4); }
 
   .results-count {
@@ -255,7 +279,7 @@
     <button type="button" class="drawer-my-shows-btn" id="drawer-browse-btn">
       <span class="drawer-my-shows-text">
         <span class="drawer-my-shows-label">Browse Venues</span>
-        <span class="drawer-my-shows-sub">By category, New England</span>
+        <span class="drawer-my-shows-sub">Find a venue by size, region, or type</span>
       </span>
       <span class="drawer-my-shows-arrow-circle">
         <i data-lucide="chevron-right"></i>
@@ -292,29 +316,53 @@
   <section id="browse-landing-view" style="display:none;">
     <div class="browse-header-row">
       <h2 class="browse-heading">Browse Venues</h2>
-      <p class="browse-sub">New England</p>
     </div>
-    <button type="button" class="landing-tile" data-mode="size">
-      <span class="landing-tile-icon"><i data-lucide="ruler"></i></span>
-      <span class="landing-tile-label">By Size</span>
-      <span class="landing-tile-sub">Tiny, small, arenas &amp; stadiums</span>
+    <button type="button" class="drawer-my-shows-btn landing-row" data-mode="favorites">
+      <span class="drawer-my-shows-text">
+        <span class="drawer-my-shows-label">Favorites</span>
+        <span class="drawer-my-shows-sub" id="landing-favorites-sub">Venues you've saved</span>
+      </span>
+      <span class="drawer-my-shows-arrow-circle"><i data-lucide="heart"></i></span>
     </button>
-    <button type="button" class="landing-tile" data-mode="region">
-      <span class="landing-tile-icon"><i data-lucide="map-pin"></i></span>
-      <span class="landing-tile-label">By State / Region</span>
-      <span class="landing-tile-sub" id="landing-region-sub"></span>
+    <button type="button" class="drawer-my-shows-btn landing-row" data-mode="size">
+      <span class="drawer-my-shows-text">
+        <span class="drawer-my-shows-label">By Size</span>
+        <span class="drawer-my-shows-sub">Tiny, small, arenas &amp; stadiums</span>
+      </span>
+      <span class="drawer-my-shows-arrow-circle"><i data-lucide="ruler"></i></span>
     </button>
-    <button type="button" class="landing-tile" data-mode="type">
-      <span class="landing-tile-icon"><i data-lucide="star"></i></span>
-      <span class="landing-tile-label">By Type</span>
-      <span class="landing-tile-sub">Outdoor, classic theatres, legendary, festivals</span>
+    <button type="button" class="drawer-my-shows-btn landing-row" data-mode="region">
+      <span class="drawer-my-shows-text">
+        <span class="drawer-my-shows-label">By State / Region</span>
+        <span class="drawer-my-shows-sub" id="landing-region-sub"></span>
+      </span>
+      <span class="drawer-my-shows-arrow-circle"><i data-lucide="map-pin"></i></span>
     </button>
+    <button type="button" class="drawer-my-shows-btn landing-row" data-mode="type">
+      <span class="drawer-my-shows-text">
+        <span class="drawer-my-shows-label">By Type</span>
+        <span class="drawer-my-shows-sub">Outdoor, classic theatres, legendary, festivals</span>
+      </span>
+      <span class="drawer-my-shows-arrow-circle"><i data-lucide="tags"></i></span>
+    </button>
+  </section>
+
+  <!-- FAVORITES — no filter chips, just the venues you've hearted.
+       Prototype-only in-memory state (see `favorites` below) — nothing
+       to persist to yet since this file isn't wired to Supabase. -->
+  <section id="browse-favorites-view" style="display:none;">
+    <div class="browse-view-header">
+      <button type="button" class="browse-back-btn" back-to="landing" aria-label="Back to Browse"><i data-lucide="chevron-left"></i></button>
+      <h2 class="browse-heading">Favorites</h2>
+    </div>
+    <p class="results-count" id="favorites-count"></p>
+    <div id="favorites-results"></div>
   </section>
 
   <!-- BY SIZE — horizontal scroll strip up top, results below, live -->
   <section id="browse-size-view" style="display:none;">
-    <button type="button" class="browse-back-btn" back-to="landing"><i data-lucide="chevron-left"></i> Browse</button>
-    <div class="browse-header-row">
+    <div class="browse-view-header">
+      <button type="button" class="browse-back-btn" back-to="landing" aria-label="Back to Browse"><i data-lucide="chevron-left"></i></button>
       <h2 class="browse-heading">By Size</h2>
     </div>
     <div class="chip-strip" id="size-strip"></div>
@@ -324,8 +372,8 @@
 
   <!-- BY STATE/REGION — same treatment, alphabetical -->
   <section id="browse-region-view" style="display:none;">
-    <button type="button" class="browse-back-btn" back-to="landing"><i data-lucide="chevron-left"></i> Browse</button>
-    <div class="browse-header-row">
+    <div class="browse-view-header">
+      <button type="button" class="browse-back-btn" back-to="landing" aria-label="Back to Browse"><i data-lucide="chevron-left"></i></button>
       <h2 class="browse-heading">By State / Region</h2>
     </div>
     <div class="chip-strip" id="region-strip"></div>
@@ -333,16 +381,17 @@
     <div id="region-results"></div>
   </section>
 
-  <!-- BY TYPE — vertical list (Outdoor first), all ages folded in as
-       a plain extra row, multi-select, results below, live -->
+  <!-- BY TYPE — horizontal scroll strip, same treatment as Size/Region
+       (was a vertical list; per direct feedback, made consistent),
+       multi-select — a venue can be Legendary AND Outdoor at once, so
+       tapping one chip doesn't deselect the others. -->
   <section id="browse-type-view" style="display:none;">
-    <button type="button" class="browse-back-btn" back-to="landing"><i data-lucide="chevron-left"></i> Browse</button>
-    <div class="browse-header-row">
+    <div class="browse-view-header">
+      <button type="button" class="browse-back-btn" back-to="landing" aria-label="Back to Browse"><i data-lucide="chevron-left"></i></button>
       <h2 class="browse-heading">By Type</h2>
-      <p class="browse-sub">Tap any that apply</p>
     </div>
-    <div id="type-list"></div>
-    <p class="results-count" id="type-count" style="margin-top: var(--space-16);"></p>
+    <div class="chip-strip" id="type-strip"></div>
+    <p class="results-count" id="type-count"></p>
     <div id="type-results"></div>
   </section>
 
@@ -362,26 +411,75 @@
 
   const REGIONS = [...new Set(VENUES.map(v => v.metro))].sort();
 
+  // ---- Favorites — prototype-only, in-memory (see file-header note) ----
+  const favorites = new Set();
+  const isFavorited = (v) => favorites.has(v.name);
+
+  function updateFavoritesLandingSub() {
+    const n = favorites.size;
+    document.getElementById('landing-favorites-sub').textContent =
+      n ? `${n} venue${n === 1 ? '' : 's'} saved` : "Venues you've saved";
+  }
+
+  // Re-renders whichever view is currently on screen — a favorite
+  // toggle can change what's visible (the Favorites list itself) or
+  // just which cards show a filled heart, depending on where you are.
+  function refreshCurrentView() {
+    const visible = ['favorites', 'size', 'region', 'type'].find(
+      (mode) => document.getElementById(`browse-${mode}-view`).style.display !== 'none'
+    );
+    if (visible === 'favorites') renderFavoritesResults();
+    if (visible === 'size') renderSizeResults();
+    if (visible === 'region') renderRegionResults();
+    if (visible === 'type') renderTypeResults();
+    updateFavoritesLandingSub();
+  }
+
   function venueCard(v) {
-    const tags = v.categories.map(c =>
-      `<span class="venue-tag${c === 'Legendary' ? ' is-legendary' : ''}">${c}</span>`
-    ).join('');
-    const notable = v.notableShows && v.notableShows.length
-      ? `<div class="venue-notable">Notable history:<ul>${v.notableShows.map(s => `<li>${s}</li>`).join('')}</ul></div>`
+    const legendaryMark = v.categories.includes('Legendary')
+      ? '<i data-lucide="star" class="venue-legendary-icon" title="Legendary venue"></i>'
       : '';
+
+    const favBtn = `
+      <button type="button" class="venue-fav-btn${isFavorited(v) ? ' is-favorited' : ''}"
+        data-fav-toggle="${v.name}" aria-pressed="${isFavorited(v)}"
+        aria-label="${isFavorited(v) ? 'Remove from favorites' : 'Add to favorites'}">
+        <i data-lucide="heart"></i>
+      </button>`;
+
+    const metaBits = [];
+    if (v.capacity) metaBits.push(`Cap. ${v.capacity.toLocaleString()}`);
+    if (v.established) metaBits.push(`Est. ${v.established}`);
+    if (v.allAges) metaBits.push(v.allAges);
+    const meta = metaBits.length
+      ? `<div class="venue-meta">${metaBits.map(b => `<span>${b}</span>`).join('')}</div>`
+      : '';
+
+    const transit = v.transit
+      ? `<div class="venue-transit"><i data-lucide="train-front"></i>${v.transit}</div>`
+      : '';
+
+    // Only the first notable show surfaces on the card — a running
+    // bulleted list read as clutter; anyone curious enough for the
+    // rest can follow the calendar link. Per direct feedback: keep
+    // this, just don't let it dominate the card.
+    let notable = '';
+    if (v.notableShows && v.notableShows.length) {
+      const more = v.notableShows.length > 1
+        ? ` <span style="opacity:.7;">+${v.notableShows.length - 1} more</span>`
+        : '';
+      notable = `<div class="venue-notable">${v.notableShows[0]}${more}</div>`;
+    }
+
     return `
       <div class="show-card">
         <div class="venue-card-top">
-          <div>
-            <div class="venue-name">${v.name}</div>
-            <div class="venue-tags">${tags}</div>
-          </div>
+          <div class="venue-name">${v.name}${legendaryMark}</div>
+          ${favBtn}
         </div>
-        <div class="venue-meta">
-          <div>${v.city}, ${v.state} — ${v.address}</div>
-          <div>${v.allAges}${v.capacity ? ` · cap. ${v.capacity.toLocaleString()}` : ''}${v.established ? ` · est. ${v.established}` : ''}</div>
-          ${v.transit ? `<div>${v.transit}</div>` : ''}
-        </div>
+        <div class="venue-location">${v.address}</div>
+        ${meta}
+        ${transit}
         ${notable}
         <div class="venue-card-actions">
           <a href="${v.url}" target="_blank" rel="noopener" class="btn-outline">
@@ -392,38 +490,64 @@
     `;
   }
 
-  function renderResults(list, containerId, countId) {
+  function renderResults(list, containerId, countId, emptyMessage) {
     document.getElementById(countId).textContent = `${list.length} venue${list.length === 1 ? '' : 's'}`;
     const el = document.getElementById(containerId);
     el.innerHTML = list.length
       ? list.map(venueCard).join('')
-      : `<div class="show-card"><p style="opacity:.6;font-size:14px;">Nothing here yet — more venues coming as future batches (Providence, Portland, Burlington, New Haven/Hartford, Manchester) get built out.</p></div>`;
+      : `<div class="show-card"><p style="opacity:.6;font-size:14px;">${emptyMessage || 'Nothing here yet — more venues coming as future batches (Providence, Portland, Burlington, New Haven/Hartford, Manchester) get built out.'}</p></div>`;
     lucide.createIcons({ root: el });
+
+    el.querySelectorAll('[data-fav-toggle]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const name = btn.dataset.favToggle;
+        favorites.has(name) ? favorites.delete(name) : favorites.add(name);
+        refreshCurrentView();
+      });
+    });
+  }
+
+  // ---- Favorites view ----
+  function renderFavoritesResults() {
+    const list = VENUES.filter(isFavorited);
+    renderResults(list, 'favorites-results', 'favorites-count',
+      "No favorites yet — tap the heart on any venue to save it here.");
+  }
+
+  function showFavoritesView() {
+    document.getElementById('browse-favorites-view').style.display = '';
+    renderFavoritesResults();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   // ---- Landing ----
   document.getElementById('landing-region-sub').textContent =
     REGIONS.length ? REGIONS.join(', ') : 'By area';
+  updateFavoritesLandingSub();
 
   function showLanding() {
-    ['my-shows-view', 'browse-size-view', 'browse-region-view', 'browse-type-view'].forEach(id => {
+    ['my-shows-view', 'browse-favorites-view', 'browse-size-view', 'browse-region-view', 'browse-type-view'].forEach(id => {
       document.getElementById(id).style.display = 'none';
     });
     document.getElementById('browse-landing-view').style.display = '';
+    updateFavoritesLandingSub();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function showMyShows() {
-    ['browse-landing-view', 'browse-size-view', 'browse-region-view', 'browse-type-view'].forEach(id => {
+    ['browse-landing-view', 'browse-favorites-view', 'browse-size-view', 'browse-region-view', 'browse-type-view'].forEach(id => {
       document.getElementById(id).style.display = 'none';
     });
     document.getElementById('my-shows-view').style.display = '';
   }
 
-  document.querySelectorAll('.landing-tile').forEach(btn => {
+  document.querySelectorAll('.landing-row').forEach(btn => {
     btn.addEventListener('click', () => {
       const mode = btn.dataset.mode;
       document.getElementById('browse-landing-view').style.display = 'none';
+      if (mode === 'favorites') showFavoritesView();
       if (mode === 'size') showSizeView();
       if (mode === 'region') showRegionView();
       if (mode === 'type') showTypeView();
@@ -496,27 +620,23 @@
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  // ---- By Type (vertical list, multi-select) ----
+  // ---- By Type (horizontal chip strip, same as Size/Region — multi-select) ----
   const selectedTypes = new Set();
 
-  function renderTypeList() {
-    const list = document.getElementById('type-list');
-    const typeRows = TYPES.map(t => `
-      <button type="button" class="drawer-my-shows-btn type-row${selectedTypes.has(t) ? ' is-selected' : ''}" data-type="${t}" style="margin-bottom: var(--space-8);">
-        <span class="drawer-my-shows-text">
-          <span class="drawer-my-shows-label">${t}</span>
-        </span>
-        <span class="drawer-my-shows-arrow-circle"><i data-lucide="${TYPE_ICONS[t]}"></i></span>
+  function renderTypeStrip() {
+    const strip = document.getElementById('type-strip');
+    strip.innerHTML = TYPES.map(t => `
+      <button type="button" class="chip-strip-item${selectedTypes.has(t) ? ' is-selected' : ''}" data-type="${t}">
+        <i data-lucide="${TYPE_ICONS[t]}"></i>${t}
       </button>
     `).join('');
-    list.innerHTML = typeRows;
-    lucide.createIcons({ root: list });
+    lucide.createIcons({ root: strip });
 
-    list.querySelectorAll('[data-type]').forEach(btn => {
+    strip.querySelectorAll('[data-type]').forEach(btn => {
       btn.addEventListener('click', () => {
         const t = btn.dataset.type;
         selectedTypes.has(t) ? selectedTypes.delete(t) : selectedTypes.add(t);
-        renderTypeList();
+        renderTypeStrip();
         renderTypeResults();
       });
     });
@@ -532,7 +652,7 @@
 
   function showTypeView() {
     document.getElementById('browse-type-view').style.display = '';
-    renderTypeList();
+    renderTypeStrip();
     renderTypeResults();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
