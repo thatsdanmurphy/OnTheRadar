@@ -404,6 +404,16 @@
   </div>
 </main>
 
+<!-- ===== Toast — brief, dismissing-itself confirmation. Currently
+     one use: "Nice, X added that too!" when Add Show turns out to be
+     a duplicate and joins an existing card instead of creating a new
+     one (see submitShowDirectly / OTR.findMatchingShow). Pink accent
+     is a deliberate, correct use here, not a violation of "pink means
+     overlap, nowhere else" — this message only ever fires at the
+     moment an overlap actually happens. aria-live so it's announced
+     without stealing focus. ===== -->
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
 <!-- ===== Who's in a group — avatar + name for everyone in either
      response group, opened by clicking the group on a show card. Same
      flat overlay language as the nav drawer's scrim. ===== -->
@@ -530,6 +540,15 @@
   const nameGateInviteMessage = document.getElementById('name-gate-invite-message');
   const siteHeader = document.getElementById('site-header');
   const mainContent = document.getElementById('main-content');
+
+  const toastEl = document.getElementById('toast');
+  let toastTimer = null;
+  function showToast(message) {
+    clearTimeout(toastTimer);
+    toastEl.textContent = message;
+    toastEl.classList.add('is-visible');
+    toastTimer = setTimeout(() => toastEl.classList.remove('is-visible'), 3200);
+  }
 
   const groupHeadingRow = document.getElementById('group-heading-row');
   const groupHeadingName = document.getElementById('group-heading-name');
@@ -1774,6 +1793,47 @@
       revealManualForm(fields);
       return;
     }
+
+    // Duplicate check — re-fetch the group's current shows rather than
+    // trusting whatever's left over from the last render, so a show
+    // someone else added seconds ago still gets caught. If it matches
+    // (see OTR.findMatchingShow), join the existing card instead of
+    // creating a second one: the first adder stays created_by/owner
+    // (unchanged — nothing about ownership needed to change, shows
+    // already had this), the new person just gets a 'curious' response
+    // on that same show, and the two cards that would've split the
+    // overlap signal in half instead stay one card with two names on
+    // it, which is the whole point of the app.
+    const { shows: currentShows, responsesByShow } = await loadGroupData(currentGroupId);
+    const existing = OTR.findMatchingShow(currentShows, fields);
+
+    if (existing) {
+      const alreadyIn = (responsesByShow[existing.id] || []).some(
+        (r) => r.person_id === person.id && r.status === 'curious'
+      );
+      await setResponse(existing.id, person.id, 'curious');
+      trackEvent('show_add_deduped', { group_id: existing.group_id, show_id: existing.id, source: source || 'manual' });
+      if (!alreadyIn) {
+        trackEvent('curious_tapped', { group_id: existing.group_id, show_id: existing.id, via: 'duplicate_join' });
+      }
+
+      if (existing.created_by === person.id) {
+        showToast('You already added that one!');
+      } else if (alreadyIn) {
+        showToast('You’re already in on that one!');
+      } else {
+        const adderResponse = (responsesByShow[existing.id] || []).find(
+          (r) => r.person_id === existing.created_by
+        );
+        const adderName = adderResponse?.people?.display_name || 'someone in your herd';
+        showToast(`Nice, ${adderName} added that too!`);
+      }
+
+      resetAddShowPanel();
+      await renderCurrentView(currentGroupId);
+      return;
+    }
+
     const show = await createShow(currentGroupId, person.id, fields);
     if (show) {
       trackEvent('show_added', { group_id: show.group_id, show_id: show.id, source: source || 'manual' });

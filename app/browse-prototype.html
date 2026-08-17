@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GigHerd — Browse prototype</title>
+
+<!-- Same fonts/icons/design system as the real app — no new tokens,
+     no new classes duplicating what components.css already has.
+     This file is a visual prototype only: static mock identity/group
+     data, not wired to Supabase. See decision log, 2026-08-15 "Browse
+     UI: landing chips + three distinct sub-pages" entry.
+
+     Structure, per direct spec:
+     - Landing page: 3 big chips — By Size / By State-Region / By Type
+       (State and Region combined into one, per direct feedback).
+     - By Size: horizontal scrollable chip strip across the top
+       (Tiny, Small, Arenas & Stadiums — 3, starting with Tiny),
+       results list below, updates live.
+     - By State/Region: same horizontal-scroll-strip treatment,
+       alphabetical, one chip per region (region already implies its
+       state in this data, so no separate state list).
+     - By Type: a vertical list, not a horizontal strip — starting
+       with Outdoor, then the rest of the 4 types. All ages/21+ was
+       tried folded in as a 5th row and then cut entirely per direct
+       feedback ("too complicated") — Type is multi-select (a venue
+       can be Legendary AND Outdoor), everything else in this file is
+       single-select. There's currently no ages filter anywhere in
+       Browse; the allAges field still shows on each venue card. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@900&family=Public+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles/tokens.css">
+<link rel="stylesheet" href="styles/grid.css">
+<link rel="stylesheet" href="styles/components.css">
+<script src="https://unpkg.com/lucide@1.29.0/dist/umd/lucide.min.js"></script>
+
+<style>
+  /* Prototype-only additions — built out of existing tokens, nothing
+     hardcoded. If this graduates into the real build, these classes
+     belong in components.css proper, not here. */
+
+  .proto-banner {
+    background: var(--color-accent);
+    color: var(--color-text-inverse);
+    font-family: var(--font-data);
+    font-size: var(--text-meta-size);
+    font-weight: 600;
+    text-align: center;
+    padding: var(--space-8);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .browse-header-row { margin-bottom: var(--space-24); }
+
+  .browse-heading {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: var(--text-head-size);
+    line-height: var(--text-head-lh);
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+  }
+
+  .browse-sub {
+    font-family: var(--font-data);
+    font-size: var(--text-meta-size);
+    line-height: var(--text-meta-lh);
+    opacity: 0.6;
+    margin: var(--space-4) 0 0;
+  }
+
+  .browse-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-4);
+    background: none;
+    border: none;
+    color: var(--color-text);
+    font-family: var(--font-data);
+    font-size: var(--text-control-size);
+    font-weight: 600;
+    opacity: 0.7;
+    cursor: pointer;
+    padding: 0;
+    margin-bottom: var(--space-16);
+  }
+  .browse-back-btn:hover { opacity: 1; }
+  .browse-back-btn svg { width: var(--icon-size); height: var(--icon-size); }
+
+  /* ---- Landing page: 3 big chips ---- */
+  .landing-tile {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+    background: var(--color-surface);
+    color: var(--color-surface-text);
+    border-radius: var(--radius);
+    padding: var(--space-24);
+    text-align: left;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    transition: background 0.15s ease;
+    margin-bottom: var(--space-16);
+  }
+  .landing-tile:hover { background: var(--tint-active); }
+
+  .landing-tile-icon {
+    width: var(--space-40);
+    height: var(--space-40);
+    border-radius: 50%;
+    background: var(--tint-hover);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .landing-tile-icon svg { width: var(--icon-size); height: var(--icon-size); }
+
+  .landing-tile-label {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: var(--text-head-size);
+    line-height: var(--text-head-lh);
+    text-transform: uppercase;
+  }
+
+  .landing-tile-sub {
+    font-family: var(--font-data);
+    font-size: var(--text-meta-size);
+    opacity: 0.55;
+  }
+
+  /* ---- Horizontal scrollable chip strip (Size, State/Region) ---- */
+  .chip-strip {
+    display: flex;
+    gap: var(--space-8);
+    overflow-x: auto;
+    padding-bottom: var(--space-8);
+    margin-bottom: var(--space-24);
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+  }
+  .chip-strip-item {
+    flex: 0 0 auto;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: var(--text-control-size);
+    background: var(--color-surface);
+    color: var(--color-surface-text);
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    padding: var(--space-8) var(--space-16);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-8);
+    white-space: nowrap;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  .chip-strip-item:hover { background: var(--tint-active); }
+  .chip-strip-item svg { width: 16px; height: 16px; opacity: 0.7; }
+  .chip-strip-item.is-selected {
+    background: color-mix(in srgb, var(--color-accent) 18%, transparent);
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+
+  /* ---- Vertical type list ---- */
+  .type-row.is-selected {
+    background: var(--tint-active);
+  }
+  .type-row.is-selected .drawer-my-shows-arrow-circle {
+    background: color-mix(in srgb, var(--color-accent) 25%, transparent);
+  }
+  .type-row.is-selected .drawer-my-shows-arrow-circle svg { opacity: 1; color: var(--color-accent); }
+
+  /* ---- Venue cards ---- */
+  .venue-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-16); }
+  .venue-name { font-family: var(--font-body); font-weight: 600; font-size: var(--text-sub-size); line-height: var(--text-sub-lh); }
+  .venue-tags { display: flex; flex-wrap: wrap; gap: var(--space-4); margin-top: var(--space-4); }
+  .venue-tag {
+    font-family: var(--font-data); font-size: var(--text-meta-size); line-height: var(--text-meta-lh);
+    text-transform: uppercase; letter-spacing: 0.04em; background: var(--tint-hover);
+    border-radius: 999px; padding: 2px var(--space-8); opacity: 0.75;
+  }
+  .venue-tag.is-legendary {
+    background: color-mix(in srgb, var(--color-accent) 20%, transparent);
+    color: var(--color-accent);
+    opacity: 1;
+  }
+  .venue-meta { font-family: var(--font-data); font-size: var(--text-meta-size); line-height: var(--text-meta-lh); opacity: 0.6; margin-top: var(--space-8); }
+  .venue-meta div { margin-top: var(--space-4); }
+  .venue-notable {
+    font-family: var(--font-body); font-size: var(--text-meta-size); line-height: 1.5; opacity: 0.8;
+    margin-top: var(--space-8); padding-top: var(--space-8); border-top: 1px solid var(--color-border);
+  }
+  .venue-notable ul { margin: var(--space-4) 0 0; padding-left: 18px; }
+  .venue-notable li { margin-bottom: var(--space-4); }
+  .venue-card-actions { margin-top: var(--space-16); }
+  .venue-card-actions a { text-decoration: none; display: inline-flex; align-items: center; gap: var(--space-4); }
+
+  .results-count {
+    font-family: var(--font-data);
+    font-size: var(--text-meta-size);
+    opacity: 0.55;
+    margin: calc(-1 * var(--space-16)) 0 var(--space-16);
+  }
+</style>
+</head>
+<body>
+
+<div class="proto-banner">Prototype — Browse feature, not wired to live data</div>
+
+<!-- ===== Header nav (copied from index.html — same markup/behavior) ===== -->
+<header class="site-header" id="site-header">
+  <div class="container header-row">
+    <button type="button" class="header-avatar-btn" id="hamburger-btn" aria-label="Open menu" aria-expanded="false" aria-controls="nav-drawer">
+      <span id="header-avatar-initials">D</span>
+    </button>
+    <a href="#" class="wordmark"><span class="wordmark-gig">Gig</span><span class="wordmark-herd">Herd</span></a>
+  </div>
+  <div class="container">
+    <p class="header-tagline">Line up shows with your pals.</p>
+  </div>
+</header>
+
+<!-- ===== Nav drawer ===== -->
+<div class="drawer-overlay" id="drawer-overlay"></div>
+<aside class="nav-drawer" id="nav-drawer" aria-hidden="true">
+  <div class="drawer-section drawer-identity-section" id="drawer-identity-section">
+    <div class="drawer-top">
+      <button type="button" class="drawer-close-btn" id="drawer-close-btn" aria-label="Close menu"><i data-lucide="x"></i></button>
+    </div>
+    <div class="drawer-identity">
+      <button type="button" class="drawer-avatar" id="drawer-avatar" aria-label="Edit your name and color" style="background:var(--color-secondary); border-radius:50%; width:40px; height:40px; display:flex; align-items:center; justify-content:center; color:#fff; border:none;">D</button>
+      <button type="button" class="drawer-name-btn" id="drawer-name-btn" aria-label="Edit your name and color">
+        <span class="drawer-name" id="drawer-name">Dan</span>
+        <i data-lucide="pencil" class="drawer-name-edit-icon"></i>
+      </button>
+    </div>
+  </div>
+
+  <div class="drawer-section drawer-section-last" id="group-bar">
+    <button type="button" class="drawer-my-shows-btn" id="drawer-my-shows-btn">
+      <span class="drawer-my-shows-text">
+        <span class="drawer-my-shows-label">My Shows</span>
+        <span class="drawer-my-shows-sub">Everything you've marked, across your herds</span>
+      </span>
+      <span class="drawer-my-shows-arrow-circle">
+        <i data-lucide="chevron-right"></i>
+      </span>
+    </button>
+
+    <button type="button" class="drawer-my-shows-btn" id="drawer-browse-btn">
+      <span class="drawer-my-shows-text">
+        <span class="drawer-my-shows-label">Browse Venues</span>
+        <span class="drawer-my-shows-sub">By category, New England</span>
+      </span>
+      <span class="drawer-my-shows-arrow-circle">
+        <i data-lucide="chevron-right"></i>
+      </span>
+    </button>
+
+    <div class="drawer-label">Herds</div>
+    <div class="drawer-group-list" id="drawer-group-list">
+      <div class="venue-meta" style="padding: var(--space-8) var(--space-16);">(mock — Boston Crew, Hockey Friends...)</div>
+    </div>
+  </div>
+
+  <div class="drawer-footer-section">
+    <p class="drawer-footer-copyright">© 2026 GigHerd</p>
+    <p class="drawer-footer-prompt">Questions or comments?</p>
+    <a class="drawer-footer-contact" href="mailto:hello@gigherd.com">hello@gigherd.com</a>
+  </div>
+</aside>
+
+<!-- ===== Body container ===== -->
+<main class="container show-list" id="main-content">
+
+  <section id="my-shows-view">
+    <div class="browse-header-row">
+      <h2 class="browse-heading">My Shows</h2>
+      <p class="browse-sub">(placeholder — real shows view is unchanged, not rebuilt here)</p>
+    </div>
+    <div class="show-card">
+      <p style="opacity:.6; font-size:14px;">This prototype only touches the Browse feature — open the drawer and tap "Browse Venues" to see it.</p>
+    </div>
+  </section>
+
+  <!-- LANDING — 3 big chips -->
+  <section id="browse-landing-view" style="display:none;">
+    <div class="browse-header-row">
+      <h2 class="browse-heading">Browse Venues</h2>
+      <p class="browse-sub">New England</p>
+    </div>
+    <button type="button" class="landing-tile" data-mode="size">
+      <span class="landing-tile-icon"><i data-lucide="ruler"></i></span>
+      <span class="landing-tile-label">By Size</span>
+      <span class="landing-tile-sub">Tiny, small, arenas &amp; stadiums</span>
+    </button>
+    <button type="button" class="landing-tile" data-mode="region">
+      <span class="landing-tile-icon"><i data-lucide="map-pin"></i></span>
+      <span class="landing-tile-label">By State / Region</span>
+      <span class="landing-tile-sub" id="landing-region-sub"></span>
+    </button>
+    <button type="button" class="landing-tile" data-mode="type">
+      <span class="landing-tile-icon"><i data-lucide="star"></i></span>
+      <span class="landing-tile-label">By Type</span>
+      <span class="landing-tile-sub">Outdoor, classic theatres, legendary, festivals</span>
+    </button>
+  </section>
+
+  <!-- BY SIZE — horizontal scroll strip up top, results below, live -->
+  <section id="browse-size-view" style="display:none;">
+    <button type="button" class="browse-back-btn" back-to="landing"><i data-lucide="chevron-left"></i> Browse</button>
+    <div class="browse-header-row">
+      <h2 class="browse-heading">By Size</h2>
+    </div>
+    <div class="chip-strip" id="size-strip"></div>
+    <p class="results-count" id="size-count"></p>
+    <div id="size-results"></div>
+  </section>
+
+  <!-- BY STATE/REGION — same treatment, alphabetical -->
+  <section id="browse-region-view" style="display:none;">
+    <button type="button" class="browse-back-btn" back-to="landing"><i data-lucide="chevron-left"></i> Browse</button>
+    <div class="browse-header-row">
+      <h2 class="browse-heading">By State / Region</h2>
+    </div>
+    <div class="chip-strip" id="region-strip"></div>
+    <p class="results-count" id="region-count"></p>
+    <div id="region-results"></div>
+  </section>
+
+  <!-- BY TYPE — vertical list (Outdoor first), all ages folded in as
+       a plain extra row, multi-select, results below, live -->
+  <section id="browse-type-view" style="display:none;">
+    <button type="button" class="browse-back-btn" back-to="landing"><i data-lucide="chevron-left"></i> Browse</button>
+    <div class="browse-header-row">
+      <h2 class="browse-heading">By Type</h2>
+      <p class="browse-sub">Tap any that apply</p>
+    </div>
+    <div id="type-list"></div>
+    <p class="results-count" id="type-count" style="margin-top: var(--space-16);"></p>
+    <div id="type-results"></div>
+  </section>
+
+</main>
+
+<script src="data/venues.js"></script>
+<script>
+  const VENUES = window.OTR && window.OTR.VENUES ? window.OTR.VENUES : [];
+
+  const SIZES = ['Tiny venues', 'Small venues', 'Arenas & Stadiums'];
+  const SIZE_ICONS = { 'Tiny venues': 'mic-2', 'Small venues': 'music', 'Arenas & Stadiums': 'building-2' };
+
+  // Outdoor first, per direct feedback — no strong signal on the rest
+  // of the order, kept in the order they were originally decided in.
+  const TYPES = ['Outdoor', 'Classic theatres', 'Legendary', 'Festivals'];
+  const TYPE_ICONS = { 'Outdoor': 'trees', 'Classic theatres': 'landmark', 'Legendary': 'star', 'Festivals': 'tent' };
+
+  const REGIONS = [...new Set(VENUES.map(v => v.metro))].sort();
+
+  function venueCard(v) {
+    const tags = v.categories.map(c =>
+      `<span class="venue-tag${c === 'Legendary' ? ' is-legendary' : ''}">${c}</span>`
+    ).join('');
+    const notable = v.notableShows && v.notableShows.length
+      ? `<div class="venue-notable">Notable history:<ul>${v.notableShows.map(s => `<li>${s}</li>`).join('')}</ul></div>`
+      : '';
+    return `
+      <div class="show-card">
+        <div class="venue-card-top">
+          <div>
+            <div class="venue-name">${v.name}</div>
+            <div class="venue-tags">${tags}</div>
+          </div>
+        </div>
+        <div class="venue-meta">
+          <div>${v.city}, ${v.state} — ${v.address}</div>
+          <div>${v.allAges}${v.capacity ? ` · cap. ${v.capacity.toLocaleString()}` : ''}${v.established ? ` · est. ${v.established}` : ''}</div>
+          ${v.transit ? `<div>${v.transit}</div>` : ''}
+        </div>
+        ${notable}
+        <div class="venue-card-actions">
+          <a href="${v.url}" target="_blank" rel="noopener" class="btn-outline">
+            View calendar <i data-lucide="arrow-up-right" style="width:16px;height:16px;"></i>
+          </a>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderResults(list, containerId, countId) {
+    document.getElementById(countId).textContent = `${list.length} venue${list.length === 1 ? '' : 's'}`;
+    const el = document.getElementById(containerId);
+    el.innerHTML = list.length
+      ? list.map(venueCard).join('')
+      : `<div class="show-card"><p style="opacity:.6;font-size:14px;">Nothing here yet — more venues coming as future batches (Providence, Portland, Burlington, New Haven/Hartford, Manchester) get built out.</p></div>`;
+    lucide.createIcons({ root: el });
+  }
+
+  // ---- Landing ----
+  document.getElementById('landing-region-sub').textContent =
+    REGIONS.length ? REGIONS.join(', ') : 'By area';
+
+  function showLanding() {
+    ['my-shows-view', 'browse-size-view', 'browse-region-view', 'browse-type-view'].forEach(id => {
+      document.getElementById(id).style.display = 'none';
+    });
+    document.getElementById('browse-landing-view').style.display = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function showMyShows() {
+    ['browse-landing-view', 'browse-size-view', 'browse-region-view', 'browse-type-view'].forEach(id => {
+      document.getElementById(id).style.display = 'none';
+    });
+    document.getElementById('my-shows-view').style.display = '';
+  }
+
+  document.querySelectorAll('.landing-tile').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const mode = btn.dataset.mode;
+      document.getElementById('browse-landing-view').style.display = 'none';
+      if (mode === 'size') showSizeView();
+      if (mode === 'region') showRegionView();
+      if (mode === 'type') showTypeView();
+    });
+  });
+
+  document.querySelectorAll('[back-to="landing"]').forEach(btn => {
+    btn.addEventListener('click', showLanding);
+  });
+
+  // ---- By Size (single-select strip) ----
+  let selectedSize = null;
+
+  function renderSizeStrip() {
+    const strip = document.getElementById('size-strip');
+    strip.innerHTML = SIZES.map(s => `
+      <button type="button" class="chip-strip-item${s === selectedSize ? ' is-selected' : ''}" data-size="${s}">
+        <i data-lucide="${SIZE_ICONS[s]}"></i>${s}
+      </button>
+    `).join('');
+    lucide.createIcons({ root: strip });
+    strip.querySelectorAll('[data-size]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        selectedSize = (selectedSize === btn.dataset.size) ? null : btn.dataset.size;
+        renderSizeStrip();
+        renderSizeResults();
+      });
+    });
+  }
+
+  function renderSizeResults() {
+    const list = selectedSize ? VENUES.filter(v => v.categories.includes(selectedSize)) : VENUES;
+    renderResults(list, 'size-results', 'size-count');
+  }
+
+  function showSizeView() {
+    document.getElementById('browse-size-view').style.display = '';
+    if (!selectedSize) selectedSize = SIZES[0]; // starts on Tiny, per direct feedback
+    renderSizeStrip();
+    renderSizeResults();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ---- By State/Region (single-select strip, alphabetical) ----
+  let selectedRegion = null;
+
+  function renderRegionStrip() {
+    const strip = document.getElementById('region-strip');
+    strip.innerHTML = REGIONS.map(r => `
+      <button type="button" class="chip-strip-item${r === selectedRegion ? ' is-selected' : ''}" data-region="${r}">${r}</button>
+    `).join('');
+    strip.querySelectorAll('[data-region]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        selectedRegion = (selectedRegion === btn.dataset.region) ? null : btn.dataset.region;
+        renderRegionStrip();
+        renderRegionResults();
+      });
+    });
+  }
+
+  function renderRegionResults() {
+    const list = selectedRegion ? VENUES.filter(v => v.metro === selectedRegion) : VENUES;
+    renderResults(list, 'region-results', 'region-count');
+  }
+
+  function showRegionView() {
+    document.getElementById('browse-region-view').style.display = '';
+    renderRegionStrip();
+    renderRegionResults();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ---- By Type (vertical list, multi-select) ----
+  const selectedTypes = new Set();
+
+  function renderTypeList() {
+    const list = document.getElementById('type-list');
+    const typeRows = TYPES.map(t => `
+      <button type="button" class="drawer-my-shows-btn type-row${selectedTypes.has(t) ? ' is-selected' : ''}" data-type="${t}" style="margin-bottom: var(--space-8);">
+        <span class="drawer-my-shows-text">
+          <span class="drawer-my-shows-label">${t}</span>
+        </span>
+        <span class="drawer-my-shows-arrow-circle"><i data-lucide="${TYPE_ICONS[t]}"></i></span>
+      </button>
+    `).join('');
+    list.innerHTML = typeRows;
+    lucide.createIcons({ root: list });
+
+    list.querySelectorAll('[data-type]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const t = btn.dataset.type;
+        selectedTypes.has(t) ? selectedTypes.delete(t) : selectedTypes.add(t);
+        renderTypeList();
+        renderTypeResults();
+      });
+    });
+  }
+
+  function renderTypeResults() {
+    let list = VENUES;
+    if (selectedTypes.size) {
+      list = list.filter(v => v.categories.some(c => selectedTypes.has(c)));
+    }
+    renderResults(list, 'type-results', 'type-count');
+  }
+
+  function showTypeView() {
+    document.getElementById('browse-type-view').style.display = '';
+    renderTypeList();
+    renderTypeResults();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ---- Drawer open/close (same behavior as index.html) ----
+  const hamburgerBtn = document.getElementById('hamburger-btn');
+  const drawerCloseBtn = document.getElementById('drawer-close-btn');
+  const drawerOverlay = document.getElementById('drawer-overlay');
+  const navDrawer = document.getElementById('nav-drawer');
+
+  function openDrawer() {
+    navDrawer.classList.add('open');
+    drawerOverlay.classList.add('open');
+    navDrawer.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('drawer-open');
+  }
+  function closeDrawer() {
+    navDrawer.classList.remove('open');
+    drawerOverlay.classList.remove('open');
+    navDrawer.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('drawer-open');
+  }
+  hamburgerBtn.addEventListener('click', openDrawer);
+  drawerCloseBtn.addEventListener('click', closeDrawer);
+  drawerOverlay.addEventListener('click', closeDrawer);
+
+  document.getElementById('drawer-my-shows-btn').addEventListener('click', () => {
+    showMyShows();
+    closeDrawer();
+  });
+  document.getElementById('drawer-browse-btn').addEventListener('click', () => {
+    showLanding();
+    closeDrawer();
+  });
+
+  // ---- Init ----
+  lucide.createIcons();
+  openDrawer(); // open by default so the new nav item is visible on load
+</script>
+
+</body>
+</html>

@@ -137,6 +137,29 @@ window.OTR = window.OTR || {};
     return true;
   };
 
+  // Best-effort duplicate detection for the Add Show flow — same date
+  // and same (normalized) title always counts as a match; venue name
+  // only has to agree when both sides actually have one set, so a
+  // manually-typed show with no venue can still match a search result
+  // that has one. Deliberately not fuzzy beyond trim/lowercase (e.g.
+  // "Paradise Rock Club" vs "...presented by Citizens" won't match) —
+  // catches the common case (two people independently adding the same
+  // Ticketmaster result, or both typing the same show by hand) without
+  // false-positiving on two different shows that share a date. See
+  // decision log, "Duplicate shows join instead of splitting."
+  OTR.findMatchingShow = function (shows, fields) {
+    const norm = (s) => (s || '').trim().toLowerCase();
+    const title = norm(fields.title);
+    const venue = norm(fields.venue_name);
+    return shows.find((s) => {
+      if (s.show_date !== fields.show_date) return false;
+      if (norm(s.title) !== title) return false;
+      const sVenue = norm(s.venue_name);
+      if (venue && sVenue) return venue === sVenue;
+      return true; // no venue on one or both sides — title + date is enough
+    }) || null;
+  };
+
   OTR.setResponse = async function (showId, personId, status) {
     const { error } = await OTR.db
       .from('responses')
