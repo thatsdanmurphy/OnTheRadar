@@ -124,10 +124,6 @@
      own edges next to the roomier margins the rest of the app now
      uses (grid margins, card padding). */
   padding: var(--space-24);
-  /* Extra bottom padding so scrolled content never sits behind the
-     footer, which is now locked to the drawer's bottom edge (see
-     .drawer-footer-section) instead of ending the in-flow content. */
-  padding-bottom: calc(var(--space-48) * 2);
   /* Right-edge corners only — the left edge sits flush against the
      screen edge (there's nothing to round it against), but the right
      edge was a hard vertical line the whole height of the screen.
@@ -579,7 +575,15 @@
   border: none;
   border-radius: var(--radius);
   padding: var(--space-8) var(--space-8) var(--space-8) var(--space-16);
-  margin-bottom: var(--space-16);
+  /* Was --space-16 — a full step looser than the --space-8 gap the
+     herds list right below it uses (.drawer-group-list), so My Shows
+     and Browse Venues read as a visually different rhythm than the
+     rows directly under them, in the same drawer. Matched to
+     --space-8 so the whole nav column (My Shows, Browse Venues, each
+     herd row) reads as one consistent list, not two different ones
+     stacked together. Also matches .landing-row in browse.css, which
+     already used --space-8 on this same button class. */
+  margin-bottom: var(--space-8);
   color: var(--color-surface-text);
   cursor: pointer;
   transition: background 0.15s ease;
@@ -1853,21 +1857,22 @@ body.drawer-open {
 /* ---------- Drawer footer (was a page footer — see index.html's note
    where the old <footer> used to sit) ---------- */
 
-/* Locked to the drawer's own bottom edge per direct feedback ("center
-   and lock the footer content, 48px above the bottom") rather than
-   sitting in normal flow after the herds section. .nav-drawer is the
-   positioned ancestor (position: fixed) and the scroll container
-   (overflow-y: auto) at once, so an absolutely-positioned child here
-   is anchored to the drawer's own box and stays put as the content
-   above it scrolls -- not carried along with the scroll like a normal
-   in-flow child would be. left/right match .nav-drawer's own
-   --space-24 padding so it lines up with everything else instead of
-   running to the drawer's true edges. */
+/* Back in normal flow now, as the last thing in the drawer, not
+   locked to the drawer's bottom edge. It used to be position:absolute
+   (anchored to .nav-drawer's own fixed box) so it stayed pinned 48px
+   above the bottom regardless of scroll position — but that meant it
+   was anchored to the *viewport*, not to the end of the content: with
+   enough herds to fill the drawer, the herd list or "Add a herd"
+   button would scroll up underneath it and the footer would sit on
+   top of that content instead of below it. Per direct feedback
+   ("footer language should not be locked, if content runs into it it
+   should not overlap, things should just push down"), it's a plain
+   in-flow block again — whatever's above it (however tall the herd
+   list gets) simply pushes it further down the scroll, never under
+   it. margin-top (rather than the old fixed 48px-from-bottom) is what
+   separates it from the herds section now. */
 .drawer-footer-section {
-  position: absolute;
-  left: var(--space-24);
-  right: var(--space-24);
-  bottom: var(--space-48);
+  margin-top: var(--space-32);
   display: flex;
   flex-direction: column;
   align-items: center;

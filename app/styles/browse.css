@@ -74,7 +74,8 @@
    components.css) instead of a bespoke "big tile" — one nav-row
    language for "go somewhere else in the app," whether that's the
    drawer or here. Only addition is the bottom margin between rows,
-   matching the drawer's own --space-16 rhythm. */
+   matching the drawer nav's own --space-8 rhythm (.drawer-my-shows-btn
+   itself, .drawer-group-list's row gap). */
 .landing-row { margin-bottom: var(--space-8); }
 
 /* Horizontal scrollable chip strip (Size, State/Region, Type) */
