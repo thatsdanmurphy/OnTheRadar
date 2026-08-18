@@ -338,6 +338,15 @@
       <button type="button" class="group-heading-btn" id="group-view-btn" aria-label="View herd">
         <i data-lucide="users"></i>
       </button>
+      <!-- Solo-herd only (myGroups.length === 1) — swapped in for
+           Share/View by selectGroup() below. The heading reads "My
+           Shows" at that point, so a Share button there would be
+           confusing (inviting someone doesn't add them to "my"
+           anything — it makes a real herd). A plain "+" that opens
+           the new-herd flow is the honest version of that action. -->
+      <button type="button" class="group-heading-btn" id="group-add-herd-btn" aria-label="Start a herd" style="display:none;">
+        <i data-lucide="plus"></i>
+      </button>
     </div>
   </div>
 
@@ -667,6 +676,7 @@
   const groupHeadingName = document.getElementById('group-heading-name');
   const groupShareBtn = document.getElementById('group-share-btn');
   const groupViewBtn = document.getElementById('group-view-btn');
+  const groupAddHerdBtn = document.getElementById('group-add-herd-btn');
   const myShowsHeadingRow = document.getElementById('my-shows-heading-row');
   const listContent = document.getElementById('show-list-content');
 
@@ -1003,6 +1013,12 @@
     if (ok) flashShareSuccess(groupShareBtn);
   });
 
+  // Solo-herd "+" — same destination as the zero-herd landing's Start
+  // a Herd tile. Once a second herd exists, selectGroup() stops
+  // showing this button (myGroups.length > 1), so it only ever
+  // appears while there's genuinely one herd to grow out of.
+  groupAddHerdBtn.addEventListener('click', openNewGroupModal);
+
   // Invite, from inside the group modal — same shared copyInviteLink()
   // helper every other share affordance uses. Has a real text label
   // (unlike the icon-only share buttons elsewhere), so success is a
@@ -1159,7 +1175,18 @@
     mainContent.style.display = '';
     await renderGroupSwitcher(myGroups);
     closeDrawer();
-    groupHeadingName.textContent = group.name;
+    // A lone herd is presented as "My Shows" instead of its literal
+    // name (e.g. "Dan's Shows") — avoids a page that just repeats
+    // what the My Shows tab already says. But Share/View still do a
+    // real invite/member-list underneath, so those buttons swap for
+    // a plain "+" (start a herd) instead — see group-add-herd-btn
+    // above. The moment a second herd exists this reverts to the
+    // normal name + Share/View treatment automatically.
+    const isSoloHerd = myGroups.length === 1;
+    groupHeadingName.textContent = isSoloHerd ? 'My Shows' : group.name;
+    groupShareBtn.style.display = isSoloHerd ? 'none' : '';
+    groupViewBtn.style.display = isSoloHerd ? 'none' : '';
+    groupAddHerdBtn.style.display = isSoloHerd ? '' : 'none';
     groupHeadingRow.style.display = 'flex';
     await renderCurrentView(group.id);
   }
