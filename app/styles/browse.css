@@ -151,22 +151,40 @@
   font-size: var(--text-control-size); line-height: var(--text-control-lh);
   opacity: 0.7; margin-top: var(--space-4);
 }
+/* Was --text-meta-size (12px) — one more distinct size in a card that
+   already had too many (per direct feedback, a whole-site typography
+   pass: "venue cards - so many different varying sizes... make sure
+   we're using tokens"). Matched to --text-control-size (14px), the
+   same size .venue-location and .venue-notable both use, so the card
+   settles on exactly two sizes total: --text-sub-size for the name,
+   --text-control-size for every line of detail under it. Also used to
+   include an allAges chip here — cut per direct feedback ("remove the
+   all ages tag"), see venueCard() in browse.js. */
 .venue-meta {
-  font-family: var(--font-data); font-size: var(--text-meta-size); line-height: var(--text-meta-lh);
+  font-family: var(--font-data); font-size: var(--text-control-size); line-height: var(--text-control-lh);
   opacity: 0.55; margin-top: var(--space-8);
   display: flex; flex-wrap: wrap; gap: var(--space-4) var(--space-8);
 }
 .venue-meta span:not(:last-child)::after { content: '·'; margin-left: var(--space-8); }
-.venue-transit {
-  font-family: var(--font-data); font-size: var(--text-meta-size); opacity: 0.5;
-  margin-top: var(--space-4); display: flex; align-items: center; gap: var(--space-4);
-}
-.venue-transit svg { width: 14px; height: 14px; flex-shrink: 0; }
+/* Used to be set off from the card above it with padding-top + a
+   border-top rule. Per direct feedback ("remove the stroke over the
+   fun fact and just make that stand out with the icon"), the rule is
+   gone — a sparkles icon in front of the text does that job instead
+   (see venueCard() in browse.js). Font-size matches .venue-location/
+   .venue-meta now (was already --text-control-size, but line-height
+   was a bare 1.4 instead of the shared --text-control-lh token — fixed
+   that too, so this line is a genuine match, not just a coincidentally
+   equal font-size with different rhythm) — per direct feedback ("make
+   that the same type size as the other details, just want to make
+   sure we're not going too small"), 14px stays the floor for anything
+   meant to be read as a real sentence, not a fine-print label. */
 .venue-notable {
   font-family: var(--font-body); font-style: italic;
-  font-size: var(--text-control-size); line-height: 1.4; opacity: 0.75;
-  margin-top: var(--space-8); padding-top: var(--space-8); border-top: 1px solid var(--color-border);
+  font-size: var(--text-control-size); line-height: var(--text-control-lh); opacity: 0.75;
+  margin-top: var(--space-8);
+  display: flex; align-items: flex-start; gap: var(--space-4);
 }
+.venue-notable svg { width: 14px; height: 14px; flex-shrink: 0; opacity: 0.6; margin-top: 3px; }
 .venue-card-actions { margin-top: var(--space-16); display: flex; justify-content: flex-end; }
 .venue-card-actions a { text-decoration: none; display: inline-flex; align-items: center; gap: var(--space-4); }
 

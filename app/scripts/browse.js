@@ -89,17 +89,23 @@
         <i data-lucide="heart"></i>
       </button>`;
 
+    // allAges used to be a third meta chip here, but it doubled up
+    // with almost nothing — most venues in this directory default to
+    // all ages anyway, so the chip was mostly just noise on every
+    // card (per direct feedback, "remove the all ages tag"). The field
+    // stays in venues.js (still meaningful data), it's just not surfaced
+    // on the card itself anymore.
     const metaBits = [];
     if (v.capacity) metaBits.push(`Cap. ${v.capacity.toLocaleString()}`);
     if (v.established) metaBits.push(`Est. ${v.established}`);
-    if (v.allAges) metaBits.push(v.allAges);
     const meta = metaBits.length
       ? `<div class="venue-meta">${metaBits.map((b) => `<span>${b}</span>`).join('')}</div>`
       : '';
 
-    const transit = v.transit
-      ? `<div class="venue-transit"><i data-lucide="train-front"></i>${v.transit}</div>`
-      : '';
+    // Transit guidance (nearest T stop) used to render here — cut per
+    // direct feedback ("remove the train guidance it's superfluous").
+    // venues.js keeps the `transit` field (some future feature might
+    // want it), it's just not rendered on the card.
 
     // Only the first notable show surfaces on the card — a running
     // bulleted list read as clutter; anyone curious enough for the
@@ -107,10 +113,16 @@
     // "+N more" counter next to that one fact, but that read as
     // strange bookkeeping tacked onto a piece of trivia (per direct
     // feedback, "why does one show fact say +2 more... one fact is
-    // enough") — cut it. The card commits to a single fact and stops.
+    // enough") — cut it. Used to also be set off from the rest of the
+    // card with a border-top rule; per direct feedback ("remove the
+    // stroke over the fun fact and just make that stand out with the
+    // icon"), the rule is gone and a sparkles icon marks it as a fact
+    // instead — same "icon carries the meaning, not a divider line"
+    // language as the transit line used to use (before that got cut
+    // too) and the legendary star marker still uses.
     let notable = '';
     if (v.notableShows && v.notableShows.length) {
-      notable = `<div class="venue-notable">${v.notableShows[0]}</div>`;
+      notable = `<div class="venue-notable"><i data-lucide="sparkles"></i><span>${v.notableShows[0]}</span></div>`;
     }
 
     return `
@@ -121,7 +133,6 @@
         </div>
         <div class="venue-location">${v.address}</div>
         ${meta}
-        ${transit}
         ${notable}
         <div class="venue-card-actions">
           <a href="${v.url}" target="_blank" rel="noopener" class="btn-outline" data-venue-calendar-link="${v.name}">

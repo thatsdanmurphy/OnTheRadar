@@ -1405,6 +1405,15 @@ body.drawer-open {
   text-align: center;
 }
 
+/* Was --text-sub-size (20px) — the site's other page-title element,
+   .browse-heading (Browse Venues' own header), sits at --text-head-size
+   (24px) for the same visual role: "the title of the page you're on."
+   Two different sizes for the same job was exactly the kind of drift
+   flagged in a whole-site typography pass ("site headers... lets make
+   sure we're using tokens"). Matched up to --text-head-size, the
+   larger of the two, rather than shrinking Browse Venues down — this
+   is also reused as-is by #my-shows-heading-row (the cross-group "My
+   Shows" title), so both page-title contexts move together. */
 .group-heading-name {
   margin: 0;
   max-width: 100%;
@@ -1413,8 +1422,8 @@ body.drawer-open {
   white-space: nowrap;
   font-family: var(--font-body);
   font-weight: 600;
-  font-size: var(--text-sub-size);
-  line-height: var(--text-sub-lh);
+  font-size: var(--text-head-size);
+  line-height: var(--text-head-lh);
   text-transform: capitalize;
 }
 
