@@ -1040,7 +1040,7 @@
       groupBar.style.display = 'none';
       groupHeadingRow.style.display = 'none';
       addShowCard.style.display = 'none';
-      renderEmptyState(document.getElementById('show-list-content'), 'No groups yet.');
+      renderZeroHerdLanding(document.getElementById('show-list-content'));
       return;
     }
 
@@ -1435,6 +1435,75 @@
     container.innerHTML = `<div class="show-list-empty-circle"><div class="show-list-empty-icon">${EMPTY_STATE_ICON}</div><div class="show-list-empty-message">${message}</div></div>`;
   }
 
+  // The zero-herd landing — replaces the old bare "No groups yet."
+  // empty state for a brand-new person with no herd. Per direct
+  // feedback ("people can just track shows alone too... I think we can
+  // make a nice placemat... so it's not like a dead end"), three equal,
+  // chunky actions rather than a passive icon+message: Browse Venues
+  // (already built, but previously unreachable at zero herds — it only
+  // ever lived inside #group-bar, which stays hidden until you have at
+  // least one herd; this is also the fix for that long-standing "Revisit
+  // if" in the decision log), Add a Show, and Start a Herd.
+  function renderZeroHerdLanding(container) {
+    container.className = 'zero-herd-landing';
+    container.innerHTML = `
+      <p class="zero-herd-intro">New here? Jump straight into whichever one fits — you can always add the others later.</p>
+      <div class="zero-herd-tiles">
+        <button type="button" class="zero-herd-tile" id="zero-herd-browse">
+          <span class="zero-herd-tile-icon"><i data-lucide="map-pin"></i></span>
+          <span class="zero-herd-tile-label">Browse Venues</span>
+          <span class="zero-herd-tile-sub">Find a venue by size, region, or type</span>
+        </button>
+        <button type="button" class="zero-herd-tile" id="zero-herd-add-show">
+          <span class="zero-herd-tile-icon"><i data-lucide="music"></i></span>
+          <span class="zero-herd-tile-label">Add a Show</span>
+          <span class="zero-herd-tile-sub">Start tracking what you're curious about</span>
+        </button>
+        <button type="button" class="zero-herd-tile" id="zero-herd-start-herd">
+          <span class="zero-herd-tile-icon"><i data-lucide="users"></i></span>
+          <span class="zero-herd-tile-label">Start a Herd</span>
+          <span class="zero-herd-tile-sub">Invite friends, see who's into the same shows</span>
+        </button>
+      </div>
+    `;
+    lucide.createIcons({ root: container });
+
+    document.getElementById('zero-herd-browse').addEventListener('click', () => {
+      // Reuses the drawer's own Browse Venues button and its existing
+      // click handler (see scripts/browse.js) rather than duplicating
+      // that logic here — this button was never reachable at zero
+      // herds before now, but its wiring already does everything
+      // needed (open Browse, close the drawer if it happened to be
+      // open) once actually triggered.
+      document.getElementById('drawer-browse-btn').click();
+    });
+
+    document.getElementById('zero-herd-add-show').addEventListener('click', handleSoloAddShow);
+
+    document.getElementById('zero-herd-start-herd').addEventListener('click', () => {
+      openNewGroupModal();
+    });
+  }
+
+  // "Add a Show" from zero herds — per direct product discussion (does
+  // solo tracking drift from the app's own mission of overlap being the
+  // signal? see MISSION.md), the answer landed on: no, because every
+  // herd already starts as one person before anyone else joins — this
+  // doesn't add a new "solo mode," it just skips the up-front naming
+  // step so a brand-new person can start adding shows immediately, in
+  // the exact same herd-of-one shape any herd begins in. Auto-creates a
+  // herd named after them (editable later, same rename path every herd
+  // already has) and drops straight into the real Add Show flow.
+  async function handleSoloAddShow() {
+    const defaultName = `${person.display_name}'s Shows`;
+    const group = await createGroup(person.id, defaultName);
+    if (!group) return;
+    trackEvent('group_created', { group_id: group.id, via: 'solo_add_show' });
+    myGroups = await getMyGroups(person.id);
+    await selectGroup(group);
+    openAddShowModal();
+  }
+
   // Marking a show "out" from the cross-group My Shows view removes it
   // from the very list it's sitting in (My Shows only ever shows
   // curious picks) — used to just vanish the card the instant you
@@ -1756,7 +1825,7 @@
     if (myGroups.length === 0) {
       groupBar.style.display = 'none';
       groupHeadingRow.style.display = 'none';
-      renderEmptyState(document.getElementById('show-list-content'), 'No groups yet.');
+      renderZeroHerdLanding(document.getElementById('show-list-content'));
       return;
     }
 

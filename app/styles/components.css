@@ -861,6 +861,106 @@ body.drawer-open {
   display: block;
 }
 
+/* ---------- Zero-herd landing ("placemat") ---------- */
+
+/* Replaces the old bare "No groups yet." empty state for a brand-new
+   person with no herd yet — see renderZeroHerdLanding() in index.html.
+   Per direct feedback ("I think we can make a nice placemat for people
+   just landing here so it's not like a dead end... I want it to be
+   chunky"). */
+.zero-herd-landing {
+  padding-block: var(--space-32);
+}
+
+.zero-herd-intro {
+  font-family: var(--font-body);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-lh);
+  opacity: 0.7;
+  text-align: center;
+  max-width: 40ch;
+  margin: 0 auto var(--space-24);
+}
+
+/* Stacked vertically by default (mobile) — per direct spec ("stacked
+   vertically on mobile but left to right on desktop"), switches to a
+   row of three equal columns at the same 1024px desktop breakpoint
+   grid.css already uses for its own row-of-three layout (.col-third). */
+.zero-herd-tiles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+}
+
+@media (min-width: 1024px) {
+  .zero-herd-tiles {
+    flex-direction: row;
+  }
+}
+
+/* Chunky: a real surface card (same --color-surface/--radius language
+   as .add-show-card), generous --space-32 padding, and a big icon
+   circle up top rather than a small inline glyph — per direct
+   feedback ("I want it to be chunky though"). flex:1 so all three
+   stay equal width once they're in a row on desktop. */
+.zero-herd-tile {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-8);
+  background: var(--color-surface);
+  color: var(--color-surface-text);
+  border: none;
+  border-radius: var(--radius);
+  padding: var(--space-32) var(--space-24);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.zero-herd-tile:hover {
+  background: var(--tint-active-strong);
+}
+
+.zero-herd-tile:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Same --color-fill-dim recessed-circle language as
+   .show-list-empty-circle, sized down — a big, solid anchor for the
+   icon rather than a bare glyph floating in the card. */
+.zero-herd-tile-icon {
+  width: var(--space-64);
+  height: var(--space-64);
+  border-radius: 50%;
+  background: var(--color-fill-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--space-8);
+}
+
+.zero-herd-tile-icon svg {
+  width: var(--space-32);
+  height: var(--space-32);
+}
+
+.zero-herd-tile-label {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: var(--text-sub-size);
+  line-height: var(--text-sub-lh);
+}
+
+.zero-herd-tile-sub {
+  font-family: var(--font-data);
+  font-size: var(--text-control-size);
+  line-height: var(--text-control-lh);
+  opacity: 0.6;
+}
+
 /* ---------- Show list loading state ---------- */
 
 /* Initial-fetch state, not the empty state — see index.html's note on
