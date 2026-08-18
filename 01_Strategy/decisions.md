@@ -363,3 +363,9 @@ Rough capacity bands used for the primary categories: **Tiny venues** ≲250, **
 **Why:** Called out directly — "why does one show fact say and two more... that sounds weird one fact i enough - i think its paradise rock club." Fair: tacking a bookkeeping count onto a single piece of trivia read odd, and the card was already deliberately choosing to show just one fact rather than a running list — the counter undercut that choice by announcing what it was leaving out.
 **Verified:** Playwright — every card with `notableShows` now renders exactly one fact, no "more" text anywhere in the rendered output.
 **Revisit if:** None expected — this is a straightforward cut, not a tradeoff.
+
+## 2026-08-15 — Drawer nav spacing: reverted the "optical" fix, back to a genuinely uniform 8px
+
+**What:** The previous pass bumped just the My Shows → Browse Venues gap to `--space-16` as an optical correction (reasoning: a gap between two filled rows reads tighter than the same gap next to plain text). Per direct follow-up ("the spacing is still not right in the nav the vertical spacing it should be uniform"), that was the wrong call — reverted it. Every gap in the drawer nav column (My Shows → Browse Venues, Browse Venues → Herds label, and every herd row) is back to a single, literal `--space-8` with no exceptions.
+**Why:** Requested directly, twice — first that the spacing looked off, then explicitly that it should be uniform once the "optical" fix didn't land. Confirmed via direct pixel measurement this time (not just a screenshot read) that all four gaps in the drawer are exactly 8px.
+**Revisit if:** If this still doesn't look right, the "optical" theory from the previous entry was probably wrong to begin with — worth asking what specifically still looks uneven rather than guessing at another CSS tweak.
