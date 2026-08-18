@@ -25,7 +25,10 @@
      tags, inconsistent with the actual wordmark
      (`<span>Gig</span><span>Herd</span>`, no space between). -->
 <meta name="description" content="Line up shows with your pals.">
-<meta name="theme-color" content="#211f1a">
+<!-- Must be a literal value — meta[name=theme-color] can't reference a CSS
+     custom property. Mirrors --color-bg in tokens.css; update both
+     together if the page background ever changes. -->
+<meta name="theme-color" content="#211f1a"> <!-- ds:intentional -->
 <link rel="manifest" href="site.webmanifest">
 <!-- Favicon — a tight "GH" monogram, same wordmark colors/weight as
      the header (Big Shoulders Display 900, pink "G"/green "H") on the
@@ -833,7 +836,7 @@
   // pink range are skipped so no swatch gets mistaken for the logo or
   // the overlap marker.
   const AVATAR_COLORS = [
-    { hex: '#ebe8e1', name: 'Paper' },
+    { hex: '#ebe8e1', name: 'Paper' }, // ds:intentional — deliberately reuses --color-text's value as the palette's neutral default
     { hex: '#c66c3f', name: 'Rust' },
     { hex: '#c6a43f', name: 'Amber' },
     { hex: '#c53fb4', name: 'Berry' },
@@ -866,7 +869,7 @@
     const g = parseInt(hex.slice(3, 5), 16);
     const b = parseInt(hex.slice(5, 7), 16);
     const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-    return luminance > 0.6 ? '#211f1a' : '#ffffff';
+    return luminance > 0.6 ? '#211f1a' : '#ffffff'; // ds:intentional — mirrors --color-bg / --color-text-inverse; JS can't read CSS custom properties without extra plumbing
   }
 
   // Plain row of avatar dots, each filled with that person's own

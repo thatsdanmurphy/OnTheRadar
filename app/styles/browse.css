@@ -142,7 +142,7 @@
   transition: opacity 0.15s ease;
 }
 .venue-fav-btn:hover { opacity: 0.75; }
-.venue-fav-btn svg { width: 20px; height: 20px; }
+.venue-fav-btn svg { width: var(--icon-size); height: var(--icon-size); }
 .venue-fav-btn.is-favorited { opacity: 1; }
 .venue-fav-btn.is-favorited svg { fill: var(--color-text); }
 
