@@ -180,7 +180,7 @@ OTR.VENUES = [
   },
   {
     name: 'Xfinity Center',
-    url: 'https://www.livenation.com/venue/KovZpaFEZ7/xfinity-center-events',
+    url: 'https://www.livenation.com/venue/KovZpZAEAElA/xfinity-center-events', // corrected 2026-08-18 — old ID (KovZpaFEZ7) resolved to a different venue, see decision log
     categories: ['Arenas & Stadiums', 'Outdoor', 'Legendary'],
     state: 'MA',
     city: 'Mansfield',
@@ -294,7 +294,7 @@ OTR.VENUES = [
   },
   {
     name: 'The Stage at Suffolk Downs',
-    url: 'https://atsuffolkdowns.com/events/the-stage-at-suffolk-downs/',
+    url: 'https://www.stageatsuffolkdowns.com/calendar', // corrected 2026-08-18 — old URL was a generic overview page with no show dates, this is the venue's own calendar
     categories: ['Outdoor'],
     state: 'MA',
     city: 'East Boston',
@@ -307,7 +307,7 @@ OTR.VENUES = [
   },
   {
     name: 'Wang Theatre',
-    url: 'https://www.bochcenter.org/wang-theatre',
+    url: 'https://www.wangtheatreboston.com/events/', // corrected 2026-08-18 — bochcenter.org/wang-theatre now 404s, this is the venue's own current events page
     categories: ['Classic theatres'],
     state: 'MA',
     city: 'Boston',
@@ -324,7 +324,7 @@ OTR.VENUES = [
     // are keyed by display name (see decision log), so two venues
     // sharing an exact name would silently collide there.
     name: 'Shubert Theatre (Boston)',
-    url: 'https://www.bochcenter.org/shubert-theatre',
+    url: 'https://www.bochcenter.org/events/all', // corrected 2026-08-18 — bochcenter.org/shubert-theatre now 404s; the Boch Center no longer publishes a per-venue page, this is its all-events listing (includes Shubert shows)
     categories: ['Classic theatres'],
     state: 'MA',
     city: 'Boston',
@@ -415,7 +415,7 @@ OTR.VENUES = [
   },
   {
     name: 'Regent Theatre',
-    url: 'https://regenttheatre.com/',
+    url: 'https://regenttheatre.com/schedule/calendar/', // corrected 2026-08-18 — homepage didn't surface show listings, this is the venue's own calendar
     categories: ['Small venues'],
     state: 'MA',
     city: 'Arlington',
@@ -559,7 +559,7 @@ OTR.VENUES = [
   },
   {
     name: 'Fete Music Hall',
-    url: 'https://fetemusichall.com/',
+    url: 'https://www.fetemusic.com/', // corrected 2026-08-18 — old domain (fetemusichall.com) no longer resolves; this is the venue's real site, confirmed at 103 Dike St, Providence
     categories: ['Small venues'],
     state: 'RI',
     city: 'Providence',
@@ -878,7 +878,7 @@ OTR.VENUES = [
   },
   {
     name: 'Waterfront Park',
-    url: 'https://ourwaterfront.org/waterfront-park/',
+    url: 'https://enjoyburlington.com/place/waterfront-park-2/', // corrected 2026-08-18 — old URL (ourwaterfront.org) is a name collision, that's Louisville KY's Waterfront Park, not Burlington's
     categories: ['Outdoor'],
     state: 'VT',
     city: 'Burlington',
@@ -1193,7 +1193,7 @@ OTR.VENUES = [
   },
   {
     name: 'The Shaskeen Pub',
-    url: 'https://www.facebook.com/theshaskeenpub/',
+    url: 'https://www.shaskeenirishpub.com/event-schedule', // corrected 2026-08-18 — the venue has its own site with a real calendar; the old link was a bare Facebook page
     categories: ['Tiny venues'],
     state: 'NH',
     city: 'Manchester',
@@ -1232,7 +1232,7 @@ OTR.VENUES = [
   },
   {
     name: 'Bank of New Hampshire Stage',
-    url: 'https://www.ccanh.com/bank-of-nh-stage-seating-chart',
+    url: 'https://www.ccanh.com/shows-and-concerts', // corrected 2026-08-18 — old URL was a seating chart with no event listings; this is CCANH's real shows calendar (covers both BNH Stage and Chubb Theatre, filterable)
     categories: ['Small venues'],
     state: 'NH',
     city: 'Concord',

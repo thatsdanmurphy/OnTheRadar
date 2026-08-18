@@ -152,12 +152,14 @@
   --text-head-size: 24px;     --text-head-lh: var(--space-32);
   --text-display-size: 40px;  --text-display-lh: var(--space-48);
   /* One deliberate off-scale size, now at least a named token instead
-     of a bare 30px sitting in components.css: the wordmark reads small
-     at --text-head-size (24px) once it's two-tone, but the next rung
-     up (--text-display-size, 40px) is too loud for a header. Line-height
-     stays pinned to --text-head-lh (32px) — the bumped size still fits
-     comfortably under it. */
-  --text-wordmark-size: 30px;
+     of a bare number sitting in components.css: the wordmark reads
+     small at --text-head-size (24px) once it's two-tone, but the next
+     rung up (--text-display-size, 40px) is too loud for a header.
+     Bumped 30px -> 36px per direct feedback ("make the logo bigger") —
+     line-height bumped alongside it to --space-40 so the taller glyphs
+     still have room; the old --text-head-lh (32px) started to feel
+     cramped against the larger size. */
+  --text-wordmark-size: 36px;
 
   /* --- Icons ---------------------------------------------------
      Lucide (lucide.dev) is the app's standard iconset going forward —

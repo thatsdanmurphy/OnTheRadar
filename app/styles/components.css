@@ -33,16 +33,23 @@
 /* Value-prop one-liner, same copy as the name gate's tagline (see
    .name-gate-tagline) — the app repeats it under the wordmark
    everywhere, not just the first screen someone sees. Quiet by
-   design: small, low-opacity, sentence case, sitting under the row
-   rather than competing with it. */
+   design: small, sentence case, sitting under the row rather than
+   competing with it — but not so quiet it disappears. Per direct
+   feedback ("tagline tighter/closer to it and maybe a little
+   brighter"): margin-top pulled in from --space-4 (4px) to a flat 2px
+   (no token at that granularity — the scale jumps 0/4/8, both too
+   coarse here — so this one's a hand-tuned exception, not a drifted
+   value) so it reads as attached to the wordmark instead of floating
+   under it; opacity raised 0.55 -> 0.75 so it's legible at a glance,
+   not squinted at. */
 .header-tagline {
   text-align: center;
   font-family: var(--font-body);
   font-size: var(--text-body-size);
   line-height: var(--text-body-lh);
   color: var(--color-text);
-  opacity: 0.55;
-  margin-top: var(--space-4);
+  opacity: 0.75;
+  margin-top: 2px; /* ds:intentional — see comment above, no token at this granularity */
   /* A <p>'s browser-default margin-bottom (~1em, unrelated to any
      token) was quietly inflating the gap below this into the tab bar —
      found by rendering the header headless and reading the computed
@@ -488,13 +495,20 @@
 }
 
 /* Group name — force-capitalized regardless of how it was typed in,
-   so a lowercase group name still reads as deliberate Title Case. */
+   so a lowercase group name still reads as deliberate Title Case.
+   Bumped to --text-sub-size/-lh (20px/24) to match every other
+   list-item name in the app (.show-title, .modal-title, .venue-name,
+   .result-title) — this was the one still sitting at --text-body-size
+   (16px), part of the same "headers inside the containers" drift
+   flagged directly. Weight stays the row's own signal for "this is
+   your current group" (400 at rest, 600 when active, see
+   .drawer-group-row.active below) — only the size was drift. */
 .group-switch-item-name {
   display: block;
   font-family: var(--font-body);
   font-weight: 400;
-  font-size: var(--text-body-size);
-  line-height: var(--text-body-lh);
+  font-size: var(--text-sub-size);
+  line-height: var(--text-sub-lh);
   text-transform: capitalize;
 }
 
@@ -625,12 +639,18 @@
   min-width: 0;
 }
 
+/* Bumped to --text-sub-size/-lh (20px/24) to match every other
+   list-item name/title in the app (.show-title, .modal-title,
+   .venue-name, .result-title, .group-switch-item-name) — this one
+   (and the browse landing tiles below it, which reuse this same
+   class) was still at --text-body-size (16px), part of the same
+   "headers inside the containers" drift flagged directly. */
 .drawer-my-shows-label {
   display: block;
   font-family: var(--font-body);
   font-weight: 600;
-  font-size: var(--text-body-size);
-  line-height: var(--text-body-lh);
+  font-size: var(--text-sub-size);
+  line-height: var(--text-sub-lh);
 }
 
 /* Mixed case now, matching the member-count fix above — same reasoning,
@@ -693,16 +713,18 @@ body.drawer-open {
 
 /* Sized a step above --text-head-size on purpose — the wordmark is
    the one place in the header that should carry real presence, and
-   24px read a little small once it was two-tone. Line-height stays
-   at the head-size rhythm (32px) since the bumped font-size still
-   fits comfortably under it. */
+   24px read a little small once it was two-tone. Bumped again per
+   direct feedback ("make the logo bigger") — line-height moved off
+   --text-head-lh (32px) to --space-40 alongside the token bump, so
+   the taller glyphs have real room instead of crowding the row above
+   and below. */
 .wordmark {
   flex: 1;
   text-align: center;
   font-family: var(--font-display);
   font-weight: 900;
   font-size: var(--text-wordmark-size);
-  line-height: var(--text-head-lh);
+  line-height: var(--space-40);
   text-transform: uppercase;
   letter-spacing: 0.01em;
   text-decoration: none;
@@ -1495,41 +1517,61 @@ body.drawer-open {
    selectGroup(), not renderCurrentView()) — unlike Add Show, knowing
    your current group isn't a Herd-Picks-only concern. Also reused
    as-is by #my-shows-heading-row (no actions div there — nothing to
-   act on from a cross-group view), so this centering applies to both. */
+   act on from a cross-group view).
+   Left-aligned row now, not the old centered/stacked block — matches
+   .browse-header-row's plain left-aligned treatment (per direct
+   feedback: "make headers bigger and left aligned"). The name gets
+   flex:1 so it can truncate instead of shoving the actions off-screen
+   on a long herd name; on mobile that also means it fills the row,
+   which is what pins the actions to the right edge. On desktop the
+   name stops growing (see media query below) so the actions sit
+   right next to it instead of stranded at the far right edge of a
+   much wider row — "appended to herd name on desktop" per direct
+   feedback. */
 .group-heading-row {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: var(--space-8);
+  gap: var(--space-16);
   margin-bottom: var(--space-16);
-  text-align: center;
 }
 
-/* Now the exact same treatment as .browse-heading (Browse Venues'
-   own header) — same font-family/weight/size/uppercase/tracking —
-   so all three page titles (Browse Venues, herd name, My Shows) read
-   as one consistent "title of the page you're on" style rather than
-   three different-looking headings. Per direct feedback ("I like the
-   brows[e] treatment lets just do that"). Also reused as-is by
-   #my-shows-heading-row (the cross-group "My Shows" title), so both
-   page-title contexts move together. */
+/* Bigger now — --text-display-size is literally documented in
+   tokens.css as the "hero numbers, page title" size, one rung above
+   the --text-head-size these were using before. Per direct feedback
+   ("make headers bigger"). Still the exact same family/weight/case/
+   tracking as .browse-heading (Browse Venues' own header), so all
+   three page titles (Browse Venues, herd name, My Shows) stay one
+   consistent style, just larger across the board now. Also reused
+   as-is by #my-shows-heading-row (the cross-group "My Shows" title),
+   so both page-title contexts move together. */
 .group-heading-name {
   margin: 0;
-  max-width: 100%;
+  flex: 1 1 auto;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  text-align: left;
   font-family: var(--font-display);
   font-weight: 900;
-  font-size: var(--text-head-size);
-  line-height: var(--text-head-lh);
+  font-size: var(--text-display-size);
+  line-height: var(--text-display-lh);
   text-transform: uppercase;
   letter-spacing: 0.01em;
 }
 
 .group-heading-actions {
   display: flex;
+  flex-shrink: 0;
   gap: var(--space-8);
+}
+
+/* Desktop: the name stops flex-growing, so it sizes to its own text
+   instead of stretching to fill the row — the actions then sit
+   directly after it (via the row's gap) instead of pinned to the far
+   right edge of a much wider container. */
+@media (min-width: 1024px) {
+  .group-heading-name { flex: 0 1 auto; }
 }
 
 /* "Ghost circle" now — same translucent-tint-circle language as
@@ -1960,9 +2002,17 @@ body.drawer-open {
   background: var(--tint-active);
 }
 
+/* Bumped to --text-sub-size/-lh (20px/24) to match every other
+   list-item name/title in the app — .show-title, .modal-title,
+   .venue-name — which all already sit at this size. This one was
+   stuck a rung lower at --text-body-size (16px) with no explicit
+   line-height at all, which is exactly the "not all the list items
+   have the same type treatment" drift flagged directly ("the headers
+   inside the containers"). */
 .search-result-item .result-title {
   font-weight: 600;
-  font-size: var(--text-body-size);
+  font-size: var(--text-sub-size);
+  line-height: var(--text-sub-lh);
 }
 
 .search-result-item .result-meta {
