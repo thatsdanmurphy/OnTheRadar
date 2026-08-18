@@ -1543,14 +1543,22 @@ body.drawer-open {
    three page titles (Browse Venues, herd name, My Shows) stay one
    consistent style, just larger across the board now. Also reused
    as-is by #my-shows-heading-row (the cross-group "My Shows" title),
-   so both page-title contexts move together. */
+   so both page-title contexts move together.
+   Wraps instead of truncating now — per direct feedback ("i dont want
+   to ellips[e]... can we wrap to two lines"). Harmless here at the
+   shared/default size since #my-shows-heading-row's text is always
+   the fixed, short "My Shows" — it just never actually wraps. See
+   #group-heading-row .group-heading-name below for the one context
+   that can genuinely get long (an actual herd name), which also
+   steps the size down a notch to keep a two-line wrap from taking up
+   the whole top of the screen. */
 .group-heading-name {
   margin: 0;
   flex: 1 1 auto;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: break-word;
   text-align: left;
   font-family: var(--font-display);
   font-weight: 900;
@@ -1560,6 +1568,23 @@ body.drawer-open {
   letter-spacing: 0.01em;
 }
 
+/* The one heading whose text is genuinely unbounded — a real herd
+   name, not fixed copy like "My Shows"/"Browse Venues". Stepped down
+   to --text-head-size (one rung below the shared --text-display-size
+   above) specifically so a long name wrapping to two lines reads as
+   "a slightly smaller title, wrapped" rather than a huge 40px block
+   eating the top of the screen. Per direct feedback ("go slightly
+   smaller with the overall size[s] and wrap"). */
+#group-heading-row .group-heading-name {
+  font-size: var(--text-head-size);
+  line-height: var(--text-head-lh);
+}
+
+/* align-items: center on .group-heading-row (above) already centers
+   the actions against the name's full height, so a two-line wrapped
+   name automatically centers the actions alongside both lines with
+   no extra rule needed — per direct feedback ("center the buttons
+   alongside the two lines when needed"). */
 .group-heading-actions {
   display: flex;
   flex-shrink: 0;
