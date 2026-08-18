@@ -496,19 +496,25 @@
 
 /* Group name — force-capitalized regardless of how it was typed in,
    so a lowercase group name still reads as deliberate Title Case.
-   Bumped to --text-sub-size/-lh (20px/24) to match every other
-   list-item name in the app (.show-title, .modal-title, .venue-name,
-   .result-title) — this was the one still sitting at --text-body-size
-   (16px), part of the same "headers inside the containers" drift
-   flagged directly. Weight stays the row's own signal for "this is
-   your current group" (400 at rest, 600 when active, see
-   .drawer-group-row.active below) — only the size was drift. */
+   Briefly bumped to --text-sub-size (20px, the card-title size used
+   by .show-title/.modal-title/.venue-name/.result-title) on the
+   theory that a drawer row's name is "the same role" as a card
+   title — reverted per direct feedback ("too big" + inconsistent-
+   looking next to the rest of the nav). The drawer is a narrow
+   (320px-ish), compact menu, not a content card — it has its own
+   smaller register, same as it did before that pass, and that's a
+   legitimate different context, not drift. Back to --text-body-size,
+   matching .drawer-my-shows-label right above it in the same drawer
+   so every row label in the nav — My Shows, Browse Venues, each
+   herd — reads at one consistent (smaller) size again. Weight is
+   still the row's own signal for "this is your current group" (400
+   at rest, 600 when active, see .drawer-group-row.active below). */
 .group-switch-item-name {
   display: block;
   font-family: var(--font-body);
   font-weight: 400;
-  font-size: var(--text-sub-size);
-  line-height: var(--text-sub-lh);
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-lh);
   text-transform: capitalize;
 }
 
@@ -639,16 +645,30 @@
   min-width: 0;
 }
 
-/* Bumped to --text-sub-size/-lh (20px/24) to match every other
-   list-item name/title in the app (.show-title, .modal-title,
-   .venue-name, .result-title, .group-switch-item-name) — this one
-   (and the browse landing tiles below it, which reuse this same
-   class) was still at --text-body-size (16px), part of the same
-   "headers inside the containers" drift flagged directly. */
+/* Briefly bumped to --text-sub-size (20px, the card-title size) —
+   reverted per direct feedback ("too big" for the nav drawer, and
+   inconsistent-looking next to the rest of it). This class covers two
+   different contexts, though: the drawer's own My Shows/Browse Venues
+   nav rows (narrow, compact menu — belongs at the smaller size below)
+   AND the Browse landing tiles in the main content area (full-width
+   cards, same visual weight as everything else there — see the
+   .landing-row override right below, which puts those back up to
+   --text-sub-size). The complaint was specifically "in the nav," so
+   only the drawer instance reverts. */
 .drawer-my-shows-label {
   display: block;
   font-family: var(--font-body);
   font-weight: 600;
+  font-size: var(--text-body-size);
+  line-height: var(--text-body-lh);
+}
+
+/* Browse landing tiles (.landing-row, see browse.css) reuse
+   .drawer-my-shows-btn's row shape but live in the main content area
+   as full-width cards, not the narrow drawer — same register as
+   .show-title/.venue-name/.result-title, not the drawer's smaller
+   nav-row size above. */
+.landing-row .drawer-my-shows-label {
   font-size: var(--text-sub-size);
   line-height: var(--text-sub-lh);
 }
