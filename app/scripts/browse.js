@@ -26,6 +26,21 @@
 
   const REGIONS = [...new Set(VENUES.map((v) => v.metro))].sort();
 
+  // Metro -> state abbreviation, derived from the venue data itself (not
+  // hand-typed) so it can't drift out of sync as metros/venues are added.
+  // Every metro in this dataset happens to sit in exactly one state, so a
+  // simple first-match lookup is safe — if that ever stops being true
+  // (a metro spanning two states), this needs to become metro -> Set and
+  // the label below needs to join multiple abbreviations instead.
+  const REGION_STATE = {};
+  VENUES.forEach((v) => {
+    if (!REGION_STATE[v.metro]) REGION_STATE[v.metro] = v.state;
+  });
+  function regionLabel(metro) {
+    const state = REGION_STATE[metro];
+    return state ? `${metro}, ${state}` : metro;
+  }
+
   // ---- Favorites ----
   // Persisted to localStorage, per-browser — not per-person via
   // Supabase. Deliberate scope call for this first merge: favoriting
@@ -217,7 +232,7 @@
   }
 
   document.getElementById('landing-region-sub').textContent =
-    REGIONS.length ? REGIONS.join(', ') : 'By area';
+    REGIONS.length ? REGIONS.map(regionLabel).join(', ') : 'By area';
   updateFavoritesLandingSub();
 
   document.querySelectorAll('.landing-row').forEach((btn) => {
@@ -284,7 +299,7 @@
   function renderRegionStrip() {
     const strip = document.getElementById('region-strip');
     strip.innerHTML = REGIONS.map((r) => `
-      <button type="button" class="chip-strip-item${r === selectedRegion ? ' is-selected' : ''}" data-region="${r}">${r}</button>
+      <button type="button" class="chip-strip-item${r === selectedRegion ? ' is-selected' : ''}" data-region="${r}">${regionLabel(r)}</button>
     `).join('');
     strip.querySelectorAll('[data-region]').forEach((btn) => {
       btn.addEventListener('click', () => {

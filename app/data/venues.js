@@ -520,6 +520,40 @@ OTR.VENUES = [
     transit: null,
     established: 2010,
   },
+  {
+    name: 'Boston Calling',
+    url: 'https://www.bostoncalling.com/',
+    categories: ['Festivals', 'Outdoor'],
+    state: 'MA',
+    city: 'Boston (Allston)',
+    metro: 'Boston/Cambridge',
+    allAges: 'all ages', // official: children under 10 free, no wristband required
+    address: '65 North Harvard St, Allston, MA 02134', // Harvard Athletic Complex
+    // Festival capacity left null like every other festival in this file
+    // (Grand Point North, Waking Windows, etc.) — a single-day attendance
+    // estimate (Boston Magazine reported a 40,000 one-day sellout in 2023)
+    // isn't the same thing as a fixed venue capacity.
+    capacity: null,
+    transit: 'MBTA Red Line to Harvard Square (~10 min walk to Gate 1); Commuter Rail (Worcester Line) to Boston Landing (~1.1 mi walk); MBTA bus routes 66 and 86 stop at Harvard Stadium',
+    established: '2013', // ran at Boston City Hall Plaza 2013–2016, moved to the Harvard Athletic Complex in 2017
+    notableShows: [
+      'Halsey and Tove Lo played early daytime sets in 2015 before either had broken out',
+      'Foo Fighters played their first major concert here in 2023, following drummer Taylor Hawkins\' 2022 death',
+    ],
+  },
+  {
+    name: 'Levitate Music & Arts Festival',
+    url: 'https://levitatemusicfestival.com/',
+    categories: ['Festivals', 'Outdoor'],
+    state: 'MA',
+    city: 'Marshfield',
+    metro: 'Boston/Cambridge',
+    allAges: 'all ages', // general admission all ages (kids under 4 free); VIP area is 21+ only, per official FAQ
+    address: '140 Main St, Marshfield, MA 02050',
+    capacity: null, // festival capacity left null, same reasoning as Boston Calling above — no fixed published cap
+    transit: null, // no public transit; official guidance is off-site parking with shuttle, or rideshare
+    established: '2013', // grew out of a 10th-anniversary party for the Levitate surf/skate shop (founded 2003)
+  },
 
   // Batch 2: Providence, RI — no MBTA transit tags below (out of the T's
   // service area entirely; `transit` left null throughout, not just
@@ -1268,5 +1302,64 @@ OTR.VENUES = [
     capacity: 750, // fully seated; standing-room configuration can reach ~1,000
     transit: null,
     established: 2023,
+  },
+
+  // Batch 7: Berkshires/Western MA — a new metro, distinct from
+  // Boston/Cambridge. Greenfield/Lenox/North Adams cluster together
+  // along the Route 2/Mohawk Trail and I-90 corridor (Greenfield <->
+  // Lenox ~45mi, Greenfield <-> North Adams ~40mi, Lenox <-> North
+  // Adams ~22mi) and are all a genuinely different, much-farther-from-
+  // Boston region (2-2.5hrs, vs. the 30-45min that already stretches
+  // "Boston/Cambridge" to cover Foxborough/Cohasset/Hyannis) — not a
+  // fit for the existing MA metro tag.
+  {
+    name: 'Tanglewood',
+    url: 'https://www.bso.org/tanglewood',
+    categories: ['Classic theatres', 'Outdoor', 'Legendary'],
+    state: 'MA',
+    city: 'Lenox',
+    metro: 'Berkshires/Western MA',
+    allAges: 'all ages',
+    address: '297 West Street, Lenox, MA 01240',
+    capacity: 15000, // Shed + lawn seating combined, per CBS Boston venue coverage
+    transit: 'No direct rail/subway; Peter Pan and Greyhound serve Lenox center, but a car/taxi is still required from town to the grounds; nearest Amtrak is Albany-Rensselaer, NY (~1 hr drive)',
+    established: '1937', // BSO's first concert at the Tanglewood estate itself (the initial 1936 concert was at nearby Holmwood, before the estate gift); the Koussevitzky Music Shed opened in 1938
+    notableShows: [
+      'August 1990: Leonard Bernstein conducted his final concert here, later released as a Deutsche Grammophon live recording',
+      '1986: 14-year-old Midori made her BSO debut playing Bernstein\'s "Serenade after Plato\'s Symposium," breaking two E-strings mid-performance and finishing the piece on a borrowed violin',
+    ],
+  },
+  {
+    name: 'MASS MoCA',
+    url: 'https://massmoca.org/',
+    categories: ['Festivals', 'Outdoor'],
+    state: 'MA',
+    city: 'North Adams',
+    metro: 'Berkshires/Western MA',
+    allAges: 'all ages', // museum/general admission has no age restriction; kids 5 and under free
+    address: '1040 MASS MoCA Way, North Adams, MA 01247',
+    capacity: null, // no published seating/standing capacity found for the Hunter Center performance space or outdoor courtyard stage
+    transit: 'No direct rail; Berkshire Regional Transit Authority (BRTA) local bus routes serve downtown North Adams, and Peter Pan intercity bus stops there too — both a short walk/drive from the museum',
+    established: '1999', // museum opened in a converted Arnold Print Works/Sprague Electric factory complex
+    notableShows: [
+      'Home of Wilco\'s Solid Sound Festival since its founding in 2010',
+      'Home of the Bang on a Can Summer Music Festival since 2001',
+    ],
+  },
+  {
+    name: 'Green River Festival',
+    url: 'https://greenriverfestival.com/',
+    categories: ['Festivals', 'Outdoor'],
+    state: 'MA',
+    city: 'Greenfield',
+    metro: 'Berkshires/Western MA',
+    allAges: 'all ages', // kids 12 and under free (limit 2 per adult); 16 and under must be accompanied by a parent/guardian, per official FAQ
+    address: '89 Wisdom Way, Greenfield, MA 01301', // Franklin County Fairgrounds
+    capacity: null, // festival capacity left null, same reasoning as Boston Calling/Levitate — no fixed published cap
+    transit: 'Free shuttle from downtown Greenfield (Olive Street Parking Garage) starting 1 hour before gates; free bike valet and bike path access; no direct rail/bus line to the fairgrounds itself',
+    established: '1986', // began as two co-located events at Greenfield Community College; became "The Green River Festival" in 2001; moved to the Franklin County Fairgrounds in 2021
+    notableShows: [
+      'Long-running lineup history includes Emmylou Harris, Buddy Guy, Lucinda Williams, Mavis Staples, The Avett Brothers, Old Crow Medicine Show, Fleet Foxes, Alison Krauss & Union Station, Taj Mahal, and Gillian Welch (per Greenfield Recorder retrospective)',
+    ],
   },
 ];
