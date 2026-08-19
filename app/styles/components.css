@@ -1555,23 +1555,32 @@ body.drawer-open {
   margin-bottom: var(--space-16);
 }
 
-/* Bigger now — --text-display-size is literally documented in
-   tokens.css as the "hero numbers, page title" size, one rung above
-   the --text-head-size these were using before. Per direct feedback
-   ("make headers bigger"). Still the exact same family/weight/case/
-   tracking as .browse-heading (Browse Venues' own header), so all
-   three page titles (Browse Venues, herd name, My Shows) stay one
-   consistent style, just larger across the board now. Also reused
-   as-is by #my-shows-heading-row (the cross-group "My Shows" title),
-   so both page-title contexts move together.
-   Wraps instead of truncating now — per direct feedback ("i dont want
-   to ellips[e]... can we wrap to two lines"). Harmless here at the
-   shared/default size since #my-shows-heading-row's text is always
-   the fixed, short "My Shows" — it just never actually wraps. See
-   #group-heading-row .group-heading-name below for the one context
-   that can genuinely get long (an actual herd name), which also
-   steps the size down a notch to keep a two-line wrap from taking up
-   the whole top of the screen. */
+/* --text-head-size — matches .browse-heading (Browse Venues' own
+   header) exactly, so all three page titles (Browse Venues, herd
+   name, My Shows) are one genuinely consistent size, not three
+   different ones. This went through two size changes this session —
+   worth recording both so a future pass doesn't reintroduce the same
+   drift:
+   1. Bumped --text-head-size -> --text-display-size (24px -> 40px)
+      per "make headers bigger."
+   2. A long herd name needed to wrap instead of ellipsis-truncating
+      (see #group-heading-row below, and .group-heading-row's flex
+      layout above), and wrapping a 40px heading to 2-3 lines ate the
+      whole top of the screen — so the *herd name specifically* got
+      stepped back down to --text-head-size, while this shared class
+      (also used as-is by #my-shows-heading-row and .browse-heading)
+      stayed at --text-display-size. That split directly caused the
+      "why are all the headers different sizes now" report — Browse
+      Venues and My Shows were still 40px while the actual herd page
+      had quietly dropped to 24px. Reverted: everything is
+      --text-head-size again, herd name included, so there's one
+      size for this role, full stop — see the removed
+      #group-heading-row override, no longer needed now that the
+      shared size already matches what that override used to set.
+   Still wraps instead of truncating — per direct feedback ("i dont
+   want to ellips[e]... can we wrap to two lines") — harmless on
+   #my-shows-heading-row/.browse-heading since their text is fixed
+   and short, it just never actually wraps there. */
 .group-heading-name {
   margin: 0;
   flex: 1 1 auto;
@@ -1582,22 +1591,10 @@ body.drawer-open {
   text-align: left;
   font-family: var(--font-display);
   font-weight: 900;
-  font-size: var(--text-display-size);
-  line-height: var(--text-display-lh);
-  text-transform: uppercase;
-  letter-spacing: 0.01em;
-}
-
-/* The one heading whose text is genuinely unbounded — a real herd
-   name, not fixed copy like "My Shows"/"Browse Venues". Stepped down
-   to --text-head-size (one rung below the shared --text-display-size
-   above) specifically so a long name wrapping to two lines reads as
-   "a slightly smaller title, wrapped" rather than a huge 40px block
-   eating the top of the screen. Per direct feedback ("go slightly
-   smaller with the overall size[s] and wrap"). */
-#group-heading-row .group-heading-name {
   font-size: var(--text-head-size);
   line-height: var(--text-head-lh);
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
 }
 
 /* align-items: center on .group-heading-row (above) already centers
