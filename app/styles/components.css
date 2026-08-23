@@ -1050,6 +1050,41 @@ body.drawer-open {
   }
 }
 
+/* Upcoming/Past — sits above the show list itself (#show-tabs in
+   index.html; herd view and cross-group My Shows both share it via
+   renderListView). Same pill-button language as Browse's
+   .chip-strip-item, but single-select and only ever two of them, so
+   it's its own small ruleset rather than reusing that class directly.
+   Weight + fill carries "selected," same as everywhere else in the
+   app — pink stays overlap-only. */
+.show-tabs {
+  display: flex;
+  gap: var(--space-8);
+  margin-bottom: var(--space-16);
+}
+.show-tab {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--text-control-size);
+  background: var(--color-surface);
+  color: var(--color-surface-text);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: var(--space-8) var(--space-16);
+  cursor: pointer;
+  opacity: 0.65;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+.show-tab:hover {
+  opacity: 1;
+}
+.show-tab.is-active {
+  background: var(--tint-active-strong);
+  border-color: transparent;
+  font-weight: 700;
+  opacity: 1;
+}
+
 /* color set here so anything inside without its own explicit color
    (show-date, show-title...) inherits charcoal by default, instead of
    the page's light text bleeding into the card. */
