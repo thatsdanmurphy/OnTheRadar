@@ -1722,21 +1722,28 @@
   // fetch instead of trying to refresh one group that isn't selected.
   // declineWithUndo, also My-Shows-only, swaps the decline button's
   // default "save and refresh" for handleDeclineWithUndo above.
-  // Splits into Upcoming/Past and renders whichever's selected on
-  // #show-tabs (see currentShowTab above) — a past show gets the
-  // non-interactive "who went" body instead of the curious/out one,
-  // and never shows the .is-out dimming or the decline-with-undo
-  // flow, since there's nothing left to respond to. Past sorts
-  // most-recent-first (nostalgia reads backward from today); Upcoming
-  // keeps the soonest-first order the query already returns shows in.
+  // #show-tabs only ever shows on the cross-group My Shows view now —
+  // a herd's own page quietly drops past shows with no tab UI at all
+  // (per direct feedback, "cut the tabs from the main group view").
+  // currentGroupId is reliably null exactly when My Shows is the
+  // active context (renderMyShowsView sets it null before calling
+  // this; selectGroup sets it to the herd's id), so that's what
+  // decides it rather than a separate flag threaded through. A past
+  // show still gets the non-interactive "who went" body instead of
+  // the curious/out one wherever it's shown, and never shows the
+  // .is-out dimming or the decline-with-undo flow, since there's
+  // nothing left to respond to. Past sorts most-recent-first
+  // (nostalgia reads backward from today); Upcoming keeps the
+  // soonest-first order the query already returns shows in.
   function renderListView(shows, responsesByShow, emptyMessage, onChange, declineWithUndo) {
     const content = listContent;
     const refresh = onChange || (() => renderCurrentView(currentGroupId));
 
-    showTabs.style.display = 'flex';
-    syncShowTabButtons();
+    const tabsHere = !currentGroupId;
+    showTabs.style.display = tabsHere ? 'flex' : 'none';
+    if (tabsHere) syncShowTabButtons();
 
-    const isPastTab = currentShowTab === 'past';
+    const isPastTab = tabsHere && currentShowTab === 'past';
     const visible = isPastTab
       ? shows.filter(isPastShow).slice().sort((a, b) => (b.show_date || '').localeCompare(a.show_date || ''))
       : shows.filter((s) => !isPastShow(s));
