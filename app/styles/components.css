@@ -1016,13 +1016,34 @@ body.drawer-open {
    the *entire* viewport would push it too far down; 60vh reads as
    centered in the visible content area below the header without a
    fragile calc() against the header's own height. */
+/* Held invisible and collapsed (min-height: 0) for a beat before
+   growing into the full centered 60vh treatment — real fetches are
+   usually well under that beat, so most loads never show this at
+   all: the real content just appears directly, no on/off flash and
+   no page jumping under it. Only a fetch that's actually slow grows
+   this open; that's the one case where a visible swap to real
+   content afterward is expected and fine. Per direct feedback ("why
+   does the loading state have to stutter/jump vertically and turn
+   on/off on initial load") — the always-on 60vh block was collapsing
+   to whatever height the real content turned out to be the instant
+   it swapped in, which read as a jolt on every load, not just slow
+   ones. */
 .show-list-loading {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: var(--space-16);
-  min-height: 60vh;
+  min-height: 0;
+  opacity: 0;
+  animation: show-list-loading-grow 0s 0.25s forwards;
+}
+
+@keyframes show-list-loading-grow {
+  to {
+    min-height: 60vh;
+    opacity: 1;
+  }
 }
 
 /* Same dimmed currentColor language as the empty-state icon/message —
@@ -1123,15 +1144,29 @@ body.drawer-open {
   transition: opacity 0.15s;
 }
 
-/* Sits alone in its own bottom-right footer row now (.show-card-actions,
-   see buildCardActionsRow in index.html) rather than up in the header
-   — per direct feedback, "feels nice to have all actions at the
-   bottom." Ghost icon button, no red: this app has no destructive-red
-   token anywhere, matching the plain-text treatment Leave herd already
-   uses for its own confirm()-gated destructive action. Negative
-   margin keeps its larger tap target from adding extra height to a
-   row that's otherwise just this one icon. */
+/* Lives inline at the end of the card's avatar row (.show-card-avatars,
+   see renderListView + buildDeleteActionSlot in index.html) — a
+   standalone footer row was tried first ("feels nice to have all
+   actions at the bottom") but left it floating below with its own
+   dead whitespace, not lined up with anything. A second pass centered
+   it against the avatar row's full height, but that still read as
+   floating per direct feedback ("still floating in this image, it
+   should be centered with the plus icon and avatar initials") — the
+   row's full height includes the "HECK YEAH!"/"CAN'T MAKE IT" label
+   above the dots, so centering against all of it doesn't line up with
+   the dots themselves. buildDeleteActionSlot wraps this button in the
+   same invisible-label-plus-row shape .avatar-group uses instead, so
+   it inherits the exact same vertical position as the dots/ghost-add
+   circle beside it, no manual centering math needed here. Ghost icon
+   button, no red: this app has no destructive-red token anywhere,
+   matching the plain-text treatment Leave herd already uses for its
+   own confirm()-gated destructive action. Negative margin keeps its
+   larger tap target from adding extra width/height beyond the icon
+   itself. */
 .show-delete-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: none;
   border: none;
   color: var(--color-surface-text);
@@ -1139,6 +1174,24 @@ body.drawer-open {
   cursor: pointer;
   padding: var(--space-4);
   margin: calc(-1 * var(--space-4));
+  flex-shrink: 0;
+}
+
+/* Pushes the whole label+row slot (see buildDeleteActionSlot) to the
+   far right of the avatar row, clear of the avatar groups — the label
+   spacer inside keeps the delete button's row starting at the same y
+   as the dots' own row. min-height on the row itself matches
+   --space-40, the avatar dots' own diameter, so the two rows are the
+   same height and the delete button (smaller than a dot) centers on
+   the exact same line the dots do, not just a same-height-but-
+   differently-filled row next to them. */
+.show-delete-slot {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.show-delete-slot .avatar-group-row {
+  min-height: var(--space-40);
 }
 
 .show-delete-btn:hover {
@@ -1300,13 +1353,6 @@ body.drawer-open {
   flex-shrink: 0;
 }
 
-/* Bottom-right footer row, currently just the delete button — see
-   buildCardActionsRow in index.html. */
-.show-card-actions {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: var(--space-8);
-}
 
 /* Purely a fact about the show (when it was added, and whether *this*
    person has responded yet) — never a status visible to anyone but

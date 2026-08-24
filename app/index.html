@@ -444,11 +444,19 @@
        contentless). First pass swapped a generic spinning-arc spinner
        for a pulsing guitar icon to match the empty-state family, but
        that read as static rather than "loading" — reverted to a
-       spinning arc (the motion that actually reads as progress),
-       genuinely centered on the page (.show-list-loading, not just
-       horizontally within whatever row it happened to sit in — the
-       "loads in a random place" feedback), with a plain "Loading
-       shows" label instead of the cuter "Tuning up…" copy. -->
+       spinning arc (the motion that actually reads as progress), with
+       a plain "Loading shows" label instead of the cuter "Tuning up…"
+       copy. Genuinely centered on the page when it's actually shown
+       (.show-list-loading is 60vh and both-axis-centered) — but per
+       direct feedback ("why does the loading state have to stutter/
+       jump vertically and turn on/off"), it now holds itself invisible
+       and collapsed for the first ~250ms (see the show-list-loading-grow
+       keyframe in components.css) rather than always occupying that
+       full 60vh from the first paint. Most real fetches finish inside
+       that window, so most loads never show this at all — the real
+       content just appears directly, no flash and no page jump under
+       it. Only a genuinely slow fetch grows this open into the full
+       centered treatment. -->
   <div id="show-list-content" class="show-list-loading">
     <div class="show-list-loading-icon">
       <svg viewBox="0 0 50 50" aria-hidden="true"><circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-dasharray="90 150"/></svg>
@@ -1626,7 +1634,11 @@
   }
 
   // Remove a show entirely — only ever rendered for the person who
-  // added it (see the created_by check above). Confirms via a plain
+  // added it (see the created_by check in renderListView, which wraps
+  // this in buildDeleteActionSlot and appends it to the card's avatar
+  // row — .show-card-avatars — as its last child; see that function's
+  // own comment for why it needs the extra wrapper rather than just
+  // dropping the button in directly). Confirms via a plain
   // window.confirm() before deleting, same "reach for the browser's
   // own primitive" approach the Leave herd button already uses — this
   // app has no destructive-red token anywhere, so a ghost icon button
@@ -1656,9 +1668,39 @@
     return btn;
   }
 
+  // Wraps the delete button in the exact same label+row shape
+  // .avatar-group uses (empty, visibility:hidden label on top, a real
+  // row below) so it sits at the same vertical position as the
+  // curious/can't-make-it avatar dots and ghost-add circle beside it —
+  // not just centered against the avatar row as a whole, which still
+  // reads as floating since that row is taller than the dots alone
+  // (it also carries the "HECK YEAH!"/"CAN'T MAKE IT" label above
+  // them). Per direct feedback after the first pass ("still floating
+  // in this image, it should be centered with the plus icon and
+  // avatar initials") — aligning to the row's full height wasn't
+  // enough, it needed to match the dots' own baseline specifically.
+  function buildDeleteActionSlot(show, refresh) {
+    const slot = document.createElement('div');
+    slot.className = 'avatar-group show-delete-slot';
+
+    const spacer = document.createElement('div');
+    spacer.className = 'avatar-group-label';
+    spacer.setAttribute('aria-hidden', 'true');
+    spacer.style.visibility = 'hidden';
+    spacer.textContent = ' ';
+    slot.appendChild(spacer);
+
+    const row = document.createElement('div');
+    row.className = 'avatar-group-row';
+    row.appendChild(buildDeleteButton(show, refresh));
+    slot.appendChild(row);
+
+    return slot;
+  }
+
   // Card header row — date+venue on the left (buildDateBadge), "Just
   // added"/collapse-toggle on the right. Delete used to live here too
-  // (see buildCardActionsRow below for where it moved) — per direct
+  // (see buildDeleteActionSlot above for where it moved) — per direct
   // feedback ("feels nice to have all actions at the bottom and makes
   // space for venue and just added tag"), this row is just the two
   // "what is this and when" facts now, nothing that acts on the show.
@@ -1705,22 +1747,6 @@
 
     if (right.children.length > 0) row.appendChild(right);
 
-    return row;
-  }
-
-  // Bottom-right footer row, currently just the delete button (only
-  // ever rendered for the show's creator) — "feels nice to have all
-  // actions at the bottom," rather than the delete icon sitting up in
-  // the header competing with date/venue/"Just added." Not rendered
-  // for a collapsed "not going" card (see renderListView) — that row
-  // is deliberately kept to the one tight line with nothing else on
-  // it; deleting a show you've already collapsed away means expanding
-  // it back open first.
-  function buildCardActionsRow(show, refresh) {
-    if (show.created_by !== person.id) return null;
-    const row = document.createElement('div');
-    row.className = 'show-card-actions';
-    row.appendChild(buildDeleteButton(show, refresh));
     return row;
   }
 
@@ -1974,12 +2000,16 @@
         renderShowInteractiveBody(body, show, responses, refresh, onDecline);
       }
 
-      // No footer row on a collapsed "not going" card — that row stays
-      // the one tight line with nothing else added to it (see
-      // buildCardActionsRow's own comment).
-      if (!isCollapsedOut) {
-        const actions = buildCardActionsRow(show, refresh);
-        if (actions) card.appendChild(actions);
+      // Delete lives inline at the end of the avatar row now — lined up
+      // with the avatar dots/ghost-add circle themselves, not just the
+      // row as a whole (see buildDeleteActionSlot's own comment for
+      // why that distinction needed its own wrapper). No delete at all
+      // on a collapsed "not going" card — that row stays the one tight
+      // line with nothing else added to it.
+      if (!isCollapsedOut && show.created_by === person.id) {
+        const avatarsRow = body.querySelector('.show-card-avatars');
+        const target = avatarsRow || card;
+        target.appendChild(buildDeleteActionSlot(show, refresh));
       }
 
       content.appendChild(card);
