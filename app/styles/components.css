@@ -1099,15 +1099,14 @@ body.drawer-open {
   transition: opacity 0.15s;
 }
 
-/* Sits in the top-right of .show-card-top-row now (see buildCardTopRow
-   in index.html) rather than being absolutely positioned in the
-   card's corner — that's what makes room for "Just added" to sit
-   beside it without the two overlapping. Ghost icon button, no red:
-   this app has no destructive-red token anywhere, matching the
-   plain-text treatment Leave herd already uses for its own
-   confirm()-gated destructive action. Negative margin keeps its
-   larger tap target from pushing the row any taller than the date
-   badge text next to it — same trick as .venue-fav-btn. */
+/* Sits alone in its own bottom-right footer row now (.show-card-actions,
+   see buildCardActionsRow in index.html) rather than up in the header
+   — per direct feedback, "feels nice to have all actions at the
+   bottom." Ghost icon button, no red: this app has no destructive-red
+   token anywhere, matching the plain-text treatment Leave herd already
+   uses for its own confirm()-gated destructive action. Negative
+   margin keeps its larger tap target from adding extra height to a
+   row that's otherwise just this one icon. */
 .show-delete-btn {
   background: none;
   border: none;
@@ -1116,7 +1115,6 @@ body.drawer-open {
   cursor: pointer;
   padding: var(--space-4);
   margin: calc(-1 * var(--space-4));
-  flex-shrink: 0;
 }
 
 .show-delete-btn:hover {
@@ -1278,17 +1276,32 @@ body.drawer-open {
   flex-shrink: 0;
 }
 
-/* Purely a fact about the show (when it was added), never about
-   anyone's response to it — see isRecentlyAdded in index.html. Same
-   quiet meta-text register as the date badge, not a colored pill;
-   pink stays reserved for overlap only. */
+/* Bottom-right footer row, currently just the delete button — see
+   buildCardActionsRow in index.html. */
+.show-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--space-8);
+}
+
+/* Purely a fact about the show (when it was added, and whether *this*
+   person has responded yet) — never a status visible to anyone but
+   them, and never a nudge toward responding; it just disappears once
+   they have (see isRecentlyAdded/buildCardTopRow in index.html).
+   --color-logo-green, muted via color-mix rather than opacity — full
+   saturation read as too loud for a meta-text badge, and opacity
+   alone would fade it toward the page instead of toward the app's
+   other quiet ink, which is what "muted" is going for here. This is
+   the one place outside the "Herd" wordmark that green appears —
+   a deliberate stretch of that token's original "wordmark only"
+   scope, not an oversight. */
 .show-new-badge {
   font-family: var(--font-data);
   font-weight: 600;
   font-size: var(--text-meta-size);
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  opacity: 0.55;
+  color: color-mix(in srgb, var(--color-logo-green) 65%, var(--color-surface-text));
   white-space: nowrap;
 }
 

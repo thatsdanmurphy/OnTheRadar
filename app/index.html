@@ -1653,18 +1653,24 @@
   }
 
   // Card header row — date+venue on the left (buildDateBadge), "Just
-  // added"/collapse-toggle/delete on the right, so the live-updated,
-  // possibly-absent pieces of top-of-card chrome sit in one predictable
-  // spot instead of each fending for its own position. Was a bare
-  // absolutely-positioned delete button before; moved into normal flex
-  // flow here specifically to make room for "Just added" to sit next
-  // to it without the two colliding (per direct feedback, "just added
-  // could be top right" — solving exactly that crowding).
+  // added"/collapse-toggle on the right. Delete used to live here too
+  // (see buildCardActionsRow below for where it moved) — per direct
+  // feedback ("feels nice to have all actions at the bottom and makes
+  // space for venue and just added tag"), this row is just the two
+  // "what is this and when" facts now, nothing that acts on the show.
   // onCollapse — only passed for a show that's currently expanded back
   // open from its collapsed "not going" state (see renderListView);
-  // renders a chevron-up next to delete so there's a way to fold it
-  // back down again, symmetric with the chevron-down that opened it.
-  function buildCardTopRow(show, refresh, onCollapse) {
+  // renders a chevron-up so there's a way to fold it back down again,
+  // symmetric with the chevron-down that opened it. mine — this
+  // person's own response row, if any; "Just added" only shows before
+  // they've responded at all. Per direct feedback ("it should also be
+  // removed if you act on it... saying you're going or not going"),
+  // responding is itself the clearest signal you've seen it, so the
+  // badge disappears right then rather than waiting out the full
+  // window. Purely per-viewer — someone else's card still shows it
+  // until *they* respond, same as every other personal-response state
+  // in this app.
+  function buildCardTopRow(show, mine, onCollapse) {
     const row = document.createElement('div');
     row.className = 'show-card-top-row';
     row.appendChild(buildDateBadge(show));
@@ -1672,7 +1678,7 @@
     const right = document.createElement('div');
     right.className = 'show-card-top-right';
 
-    if (isRecentlyAdded(show)) {
+    if (!mine && isRecentlyAdded(show)) {
       const badge = document.createElement('span');
       badge.className = 'show-new-badge';
       badge.textContent = 'Just added';
@@ -1693,12 +1699,24 @@
       lucide.createIcons({ root: collapseBtn });
     }
 
-    if (show.created_by === person.id) {
-      right.appendChild(buildDeleteButton(show, refresh));
-    }
-
     if (right.children.length > 0) row.appendChild(right);
 
+    return row;
+  }
+
+  // Bottom-right footer row, currently just the delete button (only
+  // ever rendered for the show's creator) — "feels nice to have all
+  // actions at the bottom," rather than the delete icon sitting up in
+  // the header competing with date/venue/"Just added." Not rendered
+  // for a collapsed "not going" card (see renderListView) — that row
+  // is deliberately kept to the one tight line with nothing else on
+  // it; deleting a show you've already collapsed away means expanding
+  // it back open first.
+  function buildCardActionsRow(show, refresh) {
+    if (show.created_by !== person.id) return null;
+    const row = document.createElement('div');
+    row.className = 'show-card-actions';
+    row.appendChild(buildDeleteButton(show, refresh));
     return row;
   }
 
@@ -1911,14 +1929,13 @@
       card.className = 'show-card';
       if (isCollapsedOut) card.classList.add('show-card-collapsed');
 
-      // Date+venue on the left, "Just added"/collapse-toggle/delete on
-      // the right — see buildCardTopRow. Delete is only ever rendered
-      // for the person who added a show, same "creator owns it" rule
-      // OTR.deleteShow enforces server-side.
+      // Date+venue on the left, "Just added"/collapse-toggle on the
+      // right — see buildCardTopRow. Delete lives in a separate footer
+      // row now (buildCardActionsRow, below).
       const onCollapse = isExpandedOut
         ? () => { expandedShowIds.delete(show.id); refresh(); }
         : undefined;
-      card.appendChild(buildCardTopRow(show, refresh, onCollapse));
+      card.appendChild(buildCardTopRow(show, mine, onCollapse));
 
       // Only set in the cross-group My Shows view (see
       // renderMyShowsView) — a quiet reminder of which group this show
@@ -1951,6 +1968,14 @@
       } else {
         const onDecline = declineWithUndo ? handleDeclineWithUndo(show, card, body, responses, refresh) : undefined;
         renderShowInteractiveBody(body, show, responses, refresh, onDecline);
+      }
+
+      // No footer row on a collapsed "not going" card — that row stays
+      // the one tight line with nothing else added to it (see
+      // buildCardActionsRow's own comment).
+      if (!isCollapsedOut) {
+        const actions = buildCardActionsRow(show, refresh);
+        if (actions) card.appendChild(actions);
       }
 
       content.appendChild(card);
