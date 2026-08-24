@@ -1007,28 +1007,39 @@ body.drawer-open {
 /* ---------- Show list loading state ---------- */
 
 /* Initial-fetch state, not the empty state — see index.html's note on
-   #show-list-content. Same centered-row shell as .show-list-empty so
-   the page doesn't visibly shift once real content (or the real empty
-   state) replaces it, just a smaller mark since this is meant to read
-   as brief, not as a real resting screen. */
+   #show-list-content. Genuinely centered on the page now (both axes),
+   not just horizontally within whatever row it happened to land in —
+   per direct feedback, "it kind of loads in a random place." 60vh
+   rather than the full-page 100dvh treatment .name-gate-center uses:
+   the site header is already visible above this (a person only ever
+   sees this after they're past the name gate), so centering against
+   the *entire* viewport would push it too far down; 60vh reads as
+   centered in the visible content area below the header without a
+   fragile calc() against the header's own height. */
 .show-list-loading {
   display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  padding-block: var(--space-64);
+  gap: var(--space-16);
+  min-height: 60vh;
 }
 
 /* Same dimmed currentColor language as the empty-state icon/message —
-   quiet, not a loud loading moment. Spins via a plain CSS keyframe,
-   not a Lucide icon: the icon-font CDN can silently fail to load with
-   no visible error (bit us once already on the favicon font), so a
-   hand-authored inline SVG stays dependency-free, same reasoning as
-   the empty-state guitar icon. */
+   quiet, not a loud loading moment. Slow pulse (opacity + a touch of
+   scale) rather than a spin now — calmer, and shares the exact same
+   flat guitar silhouette as .show-list-empty-icon instead of a
+   generic spinning-arc SVG, so "waiting" and "nothing here" read as
+   one icon family. Hand-authored inline SVG, not a Lucide icon: the
+   icon-font CDN can silently fail to load with no visible error (bit
+   us once already on the favicon font), so this stays dependency-free
+   same as the empty state. */
 .show-list-loading-icon {
-  width: var(--space-40);
-  height: var(--space-40);
+  width: var(--space-56);
+  height: var(--space-56);
   color: var(--color-text);
   opacity: 0.35;
-  animation: show-list-loading-spin 0.9s linear infinite;
+  animation: show-list-loading-pulse 1.6s ease-in-out infinite;
 }
 
 .show-list-loading-icon svg {
@@ -1037,14 +1048,32 @@ body.drawer-open {
   display: block;
 }
 
-@keyframes show-list-loading-spin {
-  to {
-    transform: rotate(360deg);
+@keyframes show-list-loading-pulse {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(1.05);
   }
 }
 
-/* Respect the OS-level motion preference — a spinning icon is
-   decoration, not information, so it's fine to just hold it still. */
+/* Quiet by design, same meta-text register as .show-date-badge — a
+   label, not a headline. Requested directly: "maybe a quick label?
+   loading shows or something?" "Tuning up…" instead of the literal
+   "Loading shows…" to lean into the guitar icon it sits under rather
+   than restate it in words. */
+.show-list-loading-label {
+  font-family: var(--font-data);
+  font-size: var(--text-meta-size);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.5;
+}
+
+/* Respect the OS-level motion preference — the pulse is decoration,
+   not information, so it's fine to just hold it still. */
 @media (prefers-reduced-motion: reduce) {
   .show-list-loading-icon {
     animation: none;

@@ -441,15 +441,23 @@
        .show-list-loading class rather than reusing .show-list-empty
        (a real "no shows" state and a few-hundred-ms fetch state
        shouldn't share styling just because both are momentarily
-       contentless). Hand-authored spinner SVG, same reasoning as the
-       empty-state guitar icon above — no dependency on an icon font
-       resolving. -->
+       contentless). Was a generic spinning-arc SVG; per direct
+       feedback ("could we do something cleaner/more interesting with
+       it... doesnt have to be hokey but just something"), swapped for
+       the same flat guitar silhouette EMPTY_STATE_ICON uses (kept as a
+       literal copy here since this markup is static HTML, not
+       JS-rendered) with a slow pulse instead of a spin — ties
+       "waiting" and "nothing here" to one icon family instead of a
+       generic UI spinner, and reads calmer than something spinning.
+       Centered on the page now too (.show-list-loading), not just
+       horizontally within whatever row it happened to sit in — same
+       "loads in a random place" feedback. Plus a quiet label so it's
+       not just an icon with no context. -->
   <div id="show-list-content" class="show-list-loading">
     <div class="show-list-loading-icon">
-      <svg viewBox="0 0 50 50" aria-hidden="true">
-        <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-dasharray="90 150"/>
-      </svg>
+      <svg viewBox="0 0 64 64" aria-hidden="true"><rect x="27" y="2" width="10" height="9" rx="2" fill="currentColor"/><rect x="30" y="10" width="4" height="24" fill="currentColor"/><circle cx="32" cy="37" r="9" fill="currentColor"/><circle cx="32" cy="50" r="12" fill="currentColor"/><circle cx="32" cy="43" r="3.5" fill="var(--color-bg)"/></svg>
     </div>
+    <div class="show-list-loading-label">Tuning up…</div>
   </div>
 </main>
 
