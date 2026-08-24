@@ -1205,6 +1205,21 @@
     return show.show_date < todayDateStr();
   }
 
+  // "Just added" is about the show, not about anyone's response to
+  // it — deliberately not tied to who's seen it or reacted, so it
+  // never reads as a status check on any one person. Purely objective
+  // (created_at vs. now), same fact for everyone looking at the herd.
+  // Three days was a guess at "long enough to actually notice, short
+  // enough to stay meaningfully 'new'" — revisit if it feels off once
+  // there's real usage to watch.
+  const NEW_SHOW_WINDOW_MS = 3 * 24 * 60 * 60 * 1000;
+  function isRecentlyAdded(show) {
+    if (!show.created_at) return false;
+    const addedAt = new Date(show.created_at).getTime();
+    if (Number.isNaN(addedAt)) return false;
+    return Date.now() - addedAt < NEW_SHOW_WINDOW_MS;
+  }
+
   function syncShowTabButtons() {
     showTabUpcomingBtn.classList.toggle('is-active', currentShowTab === 'upcoming');
     showTabPastBtn.classList.toggle('is-active', currentShowTab === 'past');
@@ -1367,8 +1382,9 @@
   // ever shows curious picks), which used to just vanish the card
   // instantly — jarring, and no way back if it was a misclick. The
   // override swaps that for a fade + Undo instead of the normal
-  // "save and refresh" path. A group's own page doesn't need this —
-  // marking out there just dims the card in place (.is-out), it never
+  // "save and refresh" path. A herd's own page doesn't need this —
+  // marking out there collapses the card in place (see
+  // renderShowCollapsedOutBody in renderListView), it never
   // disappears, so the default path still applies.
   // Title/venue/openers — the part of a card that's identical whether
   // the show is upcoming (renderShowInteractiveBody) or past
@@ -1531,11 +1547,55 @@
     return cantMakeItGroup;
   }
 
+  // A herd's own page never hides a show you've marked "out" — it
+  // folds down to one quiet line instead, still sitting right where
+  // it would otherwise be in the (single, untabbed) list, with the
+  // rejoin action always one tap away. Came directly out of a worry
+  // about the social weight of RSVPs: "if i say no i feel like you
+  // should still be able to jump back in somehow" — a whole separate
+  // "Not going" tab would've buried it exactly the way that worried
+  // about. No avatars, no "Can't make it" group here — you already
+  // know your own status, and this isn't the place to dwell on it.
+  function renderShowCollapsedOutBody(container, show, onRejoin) {
+    container.innerHTML = '';
+
+    const titleRow = document.createElement('div');
+    titleRow.className = 'show-title-row';
+    const titleEl = document.createElement('div');
+    titleEl.className = 'show-title';
+    titleEl.textContent = show.title;
+    titleRow.appendChild(titleEl);
+    container.appendChild(titleRow);
+
+    const rejoinRow = document.createElement('div');
+    rejoinRow.className = 'show-collapsed-rejoin';
+    const rejoinBtn = document.createElement('button');
+    rejoinBtn.type = 'button';
+    rejoinBtn.className = 'link-btn';
+    rejoinBtn.textContent = "Not going — I'm curious after all?";
+    rejoinBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const ok = await setResponse(show.id, person.id, 'curious');
+      if (ok) {
+        trackEvent('curious_tapped', { group_id: show.group_id, show_id: show.id, via: 'collapsed_rejoin' });
+        await onRejoin();
+      }
+    });
+    rejoinRow.appendChild(rejoinBtn);
+    container.appendChild(rejoinRow);
+  }
+
   // Plain text, no pill — see .show-date-badge in components.css.
+  // "Just added" rides along in the same plain-text badge rather than
+  // its own pill, matching the app's existing "no second badge
+  // component" stance (see the badge's own history — the pill/tag
+  // treatment already got cut here once before).
   function buildDateBadge(show) {
     const badge = document.createElement('div');
     badge.className = 'show-date-badge';
-    badge.textContent = formatDate(show.show_date, show.show_time);
+    let text = formatDate(show.show_date, show.show_time);
+    if (isRecentlyAdded(show)) text += ' · Just added';
+    badge.textContent = text;
     return badge;
   }
 
@@ -1730,11 +1790,14 @@
   // this; selectGroup sets it to the herd's id), so that's what
   // decides it rather than a separate flag threaded through. A past
   // show still gets the non-interactive "who went" body instead of
-  // the curious/out one wherever it's shown, and never shows the
-  // .is-out dimming or the decline-with-undo flow, since there's
-  // nothing left to respond to. Past sorts most-recent-first
-  // (nostalgia reads backward from today); Upcoming keeps the
-  // soonest-first order the query already returns shows in.
+  // the curious/out one wherever it's shown, and never collapses or
+  // shows the decline-with-undo flow, since there's nothing left to
+  // respond to. Past sorts most-recent-first (nostalgia reads
+  // backward from today); Upcoming keeps the soonest-first order the
+  // query already returns shows in. A show marked "out" on a herd's
+  // own page (never on My Shows — see isCollapsedOut below) collapses
+  // to one line via renderShowCollapsedOutBody instead of vanishing or
+  // just dimming in place.
   function renderListView(shows, responsesByShow, emptyMessage, onChange, declineWithUndo) {
     const content = listContent;
     const refresh = onChange || (() => renderCurrentView(currentGroupId));
@@ -1760,9 +1823,16 @@
       const responses = responsesByShow[show.id] || [];
       const mine = responses.find((r) => r.person_id === person.id);
 
+      // A show I've marked "out" collapses to a single line instead of
+      // the full interactive card — see renderShowCollapsedOutBody.
+      // Only applies here on a herd's own untabbed list; My Shows never
+      // reaches this with mine.status === 'out' in the first place
+      // (it only ever lists shows marked curious to begin with).
+      const isCollapsedOut = !isPastTab && !!(mine && mine.status === 'out');
+
       const card = document.createElement('div');
       card.className = 'show-card';
-      if (!isPastTab && mine && mine.status === 'out') card.classList.add('is-out');
+      if (isCollapsedOut) card.classList.add('show-card-collapsed');
 
       card.appendChild(buildDateBadge(show));
 
@@ -1798,6 +1868,8 @@
 
       if (isPastTab) {
         renderShowPastBody(body, show, responses);
+      } else if (isCollapsedOut) {
+        renderShowCollapsedOutBody(body, show, refresh);
       } else {
         const onDecline = declineWithUndo ? handleDeclineWithUndo(show, card, body, responses, refresh) : undefined;
         renderShowInteractiveBody(body, show, responses, refresh, onDecline);

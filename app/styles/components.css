@@ -97,8 +97,9 @@
 /* ---------- Nav drawer ---------- */
 
 /* Flat scrim, not a shadow — dimming the page is what separates the
-   drawer from content, same logic as .show-card.is-out using opacity
-   instead of a new visual effect for "deprioritized." */
+   drawer from content, opacity carrying "deprioritized" rather than a
+   new visual effect, same instinct as the show cards' own quieter
+   states elsewhere in this file. */
 .drawer-overlay {
   position: fixed;
   inset: 0;
@@ -1130,11 +1131,42 @@ body.drawer-open {
   height: var(--icon-size);
 }
 
-/* Person has marked themselves out — deprioritize visually without
-   hiding it. Whole-card dimming carries this signal, so the decline
-   button itself doesn't need a special "out" treatment. */
-.show-card.is-out {
-  opacity: 0.5;
+/* Person has marked themselves "out," on a herd's own (untabbed) page
+   only — folds the card down to one quiet line (title + a rejoin
+   link) instead of the full curious/out card, via
+   renderShowCollapsedOutBody in index.html. Replaces an earlier plain
+   whole-card-dim treatment (.show-card.is-out): dimming in place kept
+   the full card, including the "Can't make it" group, sitting right
+   there at full size — this goes further, tucking away everything
+   except the one thing worth still seeing (what it was, and a way
+   back in), directly per feedback about not wanting a "no" to feel
+   like a bigger deal than a "maybe." */
+.show-card-collapsed {
+  padding: var(--space-8) var(--space-16);
+}
+
+.show-card-collapsed .show-title {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--text-control-size);
+  line-height: var(--text-control-lh);
+}
+
+/* Quiet by design — same "not the main event" register as
+   .show-undo-btn, sitting right under the title with nothing else
+   competing for attention on a collapsed card. */
+.show-collapsed-rejoin {
+  margin-top: var(--space-4);
+}
+
+.show-collapsed-rejoin .link-btn {
+  font-family: var(--font-data);
+  font-size: var(--text-meta-size);
+  opacity: 0.55;
+}
+
+.show-collapsed-rejoin .link-btn:hover {
+  opacity: 1;
 }
 
 /* My Shows-only — see handleDeclineWithUndo in index.html. The avatar
