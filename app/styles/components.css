@@ -1099,22 +1099,24 @@ body.drawer-open {
   transition: opacity 0.15s;
 }
 
-/* Top-right corner, same spot .modal-close-btn occupies in its own
-   context — only ever rendered for the show's creator (see
-   buildDeleteButton in index.html). Ghost icon button, no red: this
-   app has no destructive-red token anywhere, matching the plain-text
-   treatment Leave herd already uses for its own confirm()-gated
-   destructive action. */
+/* Sits in the top-right of .show-card-top-row now (see buildCardTopRow
+   in index.html) rather than being absolutely positioned in the
+   card's corner — that's what makes room for "Just added" to sit
+   beside it without the two overlapping. Ghost icon button, no red:
+   this app has no destructive-red token anywhere, matching the
+   plain-text treatment Leave herd already uses for its own
+   confirm()-gated destructive action. Negative margin keeps its
+   larger tap target from pushing the row any taller than the date
+   badge text next to it — same trick as .venue-fav-btn. */
 .show-delete-btn {
-  position: absolute;
-  top: var(--space-16);
-  right: var(--space-16);
   background: none;
   border: none;
   color: var(--color-surface-text);
   opacity: 0.4;
   cursor: pointer;
   padding: var(--space-4);
+  margin: calc(-1 * var(--space-4));
+  flex-shrink: 0;
 }
 
 .show-delete-btn:hover {
@@ -1132,41 +1134,79 @@ body.drawer-open {
 }
 
 /* Person has marked themselves "out," on a herd's own (untabbed) page
-   only — folds the card down to one quiet line (title + a rejoin
-   link) instead of the full curious/out card, via
-   renderShowCollapsedOutBody in index.html. Replaces an earlier plain
-   whole-card-dim treatment (.show-card.is-out): dimming in place kept
-   the full card, including the "Can't make it" group, sitting right
-   there at full size — this goes further, tucking away everything
-   except the one thing worth still seeing (what it was, and a way
-   back in), directly per feedback about not wanting a "no" to feel
-   like a bigger deal than a "maybe." */
+   only — folds the card down to one tight row instead of the full
+   curious/out card, via renderShowCollapsedOutBody in index.html.
+   Replaces an earlier plain whole-card-dim treatment
+   (.show-card.is-out), then a text-link "rejoin" version that read as
+   clunky wording and too small — this version drops words entirely:
+   title, a peek at who's currently curious, and a chevron to expand
+   back into the real card. Directly per feedback about not wanting a
+   "no" to feel like a bigger deal than a "maybe." */
 .show-card-collapsed {
   padding: var(--space-8) var(--space-16);
 }
 
-.show-card-collapsed .show-title {
+.show-collapsed-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+.show-title-collapsed {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-family: var(--font-body);
   font-weight: 600;
   font-size: var(--text-control-size);
   line-height: var(--text-control-lh);
 }
 
-/* Quiet by design — same "not the main event" register as
-   .show-undo-btn, sitting right under the title with nothing else
-   competing for attention on a collapsed card. */
-.show-collapsed-rejoin {
-  margin-top: var(--space-4);
+/* Who's currently curious, shrunk down — a peek, not the full
+   labeled/clickable avatar-group treatment .show-card-avatars uses;
+   this row has no label and isn't itself a tap target for anything
+   other than the expand chevron next to it. */
+.show-collapsed-avatars {
+  flex-shrink: 0;
 }
 
-.show-collapsed-rejoin .link-btn {
-  font-family: var(--font-data);
+.show-collapsed-avatars .avatar-dot {
+  width: var(--space-24);
+  height: var(--space-24);
   font-size: var(--text-meta-size);
-  opacity: 0.55;
 }
 
-.show-collapsed-rejoin .link-btn:hover {
+/* Shared ghost-icon-button shape for both directions of the toggle —
+   chevron-down to expand a collapsed card, chevron-up to fold an
+   expanded one back down (see buildCardTopRow's onCollapse). Same
+   quiet, no-red-anywhere register as .show-delete-btn; negative
+   margin keeps the larger tap target from adding visual height. */
+.show-collapsed-expand-btn,
+.show-collapse-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--color-surface-text);
+  opacity: 0.5;
+  cursor: pointer;
+  padding: var(--space-4);
+  margin: calc(-1 * var(--space-4));
+}
+
+.show-collapsed-expand-btn:hover,
+.show-collapse-btn:hover {
   opacity: 1;
+}
+
+.show-collapsed-expand-btn svg,
+.show-collapse-btn svg {
+  width: var(--icon-size);
+  height: var(--icon-size);
 }
 
 /* My Shows-only — see handleDeclineWithUndo in index.html. The avatar
@@ -1201,7 +1241,9 @@ body.drawer-open {
    avatar row below, this was a second count of the same thing. No
    pink UI marker is left on a show card at all now — the wordmark's
    "Gig" is the only place the accent color still appears anywhere in
-   the app. */
+   the app. Venue rides along here too now (date + venue as one "when
+   and where" fact) — no more nowrap, since that combined text can run
+   long enough to need a second line on a narrow screen. */
 .show-date-badge {
   display: inline-block;
   color: var(--color-surface-text);
@@ -1211,6 +1253,42 @@ body.drawer-open {
   font-size: var(--text-meta-size);
   text-transform: uppercase;
   letter-spacing: 0.04em;
+}
+
+.show-date-badge a {
+  color: var(--color-surface-text);
+}
+
+/* Header row for a card: date+venue on the left, "Just added"/delete
+   on the right (see buildCardTopRow in index.html). flex-start rather
+   than center, so if the date badge wraps to two lines the right-side
+   chrome stays pinned to the top instead of drifting to the vertical
+   middle of a taller left column. */
+.show-card-top-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-8);
+}
+
+.show-card-top-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  flex-shrink: 0;
+}
+
+/* Purely a fact about the show (when it was added), never about
+   anyone's response to it — see isRecentlyAdded in index.html. Same
+   quiet meta-text register as the date badge, not a colored pill;
+   pink stays reserved for overlap only. */
+.show-new-badge {
+  font-family: var(--font-data);
+  font-weight: 600;
+  font-size: var(--text-meta-size);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.55;
   white-space: nowrap;
 }
 

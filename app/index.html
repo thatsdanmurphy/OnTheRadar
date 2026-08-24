@@ -1192,6 +1192,14 @@
   // tapping something doesn't silently snap back to Upcoming.
   let currentShowTab = 'upcoming';
 
+  // Which collapsed "not going" cards someone has manually expanded
+  // back open — a purely local view-state toggle, independent of
+  // their actual response (still "out" underneath; expanding just
+  // peeks at the full card again, see renderShowCollapsedOutBody/
+  // buildCardTopRow's onCollapse). Reset alongside currentShowTab on
+  // a real context switch, same reasoning.
+  let expandedShowIds = new Set();
+
   function todayDateStr() {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -1251,6 +1259,7 @@
     currentGroup = group;
     currentGroupId = group.id;
     currentShowTab = 'upcoming';
+    expandedShowIds = new Set();
     myShowsHeadingRow.style.display = 'none';
     groupBar.style.display = 'block';
     drawerMyShowsBtn.classList.remove('active');
@@ -1415,14 +1424,9 @@
     }
     container.appendChild(titleRow);
 
-    if (show.venue_name) {
-      const venue = document.createElement('div');
-      venue.className = 'show-venue';
-      venue.innerHTML = show.venue_url
-        ? `<a href="${show.venue_url}" target="_blank" rel="noopener">${show.venue_name}</a>`
-        : show.venue_name;
-      container.appendChild(venue);
-    }
+    // Venue used to have its own line here — moved up into the date
+    // badge instead (see buildDateBadge), so it's not repeated twice
+    // on the same card. Its link travels with it either way.
 
     if (show.openers) {
       const openers = document.createElement('div');
@@ -1548,54 +1552,72 @@
   }
 
   // A herd's own page never hides a show you've marked "out" — it
-  // folds down to one quiet line instead, still sitting right where
-  // it would otherwise be in the (single, untabbed) list, with the
-  // rejoin action always one tap away. Came directly out of a worry
-  // about the social weight of RSVPs: "if i say no i feel like you
-  // should still be able to jump back in somehow" — a whole separate
-  // "Not going" tab would've buried it exactly the way that worried
-  // about. No avatars, no "Can't make it" group here — you already
-  // know your own status, and this isn't the place to dwell on it.
-  function renderShowCollapsedOutBody(container, show, onRejoin) {
+  // folds down to one tight row instead, still sitting right where it
+  // would otherwise be in the (single, untabbed) list. Came directly
+  // out of a worry about the social weight of RSVPs: "if i say no i
+  // feel like you should still be able to jump back in somehow" — a
+  // whole separate "Not going" tab would've buried it exactly the way
+  // that worried about. No label, no "Can't make it" group — you
+  // already know your own status. An earlier version spelled that out
+  // as a text link ("Not going — I'm curious after all?"); per direct
+  // feedback ("terrible label... too small... no words"), this
+  // version drops the words for a peek at who's currently curious
+  // (buildAvatarDots, shrunk down) plus a chevron that expands the
+  // card back into the real one — where the actual curious/out toggle
+  // still lives.
+  function renderShowCollapsedOutBody(container, show, responses, onExpand) {
     container.innerHTML = '';
 
-    const titleRow = document.createElement('div');
-    titleRow.className = 'show-title-row';
-    const titleEl = document.createElement('div');
-    titleEl.className = 'show-title';
-    titleEl.textContent = show.title;
-    titleRow.appendChild(titleEl);
-    container.appendChild(titleRow);
+    const row = document.createElement('div');
+    row.className = 'show-collapsed-row';
 
-    const rejoinRow = document.createElement('div');
-    rejoinRow.className = 'show-collapsed-rejoin';
-    const rejoinBtn = document.createElement('button');
-    rejoinBtn.type = 'button';
-    rejoinBtn.className = 'link-btn';
-    rejoinBtn.textContent = "Not going — I'm curious after all?";
-    rejoinBtn.addEventListener('click', async (e) => {
+    const titleEl = document.createElement('div');
+    titleEl.className = 'show-title show-title-collapsed';
+    titleEl.textContent = show.title;
+    row.appendChild(titleEl);
+
+    const going = responses.filter((r) => r.status === 'curious').map((r) => r.people);
+    if (going.length > 0) {
+      const dots = buildAvatarDots(going);
+      dots.classList.add('show-collapsed-avatars');
+      row.appendChild(dots);
+    }
+
+    const expandBtn = document.createElement('button');
+    expandBtn.type = 'button';
+    expandBtn.className = 'show-collapsed-expand-btn';
+    expandBtn.setAttribute('aria-label', 'Show details');
+    expandBtn.innerHTML = '<i data-lucide="chevron-down"></i>';
+    expandBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      const ok = await setResponse(show.id, person.id, 'curious');
-      if (ok) {
-        trackEvent('curious_tapped', { group_id: show.group_id, show_id: show.id, via: 'collapsed_rejoin' });
-        await onRejoin();
-      }
+      onExpand();
     });
-    rejoinRow.appendChild(rejoinBtn);
-    container.appendChild(rejoinRow);
+    row.appendChild(expandBtn);
+    lucide.createIcons({ root: expandBtn });
+
+    container.appendChild(row);
   }
 
   // Plain text, no pill — see .show-date-badge in components.css.
-  // "Just added" rides along in the same plain-text badge rather than
-  // its own pill, matching the app's existing "no second badge
-  // component" stance (see the badge's own history — the pill/tag
-  // treatment already got cut here once before).
+  // Venue rides along here now too (date + venue is the natural "when
+  // and where" pair for scanning a long list), rather than repeating
+  // it in its own line further down the card — see the comment in
+  // renderShowHeaderInfo. Still a real link when the venue has one,
+  // same "venue links to its own calendar" behavior as before, just
+  // relocated. "Just added" moved *out* of this badge and into
+  // buildCardTopRow below, so this stays just the one "when/where"
+  // fact and doesn't get crowded with a third thing.
   function buildDateBadge(show) {
     const badge = document.createElement('div');
     badge.className = 'show-date-badge';
-    let text = formatDate(show.show_date, show.show_time);
-    if (isRecentlyAdded(show)) text += ' · Just added';
-    badge.textContent = text;
+    let html = formatDate(show.show_date, show.show_time);
+    if (show.venue_name) {
+      const venueHtml = show.venue_url
+        ? `<a href="${show.venue_url}" target="_blank" rel="noopener">${show.venue_name}</a>`
+        : show.venue_name;
+      html += ` · ${venueHtml}`;
+    }
+    badge.innerHTML = html;
     return badge;
   }
 
@@ -1628,6 +1650,56 @@
     });
 
     return btn;
+  }
+
+  // Card header row — date+venue on the left (buildDateBadge), "Just
+  // added"/collapse-toggle/delete on the right, so the live-updated,
+  // possibly-absent pieces of top-of-card chrome sit in one predictable
+  // spot instead of each fending for its own position. Was a bare
+  // absolutely-positioned delete button before; moved into normal flex
+  // flow here specifically to make room for "Just added" to sit next
+  // to it without the two colliding (per direct feedback, "just added
+  // could be top right" — solving exactly that crowding).
+  // onCollapse — only passed for a show that's currently expanded back
+  // open from its collapsed "not going" state (see renderListView);
+  // renders a chevron-up next to delete so there's a way to fold it
+  // back down again, symmetric with the chevron-down that opened it.
+  function buildCardTopRow(show, refresh, onCollapse) {
+    const row = document.createElement('div');
+    row.className = 'show-card-top-row';
+    row.appendChild(buildDateBadge(show));
+
+    const right = document.createElement('div');
+    right.className = 'show-card-top-right';
+
+    if (isRecentlyAdded(show)) {
+      const badge = document.createElement('span');
+      badge.className = 'show-new-badge';
+      badge.textContent = 'Just added';
+      right.appendChild(badge);
+    }
+
+    if (onCollapse) {
+      const collapseBtn = document.createElement('button');
+      collapseBtn.type = 'button';
+      collapseBtn.className = 'show-collapse-btn';
+      collapseBtn.setAttribute('aria-label', 'Collapse');
+      collapseBtn.innerHTML = '<i data-lucide="chevron-up"></i>';
+      collapseBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        onCollapse();
+      });
+      right.appendChild(collapseBtn);
+      lucide.createIcons({ root: collapseBtn });
+    }
+
+    if (show.created_by === person.id) {
+      right.appendChild(buildDeleteButton(show, refresh));
+    }
+
+    if (right.children.length > 0) row.appendChild(right);
+
+    return row;
   }
 
   // Empty stage, waiting for a show — a flat, single-color guitar
@@ -1824,26 +1896,29 @@
       const mine = responses.find((r) => r.person_id === person.id);
 
       // A show I've marked "out" collapses to a single line instead of
-      // the full interactive card — see renderShowCollapsedOutBody.
-      // Only applies here on a herd's own untabbed list; My Shows never
+      // the full interactive card — see renderShowCollapsedOutBody —
+      // unless it's been manually expanded back open (expandedShowIds,
+      // a purely local toggle independent of the actual response; see
+      // buildCardTopRow's onCollapse for folding it back down). Only
+      // applies here on a herd's own untabbed list; My Shows never
       // reaches this with mine.status === 'out' in the first place
       // (it only ever lists shows marked curious to begin with).
-      const isCollapsedOut = !isPastTab && !!(mine && mine.status === 'out');
+      const isOut = !isPastTab && !!(mine && mine.status === 'out');
+      const isExpandedOut = isOut && expandedShowIds.has(show.id);
+      const isCollapsedOut = isOut && !isExpandedOut;
 
       const card = document.createElement('div');
       card.className = 'show-card';
       if (isCollapsedOut) card.classList.add('show-card-collapsed');
 
-      card.appendChild(buildDateBadge(show));
-
-      // Only the person who added a show can remove it — same
-      // "creator owns it" rule the delete already enforces server-side
-      // in OTR.deleteShow. Top-right corner, same spot .modal-close-btn
-      // uses for its own dismiss action elsewhere in the app, rather
-      // than crowding the avatar row at the bottom of the card.
-      if (show.created_by === person.id) {
-        card.appendChild(buildDeleteButton(show, refresh));
-      }
+      // Date+venue on the left, "Just added"/collapse-toggle/delete on
+      // the right — see buildCardTopRow. Delete is only ever rendered
+      // for the person who added a show, same "creator owns it" rule
+      // OTR.deleteShow enforces server-side.
+      const onCollapse = isExpandedOut
+        ? () => { expandedShowIds.delete(show.id); refresh(); }
+        : undefined;
+      card.appendChild(buildCardTopRow(show, refresh, onCollapse));
 
       // Only set in the cross-group My Shows view (see
       // renderMyShowsView) — a quiet reminder of which group this show
@@ -1869,7 +1944,10 @@
       if (isPastTab) {
         renderShowPastBody(body, show, responses);
       } else if (isCollapsedOut) {
-        renderShowCollapsedOutBody(body, show, refresh);
+        renderShowCollapsedOutBody(body, show, responses, () => {
+          expandedShowIds.add(show.id);
+          refresh();
+        });
       } else {
         const onDecline = declineWithUndo ? handleDeclineWithUndo(show, card, body, responses, refresh) : undefined;
         renderShowInteractiveBody(body, show, responses, refresh, onDecline);
