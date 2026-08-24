@@ -1026,20 +1026,21 @@ body.drawer-open {
 }
 
 /* Same dimmed currentColor language as the empty-state icon/message —
-   quiet, not a loud loading moment. Slow pulse (opacity + a touch of
-   scale) rather than a spin now — calmer, and shares the exact same
-   flat guitar silhouette as .show-list-empty-icon instead of a
-   generic spinning-arc SVG, so "waiting" and "nothing here" read as
-   one icon family. Hand-authored inline SVG, not a Lucide icon: the
-   icon-font CDN can silently fail to load with no visible error (bit
-   us once already on the favicon font), so this stays dependency-free
-   same as the empty state. */
+   quiet, not a loud loading moment. A pulsing guitar silhouette was
+   tried here to match the empty-state icon family, but read as
+   static rather than "loading" per direct feedback ("I liked an
+   animated feature the spinner worked, this static guitar is not
+   going to work") — back to a spinning arc, since rotation is what
+   actually communicates progress. Hand-authored inline SVG, not a
+   Lucide icon: the icon-font CDN can silently fail to load with no
+   visible error (bit us once already on the favicon font), so this
+   stays dependency-free same as the empty state. */
 .show-list-loading-icon {
   width: var(--space-56);
   height: var(--space-56);
   color: var(--color-text);
   opacity: 0.35;
-  animation: show-list-loading-pulse 1.6s ease-in-out infinite;
+  animation: show-list-loading-spin 0.9s linear infinite;
 }
 
 .show-list-loading-icon svg {
@@ -1048,22 +1049,16 @@ body.drawer-open {
   display: block;
 }
 
-@keyframes show-list-loading-pulse {
-  0%, 100% {
-    opacity: 0.2;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.45;
-    transform: scale(1.05);
+@keyframes show-list-loading-spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 
 /* Quiet by design, same meta-text register as .show-date-badge — a
-   label, not a headline. Requested directly: "maybe a quick label?
-   loading shows or something?" "Tuning up…" instead of the literal
-   "Loading shows…" to lean into the guitar icon it sits under rather
-   than restate it in words. */
+   label, not a headline. Plain "Loading shows" per direct feedback
+   ("tuning up is cheesy can we just say loading shows") — the
+   cuter guitar-themed copy didn't land. */
 .show-list-loading-label {
   font-family: var(--font-data);
   font-size: var(--text-meta-size);
@@ -1072,7 +1067,7 @@ body.drawer-open {
   opacity: 0.5;
 }
 
-/* Respect the OS-level motion preference — the pulse is decoration,
+/* Respect the OS-level motion preference — the spin is decoration,
    not information, so it's fine to just hold it still. */
 @media (prefers-reduced-motion: reduce) {
   .show-list-loading-icon {
