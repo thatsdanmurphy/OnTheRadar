@@ -1017,7 +1017,7 @@ body.drawer-open {
    centered in the visible content area below the header without a
    fragile calc() against the header's own height. */
 /* Held invisible and collapsed (min-height: 0) for a beat before
-   growing into the full centered 60vh treatment — real fetches are
+   easing into the full centered 60vh treatment — real fetches are
    usually well under that beat, so most loads never show this at
    all: the real content just appears directly, no on/off flash and
    no page jumping under it. Only a fetch that's actually slow grows
@@ -1027,7 +1027,13 @@ body.drawer-open {
    on/off on initial load") — the always-on 60vh block was collapsing
    to whatever height the real content turned out to be the instant
    it swapped in, which read as a jolt on every load, not just slow
-   ones. */
+   ones. First attempt at the delayed-reveal fix above had the same
+   problem in miniature: a 0s-duration animation doesn't actually
+   animate anything, it just relocates the instant on/off snap from
+   "page load" to "250ms after page load" — still a hard cut, per
+   follow-up feedback ("its still a little jumpy turning on and off").
+   A real duration + easing on the animation is what actually makes it
+   a smooth grow-and-fade-in instead of a pop. */
 .show-list-loading {
   display: flex;
   flex-direction: column;
@@ -1036,7 +1042,7 @@ body.drawer-open {
   gap: var(--space-16);
   min-height: 0;
   opacity: 0;
-  animation: show-list-loading-grow 0s 0.25s forwards;
+  animation: show-list-loading-grow 0.35s ease-out 0.25s forwards;
 }
 
 @keyframes show-list-loading-grow {

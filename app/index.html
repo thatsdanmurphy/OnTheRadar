@@ -1332,7 +1332,7 @@
     renderListView(shows, responsesByShow, 'No shows yet.');
   }
 
-  // One labeled avatar group — reused for both "Heck yeah!" (curious)
+  // One labeled avatar group — reused for both "Into it" (curious)
   // and "Can't make it" (out), same shape either way: a small header
   // label, everyone in that group except me, and a fixed slot for my
   // own status that's either a ghost "+" (tap to join this list) or my
@@ -1500,11 +1500,17 @@
     container.innerHTML = '';
     renderShowHeaderInfo(container, show);
 
-    // Two labeled groups, side by side: who's curious ("Heck yeah!")
-    // and who can't make it ("Can't make it") — each with its own
-    // ghost "+" slot, so joining either list is the same gesture in
-    // the same shape, not a stack of avatars plus a separate text
-    // button. Replaces the old single row + "Can't make it" button.
+    // Two labeled groups, side by side: who's curious ("Into it") and
+    // who can't make it ("Can't make it") — each with its own ghost
+    // "+" slot, so joining either list is the same gesture in the
+    // same shape, not a stack of avatars plus a separate text button.
+    // Replaces the old single row + "Can't make it" button. Label
+    // itself went through a few rounds directly: "Heck yeah!" (original)
+    // -> discussed cutting "Can't make it" entirely and relabeling to
+    // "Who's in" (rejected — "in" still implies an "out" camp even with
+    // no decline list left in the UI) -> "Into it" (landed here: same
+    // reaction-not-status register as "Heck yeah!", just without the
+    // exclamation doing so much of the work on every single card).
     const avatarRow = document.createElement('div');
     avatarRow.className = 'show-card-avatars';
 
@@ -1513,7 +1519,7 @@
     const declinedExceptMe = declined.filter((r) => r.person_id !== person.id).map((r) => r.people);
 
     avatarRow.appendChild(buildResponseGroup(
-      'Heck yeah!',
+      'Into it',
       curiousExceptMe,
       !!(mine && mine.status === 'curious'),
       "I'm curious",
@@ -1980,8 +1986,8 @@
 
       // The "N overlap" badge (.show-overlap/.show-card-top) that used
       // to sit here — cut per direct feedback. Who's actually curious
-      // still shows up in the "Heck yeah!" avatar row below; this was
-      // a second, redundant count of the same thing sitting above it.
+      // still shows up in the "Into it" avatar row below; this was a
+      // second, redundant count of the same thing sitting above it.
       // overlapCount() itself stays in scripts/shows.js — small, still
       // documented, not wired to any UI right now.
 
