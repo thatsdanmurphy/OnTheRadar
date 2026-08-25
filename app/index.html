@@ -1783,29 +1783,64 @@
   // ever lived inside #group-bar, which stays hidden until you have at
   // least one herd; this is also the fix for that long-standing "Revisit
   // if" in the decision log), Add a Show, and Start a Herd.
+  //
+  // Reworked per direct feedback on the first version ("this is the
+  // first thing people are going to see so it's got to be slick"): the
+  // explanatory intro sentence is gone (the three tiles' own labels/subs
+  // already say what each does — the sentence was just narrating them),
+  // a poster-scale wordmark now sits above the tiles instead of an empty
+  // gap under the header, and a small quick-nav row (My Shows/Browse
+  // Venues/Add Herd) fills what used to be genuinely empty space at the
+  // very top of this first-run screen ("the nav can't be empty like
+  // that"). The quick-nav and the tiles below both lead to the same
+  // three destinations — that's deliberate, not an oversight: the nav
+  // is fast utility access for someone who already knows what they
+  // want, the tiles are the slower, explained-with-a-subline version for
+  // someone who doesn't yet.
   function renderZeroHerdLanding(container) {
     container.className = 'zero-herd-landing';
     container.innerHTML = `
-      <p class="zero-herd-intro">New here? Jump straight into whichever one fits — you can always add the others later.</p>
+      <nav class="zero-herd-quicknav" aria-label="Quick links">
+        <button type="button" class="zero-herd-quicknav-btn" id="zero-herd-nav-my-shows">My Shows</button>
+        <button type="button" class="zero-herd-quicknav-btn" id="zero-herd-nav-browse">Browse Venues</button>
+        <button type="button" class="zero-herd-quicknav-btn" id="zero-herd-nav-add-herd">Add Herd</button>
+      </nav>
+      <div class="zero-herd-hero">
+        <div class="zero-herd-wordmark"><span class="wordmark-gig">Gig</span><span class="wordmark-herd">Herd</span></div>
+      </div>
       <div class="zero-herd-tiles">
         <button type="button" class="zero-herd-tile" id="zero-herd-browse">
           <span class="zero-herd-tile-icon"><i data-lucide="map-pin"></i></span>
           <span class="zero-herd-tile-label">Browse Venues</span>
-          <span class="zero-herd-tile-sub">Find a venue by size, region, or type</span>
+          <span class="zero-herd-tile-sub">Find a venue by size or region</span>
         </button>
         <button type="button" class="zero-herd-tile" id="zero-herd-add-show">
           <span class="zero-herd-tile-icon"><i data-lucide="music"></i></span>
           <span class="zero-herd-tile-label">Add a Show</span>
-          <span class="zero-herd-tile-sub">Start tracking what you're curious about</span>
+          <span class="zero-herd-tile-sub">Track what you're curious about</span>
         </button>
         <button type="button" class="zero-herd-tile" id="zero-herd-start-herd">
           <span class="zero-herd-tile-icon"><i data-lucide="users"></i></span>
           <span class="zero-herd-tile-label">Start a Herd</span>
-          <span class="zero-herd-tile-sub">Invite friends, see who's into the same shows</span>
+          <span class="zero-herd-tile-sub">See who's into the same shows</span>
         </button>
       </div>
     `;
     lucide.createIcons({ root: container });
+
+    // Reuses the exact same click handlers the drawer's own nav
+    // buttons/tiles below already have (see each one's own comment) —
+    // the quick-nav is just a faster way to reach the same three
+    // destinations, not a separate set of behaviors to maintain.
+    document.getElementById('zero-herd-nav-my-shows').addEventListener('click', () => {
+      drawerMyShowsBtn.click();
+    });
+    document.getElementById('zero-herd-nav-browse').addEventListener('click', () => {
+      document.getElementById('drawer-browse-btn').click();
+    });
+    document.getElementById('zero-herd-nav-add-herd').addEventListener('click', () => {
+      openNewGroupModal();
+    });
 
     document.getElementById('zero-herd-browse').addEventListener('click', () => {
       // Reuses the drawer's own Browse Venues button and its existing
