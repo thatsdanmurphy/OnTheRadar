@@ -1104,35 +1104,59 @@
     setTimeout(() => { label.textContent = original; }, 1500);
   });
 
-  // Leave group — confirms first (window.confirm(), same "reach for
+  // Leave a herd — confirms first (window.confirm(), same "reach for
   // the browser's own primitive" approach as the clipboard fallback
-  // elsewhere), then removes the membership, drops the group from
-  // myGroups, and either lands on the next remaining group or falls
-  // back to the same zero-groups empty state afterPerson() shows a
-  // brand-new person.
-  groupModalLeaveBtn.addEventListener('click', async () => {
-    if (!currentGroup) return;
-    const confirmed = window.confirm(`Leave ${currentGroup.name}? You can rejoin later with an invite link.`);
+  // elsewhere), then removes the membership and drops it from
+  // myGroups. Shared by the group modal's own Leave button and each
+  // drawer row's leave icon (see renderGroupSwitcher) — leaving used
+  // to live only behind the group modal's View flow, which is hidden
+  // for a solo herd (no Share/View on a page presenting itself as just
+  // "My Shows"), so a solo herd genuinely had no way to leave it. Per
+  // direct feedback ("its weird i can;t leave this herd"), leaving is
+  // now reachable straight from the drawer's own herd list, for any
+  // herd regardless of member count. Lands on the next remaining herd
+  // if there is one; if this was the last one, shows the zero-herd
+  // landing rather than silently recreating a herd — leaving your last
+  // herd is always allowed, even though starting one is required (see
+  // the name gate).
+  async function leaveHerd(group) {
+    const confirmed = window.confirm(`Leave ${group.name}? You can rejoin later with an invite link.`);
     if (!confirmed) return;
 
-    const left = await leaveGroup(person.id, currentGroup.id);
+    const left = await leaveGroup(person.id, group.id);
     if (!left) return;
 
+    const wasCurrent = group.id === currentGroupId;
     closeGroupModal();
-    myGroups = myGroups.filter((g) => g.id !== currentGroup.id);
-    currentGroup = null;
-    currentGroupId = null;
+    myGroups = myGroups.filter((g) => g.id !== group.id);
 
     if (myGroups.length === 0) {
-      // Leaving your last herd can't leave you herdless — see
-      // ensureHerdExists().
-      const solo = await ensureHerdExists();
-      if (!solo) return;
-      await selectGroup(solo);
+      currentGroup = null;
+      currentGroupId = null;
+      closeDrawer();
+      await renderGroupSwitcher(myGroups);
+      groupHeadingRow.style.display = 'none';
+      addShowCard.style.display = 'none';
+      showTabs.style.display = 'none';
+      herdMemberStrip.style.display = 'none';
+      turnoutSubhead.style.display = 'none';
+      renderZeroHerdLanding(document.getElementById('show-list-content'));
       return;
     }
 
-    await selectGroup(myGroups[0]);
+    if (wasCurrent) {
+      await selectGroup(myGroups[0]);
+    } else {
+      // Left a different herd than the one currently open (via its own
+      // drawer row) — stay put, just refresh the drawer list so the
+      // removed row disappears.
+      await renderGroupSwitcher(myGroups);
+    }
+  }
+
+  groupModalLeaveBtn.addEventListener('click', () => {
+    if (!currentGroup) return;
+    leaveHerd(currentGroup);
   });
 
   // New herd modal — opened from the drawer's "+ Herd" button (see
@@ -1230,6 +1254,22 @@
         if (ok) flashShareSuccess(shareBtn);
       });
       row.appendChild(shareBtn);
+
+      // Leave, right in the row — see leaveHerd's own comment for why
+      // this needed to exist here specifically: the group modal's
+      // Leave button is only reachable via View, which is hidden for a
+      // solo herd, so that was previously the only way to leave any
+      // herd at all. Every row gets this regardless of member count.
+      const leaveBtn = document.createElement('button');
+      leaveBtn.type = 'button';
+      leaveBtn.className = 'drawer-group-leave';
+      leaveBtn.setAttribute('aria-label', `Leave ${g.name}`);
+      leaveBtn.innerHTML = '<i data-lucide="trash-2"></i>';
+      leaveBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        leaveHerd(g);
+      });
+      row.appendChild(leaveBtn);
 
       drawerGroupList.appendChild(row);
     });
@@ -1875,23 +1915,73 @@
     container.innerHTML = `<div class="show-list-empty-circle"><div class="show-list-empty-icon">${EMPTY_STATE_ICON}</div><div class="show-list-empty-message">${message}</div></div>`;
   }
 
-  // Zero-herd landing (the old three-tile Browse/Add Show/Start Herd
-  // placemat) is gone — per direct feedback ("I just dont like that
-  // state where we have the three buttons. its dumb"), having a herd
-  // is no longer optional. Every person always has at least one herd,
-  // defaulting to a herd-of-one presented as "My Shows" (see the
-  // isSoloHerd branch in selectGroup) — so there's nothing left for a
-  // zero-groups state to show. ensureHerdExists() is what guarantees
-  // that: called anywhere myGroups could otherwise end up empty (fresh
-  // person with no invite link, or leaving your last remaining herd),
-  // it silently creates a default-named herd (editable later, same
-  // rename path every herd already has) rather than presenting a
-  // choice screen.
+  // Zero-herd landing ("placemat") — shown to a person with no herd at
+  // all. Required at first sign-up now (see the name gate's required
+  // herd-name field), so this can't happen there anymore — but leaving
+  // your last remaining herd is always allowed (see the drawer's
+  // per-row leave button and groupModalLeaveBtn), and that can
+  // genuinely leave someone with zero herds again. This briefly got
+  // replaced with a silent auto-created solo herd instead of showing a
+  // choice screen, then reinstated the same day per direct follow-up
+  // feedback: "its weird i can;t leave this herd and if it did I'm
+  // realizing we're still going to need that empty statr withthe three
+  // buttons we built. ok we need to enable leaving this herd and bring
+  // that emprt state back for hwen peopel elave all herds knowing it
+  // will be required to start a herd in th efirst plce thehy can still
+  // leave them all." Same three tiles as before: Browse Venues, Add a
+  // Show (auto-creates a herd-of-one behind the scenes via
+  // ensureHerdExists, same as any herd starts), Start a Herd.
+  function renderZeroHerdLanding(container) {
+    container.className = 'zero-herd-landing';
+    container.innerHTML = `
+      <div class="zero-herd-tiles">
+        <button type="button" class="zero-herd-tile" id="zero-herd-browse">
+          <span class="zero-herd-tile-icon"><i data-lucide="map-pin"></i></span>
+          <span class="zero-herd-tile-label">Browse Venues</span>
+        </button>
+        <button type="button" class="zero-herd-tile" id="zero-herd-add-show">
+          <span class="zero-herd-tile-icon"><i data-lucide="music"></i></span>
+          <span class="zero-herd-tile-label">Add a Show</span>
+        </button>
+        <button type="button" class="zero-herd-tile" id="zero-herd-start-herd">
+          <span class="zero-herd-tile-icon"><i data-lucide="users"></i></span>
+          <span class="zero-herd-tile-label">Start a Herd</span>
+        </button>
+      </div>
+    `;
+    lucide.createIcons({ root: container });
+
+    document.getElementById('zero-herd-browse').addEventListener('click', () => {
+      // Reuses the drawer's own Browse Venues button and its existing
+      // click handler (see scripts/browse.js) rather than duplicating
+      // that logic here.
+      document.getElementById('drawer-browse-btn').click();
+    });
+
+    document.getElementById('zero-herd-add-show').addEventListener('click', async () => {
+      const group = await ensureHerdExists();
+      if (!group) return;
+      await selectGroup(group);
+      openAddShowModal();
+    });
+
+    document.getElementById('zero-herd-start-herd').addEventListener('click', () => {
+      openNewGroupModal();
+    });
+  }
+
+  // Auto-creates a default-named herd-of-one ("{name}'s Shows",
+  // editable later like any herd) and refreshes myGroups. The one
+  // remaining caller is the zero-herd landing's "Add a Show" tile
+  // above — every other place that could once fall through to this (a
+  // fresh sign-up, leaving your last herd) either requires a real herd
+  // name up front now (see the name gate) or deliberately shows the
+  // zero-herd landing instead of silently recreating one.
   async function ensureHerdExists() {
     const defaultName = `${person.display_name}'s Shows`;
     const group = await createGroup(person.id, defaultName);
     if (!group) return null;
-    trackEvent('group_created', { group_id: group.id, via: 'auto_solo' });
+    trackEvent('group_created', { group_id: group.id, via: 'solo_add_show' });
     myGroups = await getMyGroups(person.id);
     return group;
   }
@@ -2228,12 +2318,17 @@
     myGroups = await getMyGroups(person.id);
 
     if (myGroups.length === 0) {
-      // Brand-new person, no invite link, didn't name a herd on the
-      // name gate — herds are required now, so give them the default
-      // herd-of-one instead of a choice screen. See ensureHerdExists().
-      const solo = await ensureHerdExists();
-      if (!solo) return;
-      await selectGroup(solo);
+      // Starting a herd is required at sign-up (see the name gate), so
+      // this shouldn't happen for a brand-new person — but a returning
+      // person who's since left every herd they were in genuinely can
+      // land here, and that's allowed (see leaveHerd). Same zero-herd
+      // landing either way.
+      renderGroupSwitcher(myGroups);
+      groupHeadingRow.style.display = 'none';
+      showTabs.style.display = 'none';
+      herdMemberStrip.style.display = 'none';
+      turnoutSubhead.style.display = 'none';
+      renderZeroHerdLanding(document.getElementById('show-list-content'));
       return;
     }
 
