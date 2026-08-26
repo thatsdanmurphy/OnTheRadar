@@ -486,37 +486,8 @@
   opacity: 1;
 }
 
-/* Leave, right in the row — see leaveHerd's own comment in index.html
-   for why this exists here at all. Same icon-circle shape/size as
-   Share, quieter at rest (0.4 vs 0.7, matching .show-delete-btn's own
-   resting opacity elsewhere) since it's the less-frequent, more
-   deliberate action of the two — still no color-coding as a "danger"
-   button, same as every other delete/remove control in this app. */
-.drawer-group-leave {
-  flex-shrink: 0;
-  width: var(--space-32);
-  height: var(--space-32);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: none;
-  border: none;
-  color: var(--color-surface-text);
-  opacity: 0.4;
-  padding: 0;
-  cursor: pointer;
-  transition: background 0.15s ease, opacity 0.15s ease;
-}
-
-.drawer-group-leave:hover {
-  background: var(--tint-active);
-  opacity: 0.9;
-}
-
 .drawer-group-select:focus-visible,
 .drawer-group-share:focus-visible,
-.drawer-group-leave:focus-visible,
 .drawer-new-group-btn:focus-visible,
 .drawer-my-shows-btn:focus-visible,
 .drawer-avatar:focus-visible {

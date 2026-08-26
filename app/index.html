@@ -623,16 +623,24 @@
   </div>
 </div>
 
-<!-- ===== Group modal — opened from the secondary action beside Add
-     Show. Invite at the top (the most common reason to open this),
-     the member list in the middle (answers "who's actually in this
-     group," not just "who's responded to a show"), Leave group quiet
-     and last (a real but infrequent action — bottom-of-sheet, plain
-     text, not a filled/red button; this app has no destructive-red
-     token anywhere and one rare action didn't seem worth introducing
-     one for). Confirms via a plain window.confirm() before leaving —
-     same "reach for the browser's own primitive before building custom
-     chrome" approach already used for the clipboard-copy fallback. ===== -->
+<!-- ===== Group modal — opened from the "view" icon in the group
+     heading row. Invite at the top (the most common reason to open
+     this), the member list in the middle (answers "who's actually in
+     this group," not just "who's responded to a show"), Leave group
+     quiet and last (a real but infrequent action — bottom-of-sheet,
+     plain text, not a filled/red button; this app has no
+     destructive-red token anywhere and one rare action didn't seem
+     worth introducing one for). Confirms via a plain window.confirm()
+     before leaving — same "reach for the browser's own primitive
+     before building custom chrome" approach already used for the
+     clipboard-copy fallback. Deliberately the ONLY place Leave lives —
+     a brief detour also put a one-tap leave icon on each drawer row,
+     reverted per direct feedback ("i think that makes it too easy to
+     leave, I'd reather jsut have leave in the people list menu") — so
+     for a solo herd, openGroupModal hides Invite and the Members list
+     (neither means anything on a herd of just you) but keeps this
+     modal itself reachable and Leave visible, rather than hiding the
+     view icon that opens it entirely. ===== -->
 <div class="modal-overlay" id="group-modal-overlay" style="display:none;">
   <div class="modal-box" id="group-modal-box">
     <div class="modal-top">
@@ -664,7 +672,7 @@
       <span>Invite people</span>
     </button>
 
-    <div class="group-modal-label">Members</div>
+    <div class="group-modal-label" id="group-modal-members-label">Members</div>
     <div class="person-list" id="group-modal-member-list"></div>
 
     <button type="button" class="group-modal-leave-btn" id="group-modal-leave-btn">Leave herd</button>
@@ -771,6 +779,7 @@
   const groupModalCloseBtn = document.getElementById('group-modal-close-btn');
   const groupModalInviteBtn = document.getElementById('group-modal-invite-btn');
   const groupModalMemberList = document.getElementById('group-modal-member-list');
+  const groupModalMembersLabel = document.getElementById('group-modal-members-label');
   const groupModalLeaveBtn = document.getElementById('group-modal-leave-btn');
 
   const newGroupModalOverlay = document.getElementById('new-group-modal-overlay');
@@ -1014,13 +1023,27 @@
 
   // Group modal — the current group's own management surface: invite,
   // full member list (not just who's responded to a show), leave.
-  // Opened from the "view" icon in .group-heading-row.
+  // Opened from the "view" icon in .group-heading-row, which — unlike
+  // Share — stays visible even for a solo herd now (see selectGroup),
+  // specifically so this modal's own Leave button is always reachable.
+  // Invite and the Members list still don't make sense on a herd of
+  // just you, so those two hide here rather than reappearing just
+  // because the icon that opens this modal did; Leave (and the title,
+  // still renameable) stay up regardless. Reuses the same isSoloHerd
+  // rule selectGroup already computes (myGroups.length === 1) rather
+  // than introducing a second name for it.
   async function openGroupModal() {
     if (!currentGroup) return;
+    const isSolo = myGroups.length === 1;
     groupModalTitle.textContent = currentGroup.name;
     setGroupNameEditOpen(false);
-    const members = await getGroupMembers(currentGroup.id);
-    renderPersonList(groupModalMemberList, members);
+    groupModalInviteBtn.style.display = isSolo ? 'none' : '';
+    groupModalMembersLabel.style.display = isSolo ? 'none' : '';
+    groupModalMemberList.style.display = isSolo ? 'none' : '';
+    if (!isSolo) {
+      const members = await getGroupMembers(currentGroup.id);
+      renderPersonList(groupModalMemberList, members);
+    }
     groupModalOverlay.style.display = 'flex';
   }
 
@@ -1107,18 +1130,20 @@
   // Leave a herd — confirms first (window.confirm(), same "reach for
   // the browser's own primitive" approach as the clipboard fallback
   // elsewhere), then removes the membership and drops it from
-  // myGroups. Shared by the group modal's own Leave button and each
-  // drawer row's leave icon (see renderGroupSwitcher) — leaving used
-  // to live only behind the group modal's View flow, which is hidden
-  // for a solo herd (no Share/View on a page presenting itself as just
-  // "My Shows"), so a solo herd genuinely had no way to leave it. Per
-  // direct feedback ("its weird i can;t leave this herd"), leaving is
-  // now reachable straight from the drawer's own herd list, for any
-  // herd regardless of member count. Lands on the next remaining herd
-  // if there is one; if this was the last one, shows the zero-herd
-  // landing rather than silently recreating a herd — leaving your last
-  // herd is always allowed, even though starting one is required (see
-  // the name gate).
+  // myGroups. Lives behind the group modal's own Leave button — the
+  // "people list" (View → Members) — quiet and deliberate on purpose,
+  // not a one-tap icon sitting in the drawer's scrollable herd list. A
+  // brief detour put a leave icon directly on each drawer row instead;
+  // reverted the same day per direct follow-up feedback ("i think that
+  // makes it too easy to leave, I'd reather jsut have leave in the
+  // people list menu to be honest"). That meant the group modal itself
+  // (openGroupModal) needed to stay reachable even for a solo herd,
+  // where Share/View used to both be hidden entirely — see its own
+  // updated comment for how that's handled. Lands on the next
+  // remaining herd if there is one; if this was the last one, shows
+  // the zero-herd landing rather than silently recreating a herd —
+  // leaving your last herd is always allowed, even though starting one
+  // is required (see the name gate).
   async function leaveHerd(group) {
     const confirmed = window.confirm(`Leave ${group.name}? You can rejoin later with an invite link.`);
     if (!confirmed) return;
@@ -1147,9 +1172,12 @@
     if (wasCurrent) {
       await selectGroup(myGroups[0]);
     } else {
-      // Left a different herd than the one currently open (via its own
-      // drawer row) — stay put, just refresh the drawer list so the
-      // removed row disappears.
+      // Not actually reachable right now — the group modal only ever
+      // opens for currentGroup, so its Leave button always leaves the
+      // herd you're currently looking at. Kept as a real branch rather
+      // than assuming it away, in case Leave ever gets a second entry
+      // point (the drawer row was exactly that, briefly) that can act
+      // on a herd other than the active one.
       await renderGroupSwitcher(myGroups);
     }
   }
@@ -1254,22 +1282,6 @@
         if (ok) flashShareSuccess(shareBtn);
       });
       row.appendChild(shareBtn);
-
-      // Leave, right in the row — see leaveHerd's own comment for why
-      // this needed to exist here specifically: the group modal's
-      // Leave button is only reachable via View, which is hidden for a
-      // solo herd, so that was previously the only way to leave any
-      // herd at all. Every row gets this regardless of member count.
-      const leaveBtn = document.createElement('button');
-      leaveBtn.type = 'button';
-      leaveBtn.className = 'drawer-group-leave';
-      leaveBtn.setAttribute('aria-label', `Leave ${g.name}`);
-      leaveBtn.innerHTML = '<i data-lucide="trash-2"></i>';
-      leaveBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        leaveHerd(g);
-      });
-      row.appendChild(leaveBtn);
 
       drawerGroupList.appendChild(row);
     });
@@ -1387,21 +1399,25 @@
     closeDrawer();
     // A lone herd is presented as "My Shows" instead of its literal
     // name (e.g. "Dan's Shows") — avoids a page that just repeats
-    // what the My Shows tab already says. Share/View still do a real
-    // invite/member-list underneath a literal herd, so they're hidden
-    // here too — inviting someone doesn't add them to "my" anything,
-    // and it doesn't make sense to offer it on a page that isn't
-    // presenting itself as a herd at all. Used to swap in a "+" here
-    // to start a real herd instead, but that put herd-creation inline
-    // on a page whose whole point is "just my shows, no herd stuff" —
-    // per direct feedback, that action lives in exactly one place now,
-    // the nav drawer's own "Add a herd" button (always present, see
-    // #group-bar). The moment a second herd exists this reverts to the normal name
-    // + Share/View treatment automatically.
+    // what the My Shows tab already says. Share still does a real
+    // invite underneath a literal herd, so it's hidden here — inviting
+    // someone doesn't add them to "my" anything, and it doesn't make
+    // sense to offer it on a page that isn't presenting itself as a
+    // herd at all. Used to swap in a "+" here to start a real herd
+    // instead, but that put herd-creation inline on a page whose whole
+    // point is "just my shows, no herd stuff" — per direct feedback,
+    // that action lives in exactly one place now, the nav drawer's own
+    // "Add a herd" button (always present, see #group-bar). The moment
+    // a second herd exists this reverts to the normal name + Share
+    // treatment automatically. View stays visible even when solo,
+    // unlike Share — it's the only way to reach Leave (see
+    // openGroupModal's own comment for why leaving needed to live
+    // there specifically, and how the modal adapts its own content for
+    // a solo herd rather than showing Invite/Members on a page that
+    // isn't presenting itself as a herd).
     const isSoloHerd = myGroups.length === 1;
     groupHeadingName.textContent = isSoloHerd ? 'My Shows' : group.name;
     groupShareBtn.style.display = isSoloHerd ? 'none' : '';
-    groupViewBtn.style.display = isSoloHerd ? 'none' : '';
     groupHeadingRow.style.display = 'flex';
     await renderCurrentView(group.id);
   }
