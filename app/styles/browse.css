@@ -85,7 +85,19 @@
    language for "go somewhere else in the app," whether that's the
    drawer or here. Only addition is the bottom margin between rows,
    matching the drawer nav's own --space-8 rhythm (.drawer-my-shows-btn
-   itself, .drawer-group-list's row gap). */
+   itself, .drawer-group-list's row gap).
+   Icon placement is the one place these rows diverge from the drawer's
+   own My Shows/Browse Venues rows: those end in a chevron (a
+   navigation affordance — "tap to go deeper"), so it stays right,
+   trailing the text like a sentence's own punctuation. These icons
+   (heart/ruler/pin/shapes) are representative glyphs for the category
+   itself, not a "go" signal, so per direct feedback they lead the row
+   instead — same left-to-right reading order as everything else here
+   (icon identifies what this is, text explains it). The markup order
+   in index.html was swapped to match (icon span first) — .drawer-
+   my-shows-btn's flex row has no explicit ordering rule, so it follows
+   DOM order automatically, no CSS change needed here beyond this row's
+   own spacing. */
 .landing-row { margin-bottom: var(--space-8); }
 
 /* Horizontal scrollable chip strip (Size, State/Region, Type) */
