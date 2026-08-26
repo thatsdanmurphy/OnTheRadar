@@ -1390,9 +1390,20 @@
   // it — same threshold "Into it" itself uses to decide whether to
   // show up at all on your own list (see renderShowInteractiveBody).
   // Filters on status defensively — see the matching comment in
-  // renderShowInteractiveBody.
+  // renderShowInteractiveBody. Also excludes past shows — a herd's own
+  // page (whichever chip is active, Turnout included) always renders
+  // upcoming-only with no Past tab at all (see renderListView), so a
+  // past show that happened to hit quorum was previously still being
+  // counted here and shown in the chip's badge, but then silently
+  // dropped by renderListView's own upcoming-only filter — the badge
+  // number and the list you actually saw when you tapped in could
+  // disagree. Filtering here instead keeps every consumer (the chip's
+  // existence, its badge count, and the rendered list) looking at the
+  // exact same set.
   function computeQuorumShows(shows, responsesByShow) {
-    return shows.filter((s) => (responsesByShow[s.id] || []).filter((r) => r.status === 'curious').length >= 2);
+    return shows
+      .filter((s) => !isPastShow(s))
+      .filter((s) => (responsesByShow[s.id] || []).filter((r) => r.status === 'curious').length >= 2);
   }
 
   // "Is this show on person X's personal list" — true if they created

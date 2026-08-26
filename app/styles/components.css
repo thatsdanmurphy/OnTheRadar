@@ -1514,12 +1514,17 @@ body.drawer-open {
    the chip strip and the show list, only visible while Turnout is the
    active chip (see renderFilteredShows). Same register as other small
    meta text in the app (.group-switch-item-count etc.), not a second
-   heading — the herd's own name stays the one real heading throughout. */
+   heading — the herd's own name stays the one real heading throughout.
+   Centered per direct feedback — everything else in this area (chip
+   strip, cards) is left-aligned, but as a one-line caption announcing
+   the whole tab rather than labeling any one piece of content, it
+   reads better centered under the strip than pinned to the left edge. */
 .list-subhead {
   font-family: var(--font-body);
   font-size: var(--text-meta-size);
   color: var(--color-surface-text);
   opacity: 0.6;
+  text-align: center;
   margin-top: var(--space-8);
   margin-bottom: var(--space-16);
 }

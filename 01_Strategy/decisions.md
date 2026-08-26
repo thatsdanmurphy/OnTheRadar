@@ -655,3 +655,13 @@ Followed this file's existing convention for festival `capacity`: `null` across 
 **Verified:** Playwright, mobile viewport, against a new stateful mock (`test/mock-identity-namegate.js`) that starts with no person at all and exercises the real name-gate form end to end (not pre-seeded like the other zero-herd fixture). Confirmed: submitting with a name but a blank herd name leaves the gate up and creates no person at all; filling in both fields and submitting creates exactly one herd, named exactly what was typed ("Backyard Shows"), not the auto-generated default; zero console/page errors throughout.
 
 **Revisit if:** None expected.
+
+## 2026-08-26 — Turnout badge/list mismatch fixed; sub-header centered
+
+**What:** Two small fixes. (1) `computeQuorumShows` now excludes past shows before checking the 2+-curious threshold, not after. Previously a past show that happened to hit quorum still counted toward the Turnout chip's badge number and toward whether the chip appeared at all — but `renderListView` was separately filtering every herd-page list (Turnout included) down to upcoming-only regardless, so that show was counted in the badge yet never actually appeared once you tapped in. All three consumers (the chip's existence, its badge count, and the rendered list) now agree, since they all read from the same already-upcoming-only set. (2) `#turnout-subhead`'s text is centered now instead of left-aligned.
+
+**Why:** Reported directly: "the badge number doesnt seem to match how many shows are in turnout list can we fix? And can we center that phrase when on that tab?"
+
+**Verified:** Playwright, mobile viewport. Added a past show to the fixture that also hits quorum (two curious responses, dated 2020) — confirmed the badge still reads "1" (not "2") with it present, that it's absent from the actual Turnout list, and that the upcoming quorum show still shows up correctly. Confirmed the sub-header's computed `text-align` is `center`. Full suite re-run, all 32 checks pass.
+
+**Revisit if:** None expected.
