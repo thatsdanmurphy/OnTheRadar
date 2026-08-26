@@ -959,17 +959,17 @@ body.drawer-open {
 
 /* Same --color-fill-dim recessed-circle language as
    .show-list-empty-circle, sized down — a big, solid anchor for the
-   icon rather than a bare glyph floating in the card. Per direct
-   feedback ("can we do a hover and animation with the icons — a grow
-   and slightly rotate and change color"), the circle itself grows and
-   tips slightly on hover — transform only, its fill never changes.
-   Two earlier passes had the circle's own background doing the color
-   work (first a soft blended tint plus a gradient burst, then a hard
-   flat-color flicker) — cut per direct feedback ("can we do it where
-   just the icon changes color? remove the color thing and just do the
-   size and rotate"): the circle stays put at --color-fill-dim always,
-   and the glyph inside it is the only thing that changes color now
-   (see .zero-herd-tile-icon svg below). */
+   icon rather than a bare glyph floating in the card. The circle
+   itself grows and tips slightly on hover — transform only, its fill
+   never changes. Went through three passes on the color question
+   before landing here: a soft blended tint plus a gradient burst,
+   then a hard flat-color flicker on the circle, then moving the color
+   swap onto the glyph instead — all three are gone now. Per direct
+   feedback the hover shouldn't change color anywhere at all; on
+   inspection that's also the token-correct call, since tokens.css
+   reserves --color-accent/--color-logo-pink for the overlap marker
+   "nowhere else." Grow + rotate on the circle is the entire hover
+   treatment now, full stop — see .zero-herd-tile-icon svg below. */
 .zero-herd-tile-icon {
   width: var(--space-64);
   height: var(--space-64);
@@ -986,25 +986,21 @@ body.drawer-open {
   transform: scale(1.14) rotate(-8deg);
 }
 
-/* The glyph is the one thing that changes color on hover now — flat
-   pink, same token the wordmark's own "Gig" uses, no gradient/blur
-   involved anywhere. Quick, plain transition rather than the flicker
-   the circle used to have; the grow-and-rotate on the circle above is
-   already doing the "electric" motion, this just needs to read as a
-   clean color swap. */
+/* Used to flip the glyph to flat pink on hover (--color-logo-pink).
+   Cut per direct feedback — and worth cutting on the merits, not just
+   the ask: tokens.css is explicit that --color-accent/--color-logo-pink
+   is "overlap marker — nowhere else, not even the logo," so tinting an
+   unrelated icon pink on hover was quietly breaking the app's own rule
+   for itself. The glyph is plain --color-surface-text now, same as it
+   sits at rest — the circle's grow-and-rotate (above) is the entire
+   hover treatment, no color involved anywhere in it. */
 .zero-herd-tile-icon svg {
   width: var(--space-32);
   height: var(--space-32);
-  transition: color 0.15s ease;
-}
-
-.zero-herd-tile:hover .zero-herd-tile-icon svg {
-  color: var(--color-logo-pink);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .zero-herd-tile-icon,
-  .zero-herd-tile-icon svg {
+  .zero-herd-tile-icon {
     transition: none;
   }
 
@@ -1018,14 +1014,6 @@ body.drawer-open {
   font-weight: 700;
   font-size: var(--text-sub-size);
   line-height: var(--text-sub-lh);
-}
-
-.zero-herd-tile-sub {
-  font-family: var(--font-data);
-  font-size: var(--text-control-size);
-  line-height: var(--text-control-lh);
-  opacity: 0.6;
-  white-space: nowrap;
 }
 
 /* ---------- Show list loading state ---------- */

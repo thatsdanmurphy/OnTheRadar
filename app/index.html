@@ -351,15 +351,6 @@
       <button type="button" class="group-heading-btn" id="group-view-btn" aria-label="View herd">
         <i data-lucide="users"></i>
       </button>
-      <!-- Solo-herd only (myGroups.length === 1) — swapped in for
-           Share/View by selectGroup() below. The heading reads "My
-           Shows" at that point, so a Share button there would be
-           confusing (inviting someone doesn't add them to "my"
-           anything — it makes a real herd). A plain "+" that opens
-           the new-herd flow is the honest version of that action. -->
-      <button type="button" class="group-heading-btn" id="group-add-herd-btn" aria-label="Start a herd" style="display:none;">
-        <i data-lucide="plus"></i>
-      </button>
     </div>
   </div>
 
@@ -716,7 +707,6 @@
   const groupHeadingName = document.getElementById('group-heading-name');
   const groupShareBtn = document.getElementById('group-share-btn');
   const groupViewBtn = document.getElementById('group-view-btn');
-  const groupAddHerdBtn = document.getElementById('group-add-herd-btn');
   const myShowsHeadingRow = document.getElementById('my-shows-heading-row');
   const listContent = document.getElementById('show-list-content');
   const showTabs = document.getElementById('show-tabs');
@@ -1056,12 +1046,6 @@
     if (ok) flashShareSuccess(groupShareBtn);
   });
 
-  // Solo-herd "+" — same destination as the zero-herd landing's Start
-  // a Herd tile. Once a second herd exists, selectGroup() stops
-  // showing this button (myGroups.length > 1), so it only ever
-  // appears while there's genuinely one herd to grow out of.
-  groupAddHerdBtn.addEventListener('click', openNewGroupModal);
-
   // Invite, from inside the group modal — same shared copyInviteLink()
   // helper every other share affordance uses. Has a real text label
   // (unlike the icon-only share buttons elsewhere), so success is a
@@ -1302,16 +1286,22 @@
     closeDrawer();
     // A lone herd is presented as "My Shows" instead of its literal
     // name (e.g. "Dan's Shows") — avoids a page that just repeats
-    // what the My Shows tab already says. But Share/View still do a
-    // real invite/member-list underneath, so those buttons swap for
-    // a plain "+" (start a herd) instead — see group-add-herd-btn
-    // above. The moment a second herd exists this reverts to the
-    // normal name + Share/View treatment automatically.
+    // what the My Shows tab already says. Share/View still do a real
+    // invite/member-list underneath a literal herd, so they're hidden
+    // here too — inviting someone doesn't add them to "my" anything,
+    // and it doesn't make sense to offer it on a page that isn't
+    // presenting itself as a herd at all. Used to swap in a "+" here
+    // to start a real herd instead, but that put herd-creation inline
+    // on a page whose whole point is "just my shows, no herd stuff" —
+    // per direct feedback, that action lives in exactly one place now,
+    // the nav drawer's own "Add a herd" button (always present, see
+    // #group-bar) and the zero-herd landing's "Start a Herd" tile.
+    // The moment a second herd exists this reverts to the normal name
+    // + Share/View treatment automatically.
     const isSoloHerd = myGroups.length === 1;
     groupHeadingName.textContent = isSoloHerd ? 'My Shows' : group.name;
     groupShareBtn.style.display = isSoloHerd ? 'none' : '';
     groupViewBtn.style.display = isSoloHerd ? 'none' : '';
-    groupAddHerdBtn.style.display = isSoloHerd ? '' : 'none';
     groupHeadingRow.style.display = 'flex';
     await renderCurrentView(group.id);
   }
@@ -1802,7 +1792,7 @@
   //
   // Reworked per direct feedback on the first version ("this is the
   // first thing people are going to see so it's got to be slick"): the
-  // explanatory intro sentence is gone (the three tiles' own labels/subs
+  // explanatory intro sentence is gone (the three tiles' own labels
   // already say what each does — the sentence was just narrating them).
   // Two follow-up ideas were tried and both cut again the same day: a
   // quick-nav row (My Shows/Browse Venues/Add Herd) above the tiles,
@@ -1814,8 +1804,23 @@
   // lets just remove the second bigger instance and keep it simple")
   // — the header's own wordmark right above this content already does
   // that job, a second one two inches below it was pure repetition,
-  // not a real hero moment. Landed on the simplest version: just the
-  // three tiles, no intro, no second logo.
+  // not a real hero moment. A later pass ("this doesnt feel designed...
+  // less text would do it") cut the one-line sub-copy under each label
+  // too ("Find a venue by size or region" etc.) — the icon + bold label
+  // alone already reads clearly (Browse Venues, Add a Show, Start a
+  // Herd aren't ambiguous actions), so the sub-line was one more
+  // narrating sentence in miniature, same pattern as the intro line
+  // that got cut first. Landed on the simplest version: three tiles,
+  // icon + label only, no intro, no second logo, no sub-copy.
+  // Type/color stay within the existing scale throughout: label
+  // uses --text-sub-size/700 weight (the same card-title register
+  // --show-title/--venue-name use elsewhere), icon glyph is plain
+  // --color-surface-text at rest with no color change on hover — see
+  // .zero-herd-tile-icon svg in components.css for why (tokens.css
+  // reserves pink for the overlap marker specifically, "nowhere else,"
+  // so it doesn't belong on a hover state here either). Nothing here
+  // introduces a new size, weight, or color outside what's already
+  // named in tokens.css.
   function renderZeroHerdLanding(container) {
     container.className = 'zero-herd-landing';
     container.innerHTML = `
@@ -1823,17 +1828,14 @@
         <button type="button" class="zero-herd-tile" id="zero-herd-browse">
           <span class="zero-herd-tile-icon"><i data-lucide="map-pin"></i></span>
           <span class="zero-herd-tile-label">Browse Venues</span>
-          <span class="zero-herd-tile-sub">Find a venue by size or region</span>
         </button>
         <button type="button" class="zero-herd-tile" id="zero-herd-add-show">
           <span class="zero-herd-tile-icon"><i data-lucide="music"></i></span>
           <span class="zero-herd-tile-label">Add a Show</span>
-          <span class="zero-herd-tile-sub">Track what you're curious about</span>
         </button>
         <button type="button" class="zero-herd-tile" id="zero-herd-start-herd">
           <span class="zero-herd-tile-icon"><i data-lucide="users"></i></span>
           <span class="zero-herd-tile-label">Start a Herd</span>
-          <span class="zero-herd-tile-sub">See who's into the same shows</span>
         </button>
       </div>
     `;
