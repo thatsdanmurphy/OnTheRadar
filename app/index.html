@@ -241,12 +241,20 @@
        to the drawer's bottom edge (see .drawer-footer-section) rather
        than sitting immediately after this in flow, so the stroke was
        the last leftover divider line in the drawer. -->
-  <div class="drawer-section drawer-section-last" id="group-bar" style="display:none;">
+  <div class="drawer-section drawer-section-last" id="group-bar">
     <!-- Cross-group view — everything you've marked curious, across
          every herd you're in, not scoped to whichever one happens to
          be selected right now. Sits above the herd list itself since
          it's not really "one more herd," it's the other way of
-         looking at the same shows. -->
+         looking at the same shows.
+         This whole section used to hide entirely (display:none) for a
+         brand-new person with zero herds — per direct feedback, that
+         left the nav completely blank on first run, which read as
+         broken rather than "empty." Now it's always visible: My Shows,
+         Browse Venues, and "Add a herd" are permanent nav fixtures.
+         Only the Herds label + list (immediately below) hide themselves
+         when there are no herds yet — see renderGroupSwitcher, which
+         toggles #drawer-herds-section based on group count. -->
     <button type="button" class="drawer-my-shows-btn" id="drawer-my-shows-btn">
       <span class="drawer-my-shows-text">
         <span class="drawer-my-shows-label">My Shows</span>
@@ -285,8 +293,10 @@
          below. Internal ids/classes/functions (group.name, .group-
          modal-*, createGroup(), etc.) are deliberately untouched --
          this is a copy pass, not a data-model rename. -->
-    <div class="drawer-label">Herds</div>
-    <div class="drawer-group-list" id="drawer-group-list"></div>
+    <div id="drawer-herds-section">
+      <div class="drawer-label">Herds</div>
+      <div class="drawer-group-list" id="drawer-group-list"></div>
+    </div>
     <!-- Same visual weight as Add Show's own card now, per direct
          feedback — a real surface, centered icon + label, not a quiet
          row-shaped button underneath the list. Label reads "Add a
@@ -1085,8 +1095,7 @@
     if (myGroups.length === 0) {
       currentGroup = null;
       currentGroupId = null;
-      drawerGroupList.innerHTML = '';
-      groupBar.style.display = 'none';
+      renderGroupSwitcher(myGroups);
       groupHeadingRow.style.display = 'none';
       addShowCard.style.display = 'none';
       showTabs.style.display = 'none';
@@ -1143,9 +1152,16 @@
   // nowhere else. Each row shows a small "N members" subtitle. Re-run
   // any time groups or the current group changes.
   async function renderGroupSwitcher(groups) {
-    const counts = await getGroupMemberCounts(groups.map((g) => g.id));
+    // Herds label + list disappear as a unit once there are none —
+    // My Shows/Browse Venues/Add a herd (outside this element) stay up
+    // regardless, so the nav is never fully blank (see #group-bar).
+    document.getElementById('drawer-herds-section').style.display = groups.length ? '' : 'none';
 
     drawerGroupList.innerHTML = '';
+    if (!groups.length) return;
+
+    const counts = await getGroupMemberCounts(groups.map((g) => g.id));
+
     groups.forEach(g => {
       // Row is a plain div now, not a button — it needs to hold two
       // independent controls (select group / share that group's
@@ -2243,7 +2259,7 @@
     myGroups = await getMyGroups(person.id);
 
     if (myGroups.length === 0) {
-      groupBar.style.display = 'none';
+      renderGroupSwitcher(myGroups);
       groupHeadingRow.style.display = 'none';
       showTabs.style.display = 'none';
       renderZeroHerdLanding(document.getElementById('show-list-content'));

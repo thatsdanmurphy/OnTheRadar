@@ -158,12 +158,21 @@
     `;
   }
 
+  // Empty state reuses the shows list's own .show-list-empty circle
+  // treatment (see renderEmptyState in index.html) instead of the old
+  // bare card+paragraph — one "nothing here" language across the app
+  // rather than two. Count line ("N venues") is skipped entirely at
+  // zero rather than printing "0 venues" — the empty state below
+  // already says there's nothing here; a "0" line above it was just
+  // restating that in a colder register.
   function renderResults(list, containerId, countId, emptyMessage) {
-    document.getElementById(countId).textContent = `${list.length} venue${list.length === 1 ? '' : 's'}`;
+    document.getElementById(countId).textContent = list.length
+      ? `${list.length} venue${list.length === 1 ? '' : 's'}`
+      : '';
     const el = document.getElementById(containerId);
     el.innerHTML = list.length
       ? list.map(venueCard).join('')
-      : `<div class="show-card"><p style="opacity:.6;font-size:14px;">${emptyMessage || 'Nothing here yet — more venues coming as future batches (Providence, Portland, Burlington, New Haven/Hartford, Manchester) get built out.'}</p></div>`;
+      : `<div class="show-list-empty"><div class="show-list-empty-circle"><div class="show-list-empty-icon">${EMPTY_STATE_ICON}</div><div class="show-list-empty-message">${emptyMessage || 'Nothing here yet — more venues coming as future batches (Providence, Portland, Burlington, New Haven/Hartford, Manchester) get built out.'}</div></div></div>`;
     lucide.createIcons({ root: el });
 
     el.querySelectorAll('[data-fav-toggle]').forEach((btn) => {

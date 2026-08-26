@@ -646,32 +646,28 @@
   min-width: 0;
 }
 
-/* Briefly bumped to --text-sub-size (20px, the card-title size) —
-   reverted per direct feedback ("too big" for the nav drawer, and
-   inconsistent-looking next to the rest of it). This class covers two
-   different contexts, though: the drawer's own My Shows/Browse Venues
-   nav rows (narrow, compact menu — belongs at the smaller size below)
-   AND the Browse landing tiles in the main content area (full-width
-   cards, same visual weight as everything else there — see the
-   .landing-row override right below, which puts those back up to
-   --text-sub-size). The complaint was specifically "in the nav," so
-   only the drawer instance reverts. */
+/* Was briefly bumped to --text-sub-size (20px, the card-title size)
+   for the drawer's own nav rows, then reverted ("too big" in the nav).
+   The Browse landing rows (.landing-row) used to carry their own
+   override bumping them right back up to 20px — the reasoning at the
+   time was "these are full-width cards in the main content area, they
+   should read at card-title weight like .show-title/.venue-name."
+   Direct feedback on the resulting screen: "the headers are way too
+   big, they feel unconsidered" and an explicit ask to standardize
+   against what already exists rather than invent a third size. The
+   closest existing pattern for "a row in a list of things you can tap
+   into" is .drawer-group-row's own herd list (.group-switch-item-name,
+   below) — 16px/600 title, 12px meta subtitle — which is exactly what
+   base .drawer-my-shows-label already is. So the override is gone: the
+   Browse landing rows and every .drawer-my-shows-btn instance (drawer
+   nav rows, Browse landing rows alike) now share one title size,
+   nothing landing-row-specific left to maintain. */
 .drawer-my-shows-label {
   display: block;
   font-family: var(--font-body);
   font-weight: 600;
   font-size: var(--text-body-size);
   line-height: var(--text-body-lh);
-}
-
-/* Browse landing tiles (.landing-row, see browse.css) reuse
-   .drawer-my-shows-btn's row shape but live in the main content area
-   as full-width cards, not the narrow drawer — same register as
-   .show-title/.venue-name/.result-title, not the drawer's smaller
-   nav-row size above. */
-.landing-row .drawer-my-shows-label {
-  font-size: var(--text-sub-size);
-  line-height: var(--text-sub-lh);
 }
 
 /* Mixed case now, matching the member-count fix above — same reasoning,
