@@ -481,17 +481,15 @@
        that read as static rather than "loading" — reverted to a
        spinning arc (the motion that actually reads as progress), with
        a plain "Loading shows" label instead of the cuter "Tuning up…"
-       copy. Genuinely centered on the page when it's actually shown
-       (.show-list-loading is 60vh and both-axis-centered) — but per
-       direct feedback ("why does the loading state have to stutter/
-       jump vertically and turn on/off"), it now holds itself invisible
-       and collapsed for the first ~250ms (see the show-list-loading-grow
-       keyframe in components.css) rather than always occupying that
-       full 60vh from the first paint. Most real fetches finish inside
-       that window, so most loads never show this at all — the real
-       content just appears directly, no flash and no page jump under
-       it. Only a genuinely slow fetch grows this open into the full
-       centered treatment. -->
+       copy. Genuinely centered on the page (.show-list-loading is 60vh
+       and both-axis-centered) — went through a delayed-reveal/grow-in
+       treatment for a while trying to smooth the turn-on/off, but that
+       read as jumpy too and got cut per direct feedback ("I cant stand
+       the animated loading state that drops down on load. can we just
+       have it appear in one place at all times?"). It's fully static
+       now: always the same 60vh block, every load, no animation in or
+       out — the real content just replaces it in place once it's
+       ready. -->
   <div id="show-list-content" class="show-list-loading">
     <div class="show-list-loading-icon">
       <svg viewBox="0 0 50 50" aria-hidden="true"><circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-dasharray="90 150"/></svg>

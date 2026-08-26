@@ -635,3 +635,13 @@ Followed this file's existing convention for festival `capacity`: `null` across 
 **Verified:** Playwright, mobile viewport. Confirmed the Turnout chip's badge reads the correct quorum-show count (`1` against the fixture's one 2+-person show) and that the sub-header appears with the exact expected copy only while Turnout is selected, hiding again on switching away. The font-swap fix could not be reproduced or verified live — it depends on real network timing against Google Fonts' CDN that a local-file, mocked-OTR Playwright run doesn't exercise (fonts load near-instantly from cache in that environment, so `document.fonts.status` is already `'loaded'` by the time the check runs and the guard's re-render branch never fires in the test). Confirmed instead that the added logic doesn't break anything: the full existing suite still passes with the guard in place, and the guard is a no-op whenever fonts are already loaded. This one needs eyes on the real site to confirm it actually resolves the reported flicker.
 
 **Revisit if:** The drawer row styling issue recurs after this ships — if so, the WebKit-font-swap theory was wrong and the real cause needs a fresh look (possible alternatives not yet ruled out: a duplicate/stale `renderGroupSwitcher` call racing a newer one and painting over it, or something specific to that particular herd name/length).
+
+## 2026-08-26 — Loading state is fully static now, no more grow-in animation
+
+**What:** `.show-list-loading` (the initial-fetch spinner block) no longer animates in any way. It's always the same 60vh, centered block from the first paint, every load — no delayed reveal, no grow, no fade. Removed the `show-list-loading-grow` keyframe and the animation entirely; the real content just replaces this block in place once the fetch resolves.
+
+**Why:** This state had already been through two rounds trying to smooth its turn-on/off (a plain instant swap, then a delayed 250ms hold before an eased grow-and-fade) and both still read as jumpy. Requested directly: "I cant stand the animated loading state that drops down on load. can we just have it appear in one place at all times?" — cutting the animation outright instead of tuning it again.
+
+**Verified:** Full Playwright suite re-run, all existing checks pass (`.show-list-loading` isn't itself under test, but nothing downstream broke). Visual behavior itself (a static, always-present block vs. an animated one) isn't something a headless mocked-data run — which resolves near-instantly — meaningfully exercises either way.
+
+**Revisit if:** None expected.
