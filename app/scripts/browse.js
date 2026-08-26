@@ -260,10 +260,15 @@
   });
 
   // ---- Favorites view ----
+  // Message shortened to match the house "No ___ yet." voice used
+  // everywhere else an empty state shows up (renderListView's default,
+  // "No past shows yet.", "No shows marked yet." in renderMyShowsView)
+  // — the old instructional line ("tap the heart on any venue...") was
+  // the only empty state in the app explaining itself, which read as
+  // out of place next to the plainer pattern everywhere else.
   function renderFavoritesResults() {
     const list = VENUES.filter(isFavorited);
-    renderResults(list, 'favorites-results', 'favorites-count',
-      'No favorites yet — tap the heart on any venue to save it here.');
+    renderResults(list, 'favorites-results', 'favorites-count', 'No favorites yet.');
   }
   function showFavoritesView() {
     document.getElementById('browse-favorites-view').style.display = '';
