@@ -453,6 +453,13 @@
        second horizontal-chips pattern. -->
   <div class="chip-strip" id="herd-member-strip" style="display:none;"></div>
 
+  <!-- Turnout's own quiet sub-header — only ever shown while the
+       Turnout chip is the active one (see renderFilteredShows). Says
+       in plain language what the badge count on the chip itself only
+       implies: these are the shows where overlap has actually
+       happened. -->
+  <div class="list-subhead" id="turnout-subhead" style="display:none;">Shows two or more of you are into.</div>
+
   <!-- Upcoming/Past — never shown inside a herd (a herd's own page,
        whoever's list it is, quietly stays upcoming-only — see
        renderListView), only on the cross-group All Shows view, since
@@ -741,6 +748,7 @@
   const myShowsHeadingRow = document.getElementById('my-shows-heading-row');
   const listContent = document.getElementById('show-list-content');
   const herdMemberStrip = document.getElementById('herd-member-strip');
+  const turnoutSubhead = document.getElementById('turnout-subhead');
   const showTabs = document.getElementById('show-tabs');
   const showTabUpcomingBtn = document.getElementById('show-tab-upcoming');
   const showTabPastBtn = document.getElementById('show-tab-past');
@@ -1222,6 +1230,20 @@
     });
 
     lucide.createIcons({ root: drawerGroupList });
+
+    // Guard against a reported live bug: one herd row occasionally
+    // renders in a visibly different, thinner font than its siblings —
+    // Public Sans is loaded from Google Fonts with font-display: swap,
+    // and WebKit has a known issue where text written via innerHTML
+    // while that font is still downloading can get stuck on the
+    // fallback font even after the browser finishes loading it and
+    // repaints every other on-screen instance correctly. If fonts
+    // aren't confirmed ready yet at the moment this list is built,
+    // schedule exactly one follow-up re-render for once they are —
+    // document.fonts.ready only ever resolves once, so this can't loop.
+    if (document.fonts && document.fonts.status !== 'loaded') {
+      document.fonts.ready.then(() => renderGroupSwitcher(groups));
+    }
   }
 
   drawerNewGroupBtn.addEventListener('click', handleNewGroup);
@@ -1395,7 +1417,11 @@
 
     let html = `<button type="button" class="chip-strip-item${currentMemberId === person.id ? ' is-selected' : ''}" data-member="${person.id}">My Shows</button>`;
     if (quorumShows.length > 0) {
-      html += `<button type="button" class="chip-strip-item${currentMemberId === 'turnout' ? ' is-selected' : ''}" data-member="turnout">Turnout</button>`;
+      // Count badge — how many shows currently have 2+ people in,
+      // not who or how many people. Plain chip styling still applies
+      // to the button itself (see the file-header comment above); the
+      // badge gets its own small pill rather than any accent color.
+      html += `<button type="button" class="chip-strip-item${currentMemberId === 'turnout' ? ' is-selected' : ''}" data-member="turnout">Turnout <span class="chip-count-badge">${quorumShows.length}</span></button>`;
     }
     others.forEach((m) => {
       html += `<button type="button" class="chip-strip-item${currentMemberId === m.id ? ' is-selected' : ''}" data-member="${m.id}">${m.display_name}</button>`;
@@ -1417,6 +1443,7 @@
   // what a card's avatar row uses to decide whether to show itself at
   // all — see renderShowInteractiveBody.
   function renderFilteredShows(shows, responsesByShow, quorumShows) {
+    turnoutSubhead.style.display = currentMemberId === 'turnout' ? 'block' : 'none';
     if (currentMemberId === 'turnout') {
       renderListView(quorumShows, responsesByShow, 'No turnout yet.', undefined, 'turnout');
       return;
@@ -1982,6 +2009,7 @@
     document.getElementById('drawer-browse-btn').classList.remove('active');
     mainContent.style.display = '';
     herdMemberStrip.style.display = 'none'; // no single herd's member list applies here
+    turnoutSubhead.style.display = 'none'; // Turnout is a herd-page-only concept
     await renderGroupSwitcher(myGroups);
     closeDrawer();
 

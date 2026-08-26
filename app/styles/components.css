@@ -1503,6 +1503,45 @@ body.drawer-open {
   margin-top: var(--space-16);
 }
 
+/* Turnout's count badge — how many shows currently qualify, sitting
+   right in the chip so the number is visible without having to tap
+   in. Flat pill, no accent color (pink stays reserved for the overlap
+   marker on show cards specifically, not this chip — see the
+   file-header comment on renderMemberStrip in index.html); reads as a
+   quieter, dimmer version of the chip's own text rather than a loud
+   notification-style badge. Selected state (.is-selected) already
+   bumps the whole chip to --tint-active-strong/700 weight, which is
+   enough emphasis on its own — the badge doesn't need a second,
+   competing treatment when active. */
+.chip-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--space-16);
+  height: var(--space-16);
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--tint-active-strong);
+  font-family: var(--font-data);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* Turnout's own quiet sub-header — plain dim caption sitting between
+   the chip strip and the show list, only visible while Turnout is the
+   active chip (see renderFilteredShows). Same register as other small
+   meta text in the app (.group-switch-item-count etc.), not a second
+   heading — the herd's own name stays the one real heading throughout. */
+.list-subhead {
+  font-family: var(--font-body);
+  font-size: var(--text-meta-size);
+  color: var(--color-surface-text);
+  opacity: 0.6;
+  margin-top: var(--space-8);
+  margin-bottom: var(--space-16);
+}
+
 /* Translucent tint circle + plus — tap it to join this group (curious
    in "Heck yeah!", out in "Can't make it"). Only rendered for
    whichever group the current person hasn't already responded into —
