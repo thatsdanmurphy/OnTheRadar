@@ -900,122 +900,6 @@ body.drawer-open {
   display: block;
 }
 
-/* ---------- Zero-herd landing ("placemat") ---------- */
-
-/* Replaces the old bare "No groups yet." empty state for a brand-new
-   person with no herd yet — see renderZeroHerdLanding() in index.html.
-   Per direct feedback ("I think we can make a nice placemat for people
-   just landing here so it's not like a dead end... I want it to be
-   chunky"). */
-.zero-herd-landing {
-  padding-block: var(--space-32);
-}
-
-/* Stacked vertically by default (mobile) — per direct spec ("stacked
-   vertically on mobile but left to right on desktop"), switches to a
-   row of three equal columns at the same 1024px desktop breakpoint
-   grid.css already uses for its own row-of-three layout (.col-third). */
-.zero-herd-tiles {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-16);
-}
-
-@media (min-width: 1024px) {
-  .zero-herd-tiles {
-    flex-direction: row;
-  }
-}
-
-/* Chunky: a real surface card (same --color-surface/--radius language
-   as .add-show-card), generous --space-32 padding, and a big icon
-   circle up top rather than a small inline glyph — per direct
-   feedback ("I want it to be chunky though"). flex:1 so all three
-   stay equal width once they're in a row on desktop. */
-.zero-herd-tile {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: var(--space-8);
-  background: var(--color-surface);
-  color: var(--color-surface-text);
-  border: none;
-  border-radius: var(--radius);
-  padding: var(--space-32) var(--space-24);
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-
-.zero-herd-tile:hover {
-  background: var(--tint-active-strong);
-}
-
-.zero-herd-tile:focus-visible {
-  outline: 2px solid var(--color-focus-ring);
-  outline-offset: 2px;
-}
-
-/* Same --color-fill-dim recessed-circle language as
-   .show-list-empty-circle, sized down — a big, solid anchor for the
-   icon rather than a bare glyph floating in the card. The circle
-   itself grows and tips slightly on hover — transform only, its fill
-   never changes. Went through three passes on the color question
-   before landing here: a soft blended tint plus a gradient burst,
-   then a hard flat-color flicker on the circle, then moving the color
-   swap onto the glyph instead — all three are gone now. Per direct
-   feedback the hover shouldn't change color anywhere at all; on
-   inspection that's also the token-correct call, since tokens.css
-   reserves --color-accent/--color-logo-pink for the overlap marker
-   "nowhere else." Grow + rotate on the circle is the entire hover
-   treatment now, full stop — see .zero-herd-tile-icon svg below. */
-.zero-herd-tile-icon {
-  width: var(--space-64);
-  height: var(--space-64);
-  border-radius: 50%;
-  background: var(--color-fill-dim);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: var(--space-8);
-  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.zero-herd-tile:hover .zero-herd-tile-icon {
-  transform: scale(1.14) rotate(-8deg);
-}
-
-/* Used to flip the glyph to flat pink on hover (--color-logo-pink).
-   Cut per direct feedback — and worth cutting on the merits, not just
-   the ask: tokens.css is explicit that --color-accent/--color-logo-pink
-   is "overlap marker — nowhere else, not even the logo," so tinting an
-   unrelated icon pink on hover was quietly breaking the app's own rule
-   for itself. The glyph is plain --color-surface-text now, same as it
-   sits at rest — the circle's grow-and-rotate (above) is the entire
-   hover treatment, no color involved anywhere in it. */
-.zero-herd-tile-icon svg {
-  width: var(--space-32);
-  height: var(--space-32);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .zero-herd-tile-icon {
-    transition: none;
-  }
-
-  .zero-herd-tile:hover .zero-herd-tile-icon {
-    transform: none;
-  }
-}
-
-.zero-herd-tile-label {
-  font-family: var(--font-body);
-  font-weight: 700;
-  font-size: var(--text-sub-size);
-  line-height: var(--text-sub-lh);
-}
-
 /* ---------- Show list loading state ---------- */
 
 /* Initial-fetch state, not the empty state — see index.html's note on
@@ -1393,21 +1277,6 @@ body.drawer-open {
   white-space: nowrap;
 }
 
-/* Only rendered in the cross-group My Shows view (see
-   renderMyShowsView/renderListView in index.html) — a quiet reminder
-   of which group this card belongs to, since Herd Picks already has
-   that context from the group heading row above the list and this
-   view doesn't. Same meta-line treatment as the date badge, dimmer
-   still since it's secondary to it, not a peer. */
-.show-group-tag {
-  font-family: var(--font-data);
-  font-size: var(--text-meta-size);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  opacity: 0.45;
-  margin-top: var(--space-4);
-}
-
 /* Used to also hold a quiet arrow opening a detail page — cut along
    with the detail page itself (not needed yet, see component-map.md).
    Kept as its own row wrapper in case something else joins the title
@@ -1539,6 +1408,14 @@ body.drawer-open {
   margin-top: var(--space-16);
 }
 
+/* Own-list card with nobody joined yet — no avatar row to line the
+   delete button up against (see renderListView), so it gets this
+   plain right-aligned row of its own instead of drifting to the
+   card's default left edge. */
+.show-card-delete-only {
+  justify-content: flex-end;
+}
+
 .show-card-avatars .avatar-dot {
   width: var(--space-40);
   height: var(--space-40);
@@ -1620,28 +1497,10 @@ body.drawer-open {
    between "My Shows," each herd member's own personal list, and — once
    any show in the herd actually has 2+ people in on it — a Turnout
    chip that only exists at that point (see renderMemberStrip). Hidden
-   outright on the cross-group All Shows view, Browse, and the zero-herd
-   landing, all of which live outside a single herd's context. */
+   outright on the cross-group All Shows view and Browse, both of which
+   live outside a single herd's context. */
 #herd-member-strip {
   margin-top: var(--space-16);
-}
-
-/* Turnout is the one chip that's actually reporting overlap, not just
-   switching whose list you're looking at — a deliberate, narrow use of
-   the accent pink (see tokens.css: "overlap marker — nowhere else"),
-   the same way "Just added" earned its own documented exception to
-   --color-logo-green's scope. Outline-only at rest so it doesn't read
-   as a permanent "something's wrong here" alert; fills solid pink only
-   once selected, same weight-vs-color language the other chips use for
-   "selected," just carrying the one color that's allowed to mean this. */
-.chip-strip-item.chip-turnout {
-  border-color: var(--color-accent);
-  color: var(--color-accent);
-}
-.chip-strip-item.chip-turnout.is-selected {
-  background: var(--color-accent);
-  border-color: transparent;
-  color: var(--color-text-inverse);
 }
 
 /* Translucent tint circle + plus — tap it to join this group (curious

@@ -442,15 +442,15 @@
        shows" redesign (see decision log). Everyone in a herd tracks
        their own personal list; this is how you switch whose list
        you're looking at. First chip is always your own ("My Shows"),
-       then one chip per other member (always present, even with
-       nothing tracked yet — the nav-never-fully-empty rule applies
-       here too), then a Turnout chip that only exists once a show in
-       this herd actually has 2+ people in on it — see
-       renderMemberStrip. Only ever shown on a herd's own page; hidden
-       on the cross-group All Shows view, Browse, and the zero-herd
-       landing (see renderMyShowsView, afterPerson, the leave-herd
-       handler). Reuses .chip-strip/.chip-strip-item from browse.css
-       rather than a second horizontal-chips pattern. -->
+       then — right after it, second position — a Turnout chip that
+       only exists once a show in this herd actually has 2+ people in
+       on it, then one chip per other member (always present, even
+       with nothing tracked yet — the nav-never-fully-empty rule
+       applies here too) — see renderMemberStrip. Only ever shown on a
+       herd's own page; hidden on the cross-group All Shows view and
+       Browse (see renderMyShowsView, afterPerson). Reuses
+       .chip-strip/.chip-strip-item from browse.css rather than a
+       second horizontal-chips pattern. -->
   <div class="chip-strip" id="herd-member-strip" style="display:none;"></div>
 
   <!-- Upcoming/Past — never shown inside a herd (a herd's own page,
@@ -1107,16 +1107,15 @@
 
     closeGroupModal();
     myGroups = myGroups.filter((g) => g.id !== currentGroup.id);
+    currentGroup = null;
+    currentGroupId = null;
 
     if (myGroups.length === 0) {
-      currentGroup = null;
-      currentGroupId = null;
-      renderGroupSwitcher(myGroups);
-      groupHeadingRow.style.display = 'none';
-      addShowCard.style.display = 'none';
-      showTabs.style.display = 'none';
-      herdMemberStrip.style.display = 'none';
-      renderZeroHerdLanding(document.getElementById('show-list-content'));
+      // Leaving your last herd can't leave you herdless — see
+      // ensureHerdExists().
+      const solo = await ensureHerdExists();
+      if (!solo) return;
+      await selectGroup(solo);
       return;
     }
 
@@ -1330,8 +1329,7 @@
     // on a page whose whole point is "just my shows, no herd stuff" —
     // per direct feedback, that action lives in exactly one place now,
     // the nav drawer's own "Add a herd" button (always present, see
-    // #group-bar) and the zero-herd landing's "Start a Herd" tile.
-    // The moment a second herd exists this reverts to the normal name
+    // #group-bar). The moment a second herd exists this reverts to the normal name
     // + Share/View treatment automatically.
     const isSoloHerd = myGroups.length === 1;
     groupHeadingName.textContent = isSoloHerd ? 'My Shows' : group.name;
@@ -1379,24 +1377,29 @@
     return (responsesByShow[show.id] || []).some((r) => r.person_id === memberId && r.status === 'curious');
   }
 
-  // Builds the "My Shows" / [each member] / Turnout chip strip for the
+  // Builds the "My Shows" / Turnout / [each member] chip strip for the
   // current herd — reuses .chip-strip/.chip-strip-item from browse.js's
-  // own filter strips (same single-select tap-to-switch interaction).
-  // Every member always gets a chip, even with nothing tracked yet
-  // (the nav-never-fully-empty rule); Turnout only exists once
-  // quorumShows is non-empty. Re-run on every renderCurrentView, same
-  // as renderGroupSwitcher, so it always reflects the latest data.
+  // own filter strips (same single-select tap-to-switch interaction,
+  // same plain visual treatment — no special color; Turnout is a chip
+  // like any other, not an alert). Every member always gets a chip,
+  // even with nothing tracked yet (the nav-never-fully-empty rule);
+  // Turnout only exists once quorumShows is non-empty, and sits second —
+  // right after My Shows, ahead of individual members — since it's the
+  // one chip that's actually reporting something happening, not just
+  // switching whose list you're looking at. Re-run on every
+  // renderCurrentView, same as renderGroupSwitcher, so it always
+  // reflects the latest data.
   function renderMemberStrip(quorumShows) {
     herdMemberStrip.style.display = 'flex';
     const others = groupMembers.filter((m) => m.id !== person.id);
 
     let html = `<button type="button" class="chip-strip-item${currentMemberId === person.id ? ' is-selected' : ''}" data-member="${person.id}">My Shows</button>`;
+    if (quorumShows.length > 0) {
+      html += `<button type="button" class="chip-strip-item${currentMemberId === 'turnout' ? ' is-selected' : ''}" data-member="turnout">Turnout</button>`;
+    }
     others.forEach((m) => {
       html += `<button type="button" class="chip-strip-item${currentMemberId === m.id ? ' is-selected' : ''}" data-member="${m.id}">${m.display_name}</button>`;
     });
-    if (quorumShows.length > 0) {
-      html += `<button type="button" class="chip-strip-item chip-turnout${currentMemberId === 'turnout' ? ' is-selected' : ''}" data-member="turnout">Turnout</button>`;
-    }
     herdMemberStrip.innerHTML = html;
 
     herdMemberStrip.querySelectorAll('[data-member]').forEach((btn) => {
@@ -1421,9 +1424,12 @@
     const viewingSelf = currentMemberId === person.id;
     const visible = shows.filter((s) => isOnMemberList(s, currentMemberId, responsesByShow));
     const member = groupMembers.find((m) => m.id === currentMemberId);
+    // "On the radar" nods back to the app's original name — tighter
+    // than the first draft ("X hasn't added anything yet.") and reads
+    // as a real sentence rather than an apology.
     const emptyMessage = viewingSelf
       ? 'No shows yet.'
-      : `${member ? member.display_name : 'They'} haven't added anything yet.`;
+      : `Nothing on ${member ? member.display_name + "'s" : 'their'} radar yet.`;
     renderListView(visible, responsesByShow, emptyMessage, undefined, viewingSelf ? 'own' : 'other');
   }
 
@@ -1826,101 +1832,25 @@
     container.innerHTML = `<div class="show-list-empty-circle"><div class="show-list-empty-icon">${EMPTY_STATE_ICON}</div><div class="show-list-empty-message">${message}</div></div>`;
   }
 
-  // The zero-herd landing — replaces the old bare "No groups yet."
-  // empty state for a brand-new person with no herd. Per direct
-  // feedback ("people can just track shows alone too... I think we can
-  // make a nice placemat... so it's not like a dead end"), three equal,
-  // chunky actions rather than a passive icon+message: Browse Venues
-  // (already built, but previously unreachable at zero herds — it only
-  // ever lived inside #group-bar, which stays hidden until you have at
-  // least one herd; this is also the fix for that long-standing "Revisit
-  // if" in the decision log), Add a Show, and Start a Herd.
-  //
-  // Reworked per direct feedback on the first version ("this is the
-  // first thing people are going to see so it's got to be slick"): the
-  // explanatory intro sentence is gone (the three tiles' own labels
-  // already say what each does — the sentence was just narrating them).
-  // Two follow-up ideas were tried and both cut again the same day: a
-  // quick-nav row (My Shows/Browse Venues/Add Herd) above the tiles,
-  // cut per direct feedback ("thats basically a double navigation")
-  // since it led to the exact same three destinations as the tiles
-  // right below it; and a poster-scale second wordmark above the
-  // tiles, cut per direct feedback ("there are still two instances of
-  // gig herd... there should only be one... if its too complicated
-  // lets just remove the second bigger instance and keep it simple")
-  // — the header's own wordmark right above this content already does
-  // that job, a second one two inches below it was pure repetition,
-  // not a real hero moment. A later pass ("this doesnt feel designed...
-  // less text would do it") cut the one-line sub-copy under each label
-  // too ("Find a venue by size or region" etc.) — the icon + bold label
-  // alone already reads clearly (Browse Venues, Add a Show, Start a
-  // Herd aren't ambiguous actions), so the sub-line was one more
-  // narrating sentence in miniature, same pattern as the intro line
-  // that got cut first. Landed on the simplest version: three tiles,
-  // icon + label only, no intro, no second logo, no sub-copy.
-  // Type/color stay within the existing scale throughout: label
-  // uses --text-sub-size/700 weight (the same card-title register
-  // --show-title/--venue-name use elsewhere), icon glyph is plain
-  // --color-surface-text at rest with no color change on hover — see
-  // .zero-herd-tile-icon svg in components.css for why (tokens.css
-  // reserves pink for the overlap marker specifically, "nowhere else,"
-  // so it doesn't belong on a hover state here either). Nothing here
-  // introduces a new size, weight, or color outside what's already
-  // named in tokens.css.
-  function renderZeroHerdLanding(container) {
-    container.className = 'zero-herd-landing';
-    container.innerHTML = `
-      <div class="zero-herd-tiles">
-        <button type="button" class="zero-herd-tile" id="zero-herd-browse">
-          <span class="zero-herd-tile-icon"><i data-lucide="map-pin"></i></span>
-          <span class="zero-herd-tile-label">Browse Venues</span>
-        </button>
-        <button type="button" class="zero-herd-tile" id="zero-herd-add-show">
-          <span class="zero-herd-tile-icon"><i data-lucide="music"></i></span>
-          <span class="zero-herd-tile-label">Add a Show</span>
-        </button>
-        <button type="button" class="zero-herd-tile" id="zero-herd-start-herd">
-          <span class="zero-herd-tile-icon"><i data-lucide="users"></i></span>
-          <span class="zero-herd-tile-label">Start a Herd</span>
-        </button>
-      </div>
-    `;
-    lucide.createIcons({ root: container });
-
-    document.getElementById('zero-herd-browse').addEventListener('click', () => {
-      // Reuses the drawer's own Browse Venues button and its existing
-      // click handler (see scripts/browse.js) rather than duplicating
-      // that logic here — this button was never reachable at zero
-      // herds before now, but its wiring already does everything
-      // needed (open Browse, close the drawer if it happened to be
-      // open) once actually triggered.
-      document.getElementById('drawer-browse-btn').click();
-    });
-
-    document.getElementById('zero-herd-add-show').addEventListener('click', handleSoloAddShow);
-
-    document.getElementById('zero-herd-start-herd').addEventListener('click', () => {
-      openNewGroupModal();
-    });
-  }
-
-  // "Add a Show" from zero herds — per direct product discussion (does
-  // solo tracking drift from the app's own mission of overlap being the
-  // signal? see MISSION.md), the answer landed on: no, because every
-  // herd already starts as one person before anyone else joins — this
-  // doesn't add a new "solo mode," it just skips the up-front naming
-  // step so a brand-new person can start adding shows immediately, in
-  // the exact same herd-of-one shape any herd begins in. Auto-creates a
-  // herd named after them (editable later, same rename path every herd
-  // already has) and drops straight into the real Add Show flow.
-  async function handleSoloAddShow() {
+  // Zero-herd landing (the old three-tile Browse/Add Show/Start Herd
+  // placemat) is gone — per direct feedback ("I just dont like that
+  // state where we have the three buttons. its dumb"), having a herd
+  // is no longer optional. Every person always has at least one herd,
+  // defaulting to a herd-of-one presented as "My Shows" (see the
+  // isSoloHerd branch in selectGroup) — so there's nothing left for a
+  // zero-groups state to show. ensureHerdExists() is what guarantees
+  // that: called anywhere myGroups could otherwise end up empty (fresh
+  // person with no invite link, or leaving your last remaining herd),
+  // it silently creates a default-named herd (editable later, same
+  // rename path every herd already has) rather than presenting a
+  // choice screen.
+  async function ensureHerdExists() {
     const defaultName = `${person.display_name}'s Shows`;
     const group = await createGroup(person.id, defaultName);
-    if (!group) return;
-    trackEvent('group_created', { group_id: group.id, via: 'solo_add_show' });
+    if (!group) return null;
+    trackEvent('group_created', { group_id: group.id, via: 'auto_solo' });
     myGroups = await getMyGroups(person.id);
-    await selectGroup(group);
-    openAddShowModal();
+    return group;
   }
 
   // onChange defaults to the single-context refresh every caller
@@ -1969,17 +1899,6 @@
 
       card.appendChild(buildCardTopRow(show, mine));
 
-      // Only set in the cross-group All Shows view (see
-      // renderMyShowsView) — a quiet reminder of which group this show
-      // actually belongs to, since there's no single group heading
-      // doing that job here the way there is inside a herd.
-      if (show._groupName) {
-        const tag = document.createElement('div');
-        tag.className = 'show-group-tag';
-        tag.textContent = show._groupName;
-        card.appendChild(tag);
-      }
-
       const body = document.createElement('div');
       card.appendChild(body);
 
@@ -1993,17 +1912,56 @@
       // Delete lives inline at the end of the avatar row — lined up
       // with the avatar dots/ghost-add circle themselves, not just the
       // row as a whole (see buildDeleteActionSlot's own comment for
-      // why that distinction needed its own wrapper). Falls back to
-      // the card itself when there's no avatar row at all (an own-list
-      // card nobody's joined yet — see renderShowInteractiveBody).
+      // why that distinction needed its own wrapper). When there's no
+      // avatar row at all (an own-list card nobody's joined yet — see
+      // renderShowInteractiveBody), that alignment trick has nothing to
+      // line up against, so it gets its own plain right-aligned row
+      // instead — still bottom-right on the card, not stuck to the
+      // card's own default (left) flow.
       if (show.created_by === person.id) {
         const avatarsRow = body.querySelector('.show-card-avatars');
-        const target = avatarsRow || card;
-        target.appendChild(buildDeleteActionSlot(show, refresh));
+        if (avatarsRow) {
+          avatarsRow.appendChild(buildDeleteActionSlot(show, refresh));
+        } else {
+          const deleteOnlyRow = document.createElement('div');
+          deleteOnlyRow.className = 'show-card-avatars show-card-delete-only';
+          deleteOnlyRow.appendChild(buildDeleteButton(show, refresh));
+          body.appendChild(deleteOnlyRow);
+        }
       }
 
       content.appendChild(card);
     });
+  }
+
+  // Collapses shows that match OTR.findMatchingShow's rule (same
+  // normalized title + date, venue only compared when both sides have
+  // one) down to a single canonical row, unioning every matched show's
+  // responses onto that row's id in responsesByShow (deduped by
+  // person — the same person could in principle be in more than one of
+  // the matched herds and show up on more than one of the rows). Only
+  // used by the cross-group All Shows view (see renderMyShowsView);
+  // a single herd's own list never needs this, since findMatchingShow
+  // already prevents the duplicate from being created there in the
+  // first place (see submitShowDirectly).
+  function mergeAcrossHerds(shows, responsesByShow) {
+    const canonical = [];
+    shows.forEach((show) => {
+      const match = OTR.findMatchingShow(canonical, show);
+      if (!match) {
+        canonical.push(show);
+        return;
+      }
+      const combined = responsesByShow[match.id] || [];
+      const seenPeople = new Set(combined.map((r) => r.person_id));
+      (responsesByShow[show.id] || []).forEach((r) => {
+        if (seenPeople.has(r.person_id)) return;
+        seenPeople.add(r.person_id);
+        combined.push(r);
+      });
+      responsesByShow[match.id] = combined;
+    });
+    return canonical;
   }
 
   // Cross-group "My Shows" — every show, in every group this person
@@ -2036,16 +1994,28 @@
     );
 
     const mergedResponses = {};
-    const myShows = [];
-    perGroup.forEach(({ group, shows, responsesByShow }) => {
+    let myShows = [];
+    perGroup.forEach(({ shows, responsesByShow }) => {
       Object.assign(mergedResponses, responsesByShow);
       shows.forEach((s) => {
         const mine = (responsesByShow[s.id] || []).find(
           (r) => r.person_id === person.id && r.status === 'curious'
         );
-        if (mine) myShows.push(Object.assign({ _groupName: group.name }, s));
+        if (mine) myShows.push(s);
       });
     });
+    // The same real-world show can exist as two independent rows if it
+    // was added separately in two different herds — Add Show's own
+    // duplicate-join only ever checks within one herd at a time (see
+    // findMatchingShow's own scope note), so those never got caught
+    // there. Collapse them into one card here instead, reusing the
+    // exact same matching rule (title + date, venue only when both
+    // sides have one) rather than a second definition of "same show."
+    // No herd tag on the result anymore either — once a card can
+    // represent more than one herd at once, naming just one of them
+    // stopped being accurate, so it's just gone rather than picking
+    // one arbitrarily.
+    myShows = mergeAcrossHerds(myShows, mergedResponses);
     myShows.sort((a, b) => (a.show_date || '').localeCompare(b.show_date || ''));
 
     // mode omitted — behaves like 'own' (avatar row hidden until 2+
@@ -2214,11 +2184,12 @@
     myGroups = await getMyGroups(person.id);
 
     if (myGroups.length === 0) {
-      renderGroupSwitcher(myGroups);
-      groupHeadingRow.style.display = 'none';
-      showTabs.style.display = 'none';
-      herdMemberStrip.style.display = 'none';
-      renderZeroHerdLanding(document.getElementById('show-list-content'));
+      // Brand-new person, no invite link, didn't name a herd on the
+      // name gate — herds are required now, so give them the default
+      // herd-of-one instead of a choice screen. See ensureHerdExists().
+      const solo = await ensureHerdExists();
+      if (!solo) return;
+      await selectGroup(solo);
       return;
     }
 
