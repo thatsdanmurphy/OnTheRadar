@@ -1787,27 +1787,22 @@
   // Reworked per direct feedback on the first version ("this is the
   // first thing people are going to see so it's got to be slick"): the
   // explanatory intro sentence is gone (the three tiles' own labels/subs
-  // already say what each does — the sentence was just narrating them),
-  // a poster-scale wordmark now sits above the tiles instead of an empty
-  // gap under the header, and a small quick-nav row (My Shows/Browse
-  // Venues/Add Herd) fills what used to be genuinely empty space at the
-  // very top of this first-run screen ("the nav can't be empty like
-  // that"). The quick-nav and the tiles below both lead to the same
-  // three destinations — that's deliberate, not an oversight: the nav
-  // is fast utility access for someone who already knows what they
-  // want, the tiles are the slower, explained-with-a-subline version for
-  // someone who doesn't yet.
+  // already say what each does — the sentence was just narrating them).
+  // Two follow-up ideas were tried and both cut again the same day: a
+  // quick-nav row (My Shows/Browse Venues/Add Herd) above the tiles,
+  // cut per direct feedback ("thats basically a double navigation")
+  // since it led to the exact same three destinations as the tiles
+  // right below it; and a poster-scale second wordmark above the
+  // tiles, cut per direct feedback ("there are still two instances of
+  // gig herd... there should only be one... if its too complicated
+  // lets just remove the second bigger instance and keep it simple")
+  // — the header's own wordmark right above this content already does
+  // that job, a second one two inches below it was pure repetition,
+  // not a real hero moment. Landed on the simplest version: just the
+  // three tiles, no intro, no second logo.
   function renderZeroHerdLanding(container) {
     container.className = 'zero-herd-landing';
     container.innerHTML = `
-      <nav class="zero-herd-quicknav" aria-label="Quick links">
-        <button type="button" class="zero-herd-quicknav-btn" id="zero-herd-nav-my-shows">My Shows</button>
-        <button type="button" class="zero-herd-quicknav-btn" id="zero-herd-nav-browse">Browse Venues</button>
-        <button type="button" class="zero-herd-quicknav-btn" id="zero-herd-nav-add-herd">Add Herd</button>
-      </nav>
-      <div class="zero-herd-hero">
-        <div class="zero-herd-wordmark"><span class="wordmark-gig">Gig</span><span class="wordmark-herd">Herd</span></div>
-      </div>
       <div class="zero-herd-tiles">
         <button type="button" class="zero-herd-tile" id="zero-herd-browse">
           <span class="zero-herd-tile-icon"><i data-lucide="map-pin"></i></span>
@@ -1827,20 +1822,6 @@
       </div>
     `;
     lucide.createIcons({ root: container });
-
-    // Reuses the exact same click handlers the drawer's own nav
-    // buttons/tiles below already have (see each one's own comment) —
-    // the quick-nav is just a faster way to reach the same three
-    // destinations, not a separate set of behaviors to maintain.
-    document.getElementById('zero-herd-nav-my-shows').addEventListener('click', () => {
-      drawerMyShowsBtn.click();
-    });
-    document.getElementById('zero-herd-nav-browse').addEventListener('click', () => {
-      document.getElementById('drawer-browse-btn').click();
-    });
-    document.getElementById('zero-herd-nav-add-herd').addEventListener('click', () => {
-      openNewGroupModal();
-    });
 
     document.getElementById('zero-herd-browse').addEventListener('click', () => {
       // Reuses the drawer's own Browse Venues button and its existing
