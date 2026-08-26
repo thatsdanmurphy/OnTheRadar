@@ -1605,6 +1605,45 @@ body.drawer-open {
   margin-left: 0;
 }
 
+/* Your own filled dot in "Into it," when you're not the show's
+   creator, doubles as a leave button — tap it again to un-join (see
+   removeResponse in scripts/shows.js, wired from buildResponseGroup's
+   onLeave param). The creator's dot never gets this class; their
+   equivalent action is deleting the show, not un-joining it. */
+.avatar-dot-leavable {
+  cursor: pointer;
+}
+
+/* Herd member/turnout chip strip — reuses .chip-strip/.chip-strip-item
+   from browse.css (built for Browse's own filter strips) rather than
+   inventing a second horizontal-scroll-chips pattern. Lets you switch
+   between "My Shows," each herd member's own personal list, and — once
+   any show in the herd actually has 2+ people in on it — a Turnout
+   chip that only exists at that point (see renderMemberStrip). Hidden
+   outright on the cross-group All Shows view, Browse, and the zero-herd
+   landing, all of which live outside a single herd's context. */
+#herd-member-strip {
+  margin-top: var(--space-16);
+}
+
+/* Turnout is the one chip that's actually reporting overlap, not just
+   switching whose list you're looking at — a deliberate, narrow use of
+   the accent pink (see tokens.css: "overlap marker — nowhere else"),
+   the same way "Just added" earned its own documented exception to
+   --color-logo-green's scope. Outline-only at rest so it doesn't read
+   as a permanent "something's wrong here" alert; fills solid pink only
+   once selected, same weight-vs-color language the other chips use for
+   "selected," just carrying the one color that's allowed to mean this. */
+.chip-strip-item.chip-turnout {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+.chip-strip-item.chip-turnout.is-selected {
+  background: var(--color-accent);
+  border-color: transparent;
+  color: var(--color-text-inverse);
+}
+
 /* Translucent tint circle + plus — tap it to join this group (curious
    in "Heck yeah!", out in "Can't make it"). Only rendered for
    whichever group the current person hasn't already responded into —

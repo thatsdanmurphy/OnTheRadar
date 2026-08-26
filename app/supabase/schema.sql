@@ -55,17 +55,19 @@ create table shows (
   created_at timestamptz not null default now()
 );
 
--- One row per person per show: curious / out. Only 'curious' counts
--- toward the overlap indicator (app logic, not enforced here) — see
--- the response-states decision (originally three-way with 'going',
--- cut down to two after "Got tickets" turned out not to map cleanly
--- onto how a group actually buys tickets — sometimes together,
--- sometimes separately, always off-platform).
+-- One row per person per show: it means "I'm in." No decline state
+-- exists anymore — see 2026-08-26-drop-out-status.sql. Originally
+-- three-way (curious/going/out), cut to two (curious/out) once "Got
+-- tickets" turned out not to map onto how a group actually buys
+-- tickets, then cut to one once 'out' turned out to carry real social
+-- pressure of its own (each cut is in the decision log). A row's mere
+-- existence is the whole signal now; not being in a show is simply not
+-- having a row, not a second status.
 create table responses (
   id uuid primary key default gen_random_uuid(),
   show_id uuid not null references shows(id) on delete cascade,
   person_id uuid not null references people(id) on delete cascade,
-  status text not null check (status in ('curious', 'out')),
+  status text not null check (status in ('curious')),
   updated_at timestamptz not null default now(),
   unique (show_id, person_id)
 );

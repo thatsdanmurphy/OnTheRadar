@@ -255,9 +255,15 @@
          Only the Herds label + list (immediately below) hide themselves
          when there are no herds yet — see renderGroupSwitcher, which
          toggles #drawer-herds-section based on group count. -->
+    <!-- Renamed from "My Shows" to "All Shows" — every herd now has
+         its own "My Shows" chip (your personal list within that one
+         herd, see #herd-member-strip), so this nav item needed a
+         different name for the cross-group aggregate specifically.
+         Same view underneath (renderMyShowsView), same id/handlers —
+         copy-only change. -->
     <button type="button" class="drawer-my-shows-btn" id="drawer-my-shows-btn">
       <span class="drawer-my-shows-text">
-        <span class="drawer-my-shows-label">My Shows</span>
+        <span class="drawer-my-shows-label">All Shows</span>
         <span class="drawer-my-shows-sub">Everything you've marked, across your herds</span>
       </span>
       <!-- Same --space-32 circular hit-area as .drawer-group-share
@@ -354,11 +360,11 @@
     </div>
   </div>
 
-  <!-- My Shows — cross-group view, reuses .group-heading-row's h2
+  <!-- All Shows — cross-group view, reuses .group-heading-row's h2
        styling (same visual weight as "which group am I in") but with
        no actions, since there's no single group here to share/view. -->
   <div class="group-heading-row" id="my-shows-heading-row" style="display:none;">
-    <h2 class="group-heading-name">My Shows</h2>
+    <h2 class="group-heading-name">All Shows</h2>
   </div>
 
   <!-- Add show — one card, always, full width again now that the
@@ -432,6 +438,27 @@
        call renderListView — so it lives here in #main-content rather
        than inside either heading row above. Hidden until a group (or
        My Shows) is actually rendered; see selectGroup/renderMyShowsView. -->
+  <!-- Herd member / Turnout chip strip — the "watch each other's
+       shows" redesign (see decision log). Everyone in a herd tracks
+       their own personal list; this is how you switch whose list
+       you're looking at. First chip is always your own ("My Shows"),
+       then one chip per other member (always present, even with
+       nothing tracked yet — the nav-never-fully-empty rule applies
+       here too), then a Turnout chip that only exists once a show in
+       this herd actually has 2+ people in on it — see
+       renderMemberStrip. Only ever shown on a herd's own page; hidden
+       on the cross-group All Shows view, Browse, and the zero-herd
+       landing (see renderMyShowsView, afterPerson, the leave-herd
+       handler). Reuses .chip-strip/.chip-strip-item from browse.css
+       rather than a second horizontal-chips pattern. -->
+  <div class="chip-strip" id="herd-member-strip" style="display:none;"></div>
+
+  <!-- Upcoming/Past — never shown inside a herd (a herd's own page,
+       whoever's list it is, quietly stays upcoming-only — see
+       renderListView), only on the cross-group All Shows view, since
+       that's the one place shows from every herd mix together and
+       "who went" nostalgia genuinely needs its own tab rather than a
+       silent filter. -->
   <div class="show-tabs" id="show-tabs" style="display:none;">
     <button type="button" class="show-tab is-active" id="show-tab-upcoming">Upcoming</button>
     <button type="button" class="show-tab" id="show-tab-past">Past</button>
@@ -669,7 +696,7 @@
 <script src="scripts/shows.js"></script>
 <script>
   const { getPerson, createPerson, getMyGroups, getGroupMembers, getGroupMemberCounts, createGroup, getGroupBySlug, joinGroup, leaveGroup, updatePersonColor, updatePersonName, updateGroupName } = OTR;
-  const { getShowsForGroup, getResponsesForShows, setResponse, createShow, searchShows, searchVenues } = OTR;
+  const { getShowsForGroup, getResponsesForShows, setResponse, removeResponse, createShow, searchShows, searchVenues } = OTR;
 
   // Thin GA4 wrapper — every product event in the app funnels through
   // here rather than calling gtag() directly, so there's one place to
@@ -713,6 +740,7 @@
   const groupViewBtn = document.getElementById('group-view-btn');
   const myShowsHeadingRow = document.getElementById('my-shows-heading-row');
   const listContent = document.getElementById('show-list-content');
+  const herdMemberStrip = document.getElementById('herd-member-strip');
   const showTabs = document.getElementById('show-tabs');
   const showTabUpcomingBtn = document.getElementById('show-tab-upcoming');
   const showTabPastBtn = document.getElementById('show-tab-past');
@@ -1087,6 +1115,7 @@
       groupHeadingRow.style.display = 'none';
       addShowCard.style.display = 'none';
       showTabs.style.display = 'none';
+      herdMemberStrip.style.display = 'none';
       renderZeroHerdLanding(document.getElementById('show-list-content'));
       return;
     }
@@ -1208,13 +1237,15 @@
   // tapping something doesn't silently snap back to Upcoming.
   let currentShowTab = 'upcoming';
 
-  // Which collapsed "not going" cards someone has manually expanded
-  // back open — a purely local view-state toggle, independent of
-  // their actual response (still "out" underneath; expanding just
-  // peeks at the full card again, see renderShowCollapsedOutBody/
-  // buildCardTopRow's onCollapse). Reset alongside currentShowTab on
-  // a real context switch, same reasoning.
-  let expandedShowIds = new Set();
+  // Whose personal list is showing inside the current herd — either a
+  // person id (your own or another member's), or the literal string
+  // 'turnout' for the quorum-gated Turnout chip. Reset to your own id
+  // on a real context switch (a different herd — see selectGroup),
+  // same reasoning currentShowTab uses. groupMembers is the current
+  // herd's member list, refreshed alongside it in renderCurrentView —
+  // renderMemberStrip and the per-chip filtering below both read it.
+  let currentMemberId = null;
+  let groupMembers = [];
 
   function todayDateStr() {
     const d = new Date();
@@ -1275,7 +1306,7 @@
     currentGroup = group;
     currentGroupId = group.id;
     currentShowTab = 'upcoming';
-    expandedShowIds = new Set();
+    currentMemberId = person.id; // default to your own personal list
     myShowsHeadingRow.style.display = 'none';
     groupBar.style.display = 'block';
     drawerMyShowsBtn.classList.remove('active');
@@ -1330,29 +1361,105 @@
     return { shows, responsesByShow };
   }
 
-  // The full group list, unfiltered — used to also branch on a
-  // Herd Picks / My Shows tab (a client-side filter to "shows I've
-  // marked curious," scoped to just this group), cut once the
-  // cross-group My Shows view (see renderMyShowsView) covered the
-  // same need without the one-group limitation. Add Show is always
-  // visible here now too — it used to hide on the My Shows tab.
-  async function renderCurrentView(groupId) {
-    const { shows, responsesByShow } = await loadGroupData(groupId);
-    addShowCard.style.display = 'block';
-    renderListView(shows, responsesByShow, 'No shows yet.');
+  // A show counts toward Turnout once 2+ people are actually in on
+  // it — same threshold "Into it" itself uses to decide whether to
+  // show up at all on your own list (see renderShowInteractiveBody).
+  // Filters on status defensively — see the matching comment in
+  // renderShowInteractiveBody.
+  function computeQuorumShows(shows, responsesByShow) {
+    return shows.filter((s) => (responsesByShow[s.id] || []).filter((r) => r.status === 'curious').length >= 2);
   }
 
-  // One labeled avatar group — reused for both "Into it" (curious)
-  // and "Can't make it" (out), same shape either way: a small header
-  // label, everyone in that group except me, and a fixed slot for my
-  // own status that's either a ghost "+" (tap to join this list) or my
-  // filled dot (if I'm already in it). Symmetric by design: whichever
-  // list I haven't joined shows its ghost, so I can always switch.
-  // Clicking anywhere else on the group (label, avatars, my own dot)
-  // opens a modal with everyone in it, name + avatar — the ghost "+"
-  // stops that click from bubbling up, since tapping it is a different
-  // action (joining), not "show me who's here."
-  function buildResponseGroup(label, peopleExceptMe, amIIn, joinAriaLabel, onJoin, allPeople) {
+  // "Is this show on person X's personal list" — true if they created
+  // it (every herd starts as a herd of one; the creator is always on
+  // their own list) or if they've joined it (a responses row for
+  // them — see submitShowDirectly/buildResponseGroup's onJoin).
+  function isOnMemberList(show, memberId, responsesByShow) {
+    if (show.created_by === memberId) return true;
+    return (responsesByShow[show.id] || []).some((r) => r.person_id === memberId && r.status === 'curious');
+  }
+
+  // Builds the "My Shows" / [each member] / Turnout chip strip for the
+  // current herd — reuses .chip-strip/.chip-strip-item from browse.js's
+  // own filter strips (same single-select tap-to-switch interaction).
+  // Every member always gets a chip, even with nothing tracked yet
+  // (the nav-never-fully-empty rule); Turnout only exists once
+  // quorumShows is non-empty. Re-run on every renderCurrentView, same
+  // as renderGroupSwitcher, so it always reflects the latest data.
+  function renderMemberStrip(quorumShows) {
+    herdMemberStrip.style.display = 'flex';
+    const others = groupMembers.filter((m) => m.id !== person.id);
+
+    let html = `<button type="button" class="chip-strip-item${currentMemberId === person.id ? ' is-selected' : ''}" data-member="${person.id}">My Shows</button>`;
+    others.forEach((m) => {
+      html += `<button type="button" class="chip-strip-item${currentMemberId === m.id ? ' is-selected' : ''}" data-member="${m.id}">${m.display_name}</button>`;
+    });
+    if (quorumShows.length > 0) {
+      html += `<button type="button" class="chip-strip-item chip-turnout${currentMemberId === 'turnout' ? ' is-selected' : ''}" data-member="turnout">Turnout</button>`;
+    }
+    herdMemberStrip.innerHTML = html;
+
+    herdMemberStrip.querySelectorAll('[data-member]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        if (btn.dataset.member === currentMemberId) return;
+        currentMemberId = btn.dataset.member;
+        currentShowTab = 'upcoming';
+        renderCurrentView(currentGroupId);
+      });
+    });
+  }
+
+  // Filters this herd's shows down to whichever chip is selected, then
+  // hands off to renderListView. 'own' mode (your own chip) is also
+  // what a card's avatar row uses to decide whether to show itself at
+  // all — see renderShowInteractiveBody.
+  function renderFilteredShows(shows, responsesByShow, quorumShows) {
+    if (currentMemberId === 'turnout') {
+      renderListView(quorumShows, responsesByShow, 'No turnout yet.', undefined, 'turnout');
+      return;
+    }
+    const viewingSelf = currentMemberId === person.id;
+    const visible = shows.filter((s) => isOnMemberList(s, currentMemberId, responsesByShow));
+    const member = groupMembers.find((m) => m.id === currentMemberId);
+    const emptyMessage = viewingSelf
+      ? 'No shows yet.'
+      : `${member ? member.display_name : 'They'} haven't added anything yet.`;
+    renderListView(visible, responsesByShow, emptyMessage, undefined, viewingSelf ? 'own' : 'other');
+  }
+
+  // The full group list, unfiltered — loaded once per render, then
+  // split three ways: the member strip (renderMemberStrip), and
+  // whichever chip is currently selected (renderFilteredShows). Add
+  // Show is always visible here regardless of which chip is active —
+  // it always adds to *your own* list no matter whose you're looking
+  // at (see submitShowDirectly, which snaps back to My Shows after).
+  async function renderCurrentView(groupId) {
+    const { shows, responsesByShow } = await loadGroupData(groupId);
+    groupMembers = await getGroupMembers(groupId);
+    addShowCard.style.display = 'block';
+
+    const quorumShows = computeQuorumShows(shows, responsesByShow);
+    // Fell below quorum since the last render (someone left) while
+    // Turnout was the active chip — back to your own list rather than
+    // showing a chip that no longer exists.
+    if (currentMemberId === 'turnout' && quorumShows.length === 0) {
+      currentMemberId = person.id;
+    }
+    renderMemberStrip(quorumShows);
+    renderFilteredShows(shows, responsesByShow, quorumShows);
+  }
+
+  // One labeled avatar group — "Into it" is the only one left now that
+  // "Can't make it" is gone (see decision log): everyone currently in
+  // on a show, plus a fixed slot for my own status that's either a
+  // ghost "+" (tap to join) or my filled dot (if I'm already in —
+  // tappable to leave again when onLeave is passed, see
+  // renderShowInteractiveBody). Clicking anywhere else on the group
+  // (label, avatars, my own dot) opens a modal with everyone in it,
+  // name + avatar — the ghost "+" and the leavable dot both stop that
+  // click from bubbling up, since tapping either is a different action
+  // (joining/leaving), not "show me who's here."
+  function buildResponseGroup(label, peopleExceptMe, amIIn, joinAriaLabel, onJoin, allPeople, onLeave) {
     const group = document.createElement('div');
     group.className = 'avatar-group';
 
@@ -1378,6 +1485,19 @@
       myDot.style.background = myColor;
       myDot.style.color = contrastTextFor(myColor);
       myDot.textContent = initials(person.display_name);
+      // Only wired for a non-creator (onLeave is null for the show's
+      // own creator — see renderShowInteractiveBody) — tapping your
+      // own dot un-joins the show, symmetric with the ghost "+" that
+      // joins it.
+      if (onLeave) {
+        myDot.classList.add('avatar-dot-leavable');
+        myDot.setAttribute('role', 'button');
+        myDot.setAttribute('aria-label', "You're in — tap to leave");
+        myDot.addEventListener('click', (e) => {
+          e.stopPropagation();
+          onLeave();
+        });
+      }
       mySlot.appendChild(myDot);
     } else {
       const ghostAdd = document.createElement('button');
@@ -1407,16 +1527,6 @@
   // used to sit on the headline (and the separate detail page it
   // opened) was cut. Everything worth seeing lives right on the card;
   // revisit a real detail page if that stops being true.
-  // onDeclineOverride — only set by the cross-group My Shows view (see
-  // renderListView/handleDeclineWithUndo below). Marking "out" there
-  // removes the show from the very list it's sitting in (My Shows only
-  // ever shows curious picks), which used to just vanish the card
-  // instantly — jarring, and no way back if it was a misclick. The
-  // override swaps that for a fade + Undo instead of the normal
-  // "save and refresh" path. A herd's own page doesn't need this —
-  // marking out there collapses the card in place (see
-  // renderShowCollapsedOutBody in renderListView), it never
-  // disappears, so the default path still applies.
   // Title/venue/openers — the part of a card that's identical whether
   // the show is upcoming (renderShowInteractiveBody) or past
   // (renderShowPastBody below). Pulled out once both needed it rather
@@ -1503,45 +1613,55 @@
     container.appendChild(avatarRow);
   }
 
-  function renderShowInteractiveBody(container, show, responses, onResponseChange, onDeclineOverride) {
+  // alwaysShowAvatars — false only when this card is sitting on your
+  // own personal list (see renderFilteredShows' 'own' mode): a show
+  // you created that nobody's joined yet shows no avatar row at all,
+  // since "Into it: you" tells you nothing you didn't already know.
+  // The moment a second person joins, it appears for everyone,
+  // creator included. Browsing anyone else's list, or Turnout, always
+  // shows it — that's the actual discovery surface "want in" happens
+  // from, so it can't wait for a quorum that hasn't happened yet.
+  // Used to be two groups side by side ("Into it" + "Can't make it");
+  // the decline half is gone entirely now — see decision log, personal
+  // lists replace the shared herd list — so there's exactly one group
+  // left, matching the same "reaction, not status" register "Into it"
+  // always had.
+  function renderShowInteractiveBody(container, show, responses, onResponseChange, alwaysShowAvatars) {
     const mine = responses.find((r) => r.person_id === person.id);
+    const amIIn = !!mine;
+    const isCreator = show.created_by === person.id;
+    // Filters on status defensively (rather than trusting responses is
+    // already 'curious'-only) so this keeps working correctly even if
+    // the app deploys before the drop-out-status migration runs against
+    // the live database.
     const interested = responses.filter((r) => r.status === 'curious');
 
     container.innerHTML = '';
     renderShowHeaderInfo(container, show);
 
-    // Two labeled groups, side by side: who's curious ("Into it") and
-    // who can't make it ("Can't make it") — each with its own ghost
-    // "+" slot, so joining either list is the same gesture in the
-    // same shape, not a stack of avatars plus a separate text button.
-    // Replaces the old single row + "Can't make it" button. Label
-    // itself went through a few rounds directly: "Heck yeah!" (original)
-    // -> discussed cutting "Can't make it" entirely and relabeling to
-    // "Who's in" (rejected — "in" still implies an "out" camp even with
-    // no decline list left in the UI) -> "Into it" (landed here: same
-    // reaction-not-status register as "Heck yeah!", just without the
-    // exclamation doing so much of the work on every single card).
+    if (!alwaysShowAvatars && interested.length < 2) {
+      return;
+    }
+
     const avatarRow = document.createElement('div');
     avatarRow.className = 'show-card-avatars';
 
     const curiousExceptMe = interested.filter((r) => r.person_id !== person.id).map((r) => r.people);
-    const declined = responses.filter((r) => r.status === 'out');
-    const declinedExceptMe = declined.filter((r) => r.person_id !== person.id).map((r) => r.people);
 
     avatarRow.appendChild(buildResponseGroup(
       'Into it',
       curiousExceptMe,
-      !!(mine && mine.status === 'curious'),
-      "I'm curious",
+      amIIn,
+      "I want in",
       async () => {
         const ok = await setResponse(show.id, person.id, 'curious');
         if (ok) {
-          // interested.length is the curious count *before* this tap,
-          // and excludes the actor (they weren't in it — the ghost "+"
-          // slot only shows when they aren't curious yet). So the new
-          // total is interested.length + 1; overlap_reached fires only
-          // on the exact 1→2 transition, never again for this show, so
-          // it's a true one-time-per-show north-star signal, not a
+          // interested.length is the count *before* this tap, and
+          // excludes the actor (the ghost "+" only shows when they
+          // aren't in yet). New total is interested.length + 1;
+          // overlap_reached fires only on the exact 1→2 transition —
+          // also the exact moment Turnout would first pick this show
+          // up — so it stays a true one-time-per-show signal, not a
           // running counter.
           trackEvent('curious_tapped', { group_id: show.group_id, show_id: show.id });
           if (interested.length === 1) {
@@ -1550,80 +1670,21 @@
           await onResponseChange();
         }
       },
-      interested.map((r) => r.people)
-    ));
-
-    const cantMakeItGroup = buildResponseGroup(
-      "Can't make it",
-      declinedExceptMe,
-      !!(mine && mine.status === 'out'),
-      "Can't make it",
-      onDeclineOverride || (async () => {
-        const ok = await setResponse(show.id, person.id, 'out');
+      interested.map((r) => r.people),
+      // No leave affordance for the show's own creator — their dot is
+      // just "you," not a toggle; deleting the show is their
+      // equivalent of backing out. Everyone else can tap their own dot
+      // to un-join.
+      isCreator ? null : async () => {
+        const ok = await removeResponse(show.id, person.id);
         if (ok) {
-          trackEvent('out_tapped', { group_id: show.group_id, show_id: show.id });
+          trackEvent('show_left', { group_id: show.group_id, show_id: show.id });
           await onResponseChange();
         }
-      }),
-      declined.map((r) => r.people)
-    );
-    cantMakeItGroup.classList.add('avatar-group-declined');
-    avatarRow.appendChild(cantMakeItGroup);
+      }
+    ));
 
     container.appendChild(avatarRow);
-
-    // Handed back so handleDeclineWithUndo can find this group's own
-    // .avatar-my-slot after a re-render and drop the inline Undo
-    // button right next to the now-moved avatar, instead of building
-    // a separate undo bar elsewhere in the card.
-    return cantMakeItGroup;
-  }
-
-  // A herd's own page never hides a show you've marked "out" — it
-  // folds down to one tight row instead, still sitting right where it
-  // would otherwise be in the (single, untabbed) list. Came directly
-  // out of a worry about the social weight of RSVPs: "if i say no i
-  // feel like you should still be able to jump back in somehow" — a
-  // whole separate "Not going" tab would've buried it exactly the way
-  // that worried about. No label, no "Can't make it" group — you
-  // already know your own status. An earlier version spelled that out
-  // as a text link ("Not going — I'm curious after all?"); per direct
-  // feedback ("terrible label... too small... no words"), this
-  // version drops the words for a peek at who's currently curious
-  // (buildAvatarDots, shrunk down) plus a chevron that expands the
-  // card back into the real one — where the actual curious/out toggle
-  // still lives.
-  function renderShowCollapsedOutBody(container, show, responses, onExpand) {
-    container.innerHTML = '';
-
-    const row = document.createElement('div');
-    row.className = 'show-collapsed-row';
-
-    const titleEl = document.createElement('div');
-    titleEl.className = 'show-title show-title-collapsed';
-    titleEl.textContent = show.title;
-    row.appendChild(titleEl);
-
-    const going = responses.filter((r) => r.status === 'curious').map((r) => r.people);
-    if (going.length > 0) {
-      const dots = buildAvatarDots(going);
-      dots.classList.add('show-collapsed-avatars');
-      row.appendChild(dots);
-    }
-
-    const expandBtn = document.createElement('button');
-    expandBtn.type = 'button';
-    expandBtn.className = 'show-collapsed-expand-btn';
-    expandBtn.setAttribute('aria-label', 'Show details');
-    expandBtn.innerHTML = '<i data-lucide="chevron-down"></i>';
-    expandBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      onExpand();
-    });
-    row.appendChild(expandBtn);
-    lucide.createIcons({ root: expandBtn });
-
-    container.appendChild(row);
   }
 
   // Plain text, no pill — see .show-date-badge in components.css.
@@ -1715,24 +1776,19 @@
   }
 
   // Card header row — date+venue on the left (buildDateBadge), "Just
-  // added"/collapse-toggle on the right. Delete used to live here too
-  // (see buildDeleteActionSlot above for where it moved) — per direct
-  // feedback ("feels nice to have all actions at the bottom and makes
-  // space for venue and just added tag"), this row is just the two
-  // "what is this and when" facts now, nothing that acts on the show.
-  // onCollapse — only passed for a show that's currently expanded back
-  // open from its collapsed "not going" state (see renderListView);
-  // renders a chevron-up so there's a way to fold it back down again,
-  // symmetric with the chevron-down that opened it. mine — this
+  // added" on the right. Delete lives in its own footer slot instead
+  // (see buildDeleteActionSlot) — this row is just the two "what is
+  // this and when" facts, nothing that acts on the show. The
+  // collapse/expand chevron that used to live here belonged to the
+  // "not going" collapsed-card state, which is gone entirely now that
+  // there's no decline to collapse (see decision log). mine — this
   // person's own response row, if any; "Just added" only shows before
-  // they've responded at all. Per direct feedback ("it should also be
-  // removed if you act on it... saying you're going or not going"),
-  // responding is itself the clearest signal you've seen it, so the
-  // badge disappears right then rather than waiting out the full
-  // window. Purely per-viewer — someone else's card still shows it
-  // until *they* respond, same as every other personal-response state
-  // in this app.
-  function buildCardTopRow(show, mine, onCollapse) {
+  // they've responded at all. Responding is itself the clearest signal
+  // you've seen it, so the badge disappears right then rather than
+  // waiting out the full window. Purely per-viewer — someone else's
+  // card still shows it until *they* respond, same as every other
+  // personal-response state in this app.
+  function buildCardTopRow(show, mine) {
     const row = document.createElement('div');
     row.className = 'show-card-top-row';
     row.appendChild(buildDateBadge(show));
@@ -1745,20 +1801,6 @@
       badge.className = 'show-new-badge';
       badge.textContent = 'Just added';
       right.appendChild(badge);
-    }
-
-    if (onCollapse) {
-      const collapseBtn = document.createElement('button');
-      collapseBtn.type = 'button';
-      collapseBtn.className = 'show-collapse-btn';
-      collapseBtn.setAttribute('aria-label', 'Collapse');
-      collapseBtn.innerHTML = '<i data-lucide="chevron-up"></i>';
-      collapseBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        onCollapse();
-      });
-      right.appendChild(collapseBtn);
-      lucide.createIcons({ root: collapseBtn });
     }
 
     if (right.children.length > 0) row.appendChild(right);
@@ -1881,90 +1923,25 @@
     openAddShowModal();
   }
 
-  // Marking a show "out" from the cross-group My Shows view removes it
-  // from the very list it's sitting in (My Shows only ever shows
-  // curious picks) — used to just vanish the card the instant you
-  // clicked, with no way back if it was a misclick. Per direct
-  // feedback, the avatar itself needs to actually move to the "Can't
-  // make it" slot right away (real confirmation, not a frozen avatar
-  // behind a fade), and the old separate "Marked can't make it." bar
-  // is gone — the Undo lives right next to the moved avatar instead.
-  // The card still dims slowly in the background as a "pending
-  // removal" signal, and if Undo isn't clicked within the window, the
-  // pending refresh runs and the card leaves for real.
-  const UNDO_WINDOW_MS = 4000;
-  function handleDeclineWithUndo(show, card, body, responses, refresh) {
-    return async () => {
-      const ok = await setResponse(show.id, person.id, 'out');
-      if (!ok) return;
-      trackEvent('out_tapped', { group_id: show.group_id, show_id: show.id, via: 'my_shows' });
-
-      // Reflect the new status locally so the avatar re-renders into
-      // the "Can't make it" slot immediately, instead of waiting on a
-      // full refetch — same instant-reflect approach every other
-      // response change in the app already uses.
-      const updatedResponses = responses.filter((r) => r.person_id !== person.id);
-      updatedResponses.push({ person_id: person.id, status: 'out', people: person });
-
-      const declinedGroup = renderShowInteractiveBody(body, show, updatedResponses, refresh);
-      card.classList.add('show-card-content-fading');
-
-      const mySlot = declinedGroup && declinedGroup.querySelector('.avatar-my-slot');
-      if (!mySlot) return;
-
-      const undoBtn = document.createElement('button');
-      undoBtn.type = 'button';
-      undoBtn.className = 'link-btn show-undo-btn';
-      undoBtn.textContent = 'Undo';
-      mySlot.appendChild(undoBtn);
-
-      const timer = setTimeout(() => { refresh(); }, UNDO_WINDOW_MS);
-
-      // Stops the click from bubbling to the group's own click handler
-      // (opens the "who's in" modal) — same reasoning as the ghost-add
-      // button's own stopPropagation.
-      undoBtn.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        clearTimeout(timer);
-        const restored = await setResponse(show.id, person.id, 'curious');
-        if (!restored) return;
-        // Deliberately no trackEvent here — this is undoing an
-        // accidental decline, not a fresh curious signal, so it
-        // shouldn't count toward curious_tapped/overlap_reached (see
-        // analytics plan's "undo-guard" note).
-        card.classList.remove('show-card-content-fading');
-        const restoredResponses = updatedResponses.filter((r) => r.person_id !== person.id);
-        restoredResponses.push({ person_id: person.id, status: 'curious', people: person });
-        renderShowInteractiveBody(body, show, restoredResponses, refresh);
-      });
-    };
-  }
-
-  // onChange defaults to the single-group refresh every existing
-  // caller wants; the cross-group My Shows view (see renderMyShowsView
-  // below) passes its own so a response change re-runs the aggregate
-  // fetch instead of trying to refresh one group that isn't selected.
-  // declineWithUndo, also My-Shows-only, swaps the decline button's
-  // default "save and refresh" for handleDeclineWithUndo above.
-  // #show-tabs only ever shows on the cross-group My Shows view now —
-  // a herd's own page quietly drops past shows with no tab UI at all
-  // (per direct feedback, "cut the tabs from the main group view").
-  // currentGroupId is reliably null exactly when My Shows is the
-  // active context (renderMyShowsView sets it null before calling
-  // this; selectGroup sets it to the herd's id), so that's what
-  // decides it rather than a separate flag threaded through. A past
-  // show still gets the non-interactive "who went" body instead of
-  // the curious/out one wherever it's shown, and never collapses or
-  // shows the decline-with-undo flow, since there's nothing left to
-  // respond to. Past sorts most-recent-first (nostalgia reads
-  // backward from today); Upcoming keeps the soonest-first order the
-  // query already returns shows in. A show marked "out" on a herd's
-  // own page (never on My Shows — see isCollapsedOut below) collapses
-  // to one line via renderShowCollapsedOutBody instead of vanishing or
-  // just dimming in place.
-  function renderListView(shows, responsesByShow, emptyMessage, onChange, declineWithUndo) {
+  // onChange defaults to the single-context refresh every caller
+  // wants — renderCurrentView for a herd's own strip, or the cross-
+  // group All Shows view's own renderMyShowsView (see below), which
+  // needs to re-run its aggregate fetch instead. mode controls the
+  // card body: 'own' hides a card's avatar row until 2+ people are in
+  // (see renderShowInteractiveBody), 'other'/'turnout' always show it;
+  // omitted (the cross-group All Shows call) behaves like 'own', since
+  // that view is always *your* personal picks too, just merged across
+  // every herd. #show-tabs only ever shows on the cross-group All
+  // Shows view — a herd's own page (whichever chip is selected)
+  // quietly stays upcoming-only with no tab UI at all, same as before
+  // this redesign. currentGroupId is reliably null exactly when All
+  // Shows is the active context, so that's what decides it. A past
+  // show still gets the non-interactive "who went" body wherever it's
+  // shown.
+  function renderListView(shows, responsesByShow, emptyMessage, onChange, mode) {
     const content = listContent;
     const refresh = onChange || (() => renderCurrentView(currentGroupId));
+    const effectiveMode = mode || 'own';
 
     const tabsHere = !currentGroupId;
     showTabs.style.display = tabsHere ? 'flex' : 'none';
@@ -1987,34 +1964,15 @@
       const responses = responsesByShow[show.id] || [];
       const mine = responses.find((r) => r.person_id === person.id);
 
-      // A show I've marked "out" collapses to a single line instead of
-      // the full interactive card — see renderShowCollapsedOutBody —
-      // unless it's been manually expanded back open (expandedShowIds,
-      // a purely local toggle independent of the actual response; see
-      // buildCardTopRow's onCollapse for folding it back down). Only
-      // applies here on a herd's own untabbed list; My Shows never
-      // reaches this with mine.status === 'out' in the first place
-      // (it only ever lists shows marked curious to begin with).
-      const isOut = !isPastTab && !!(mine && mine.status === 'out');
-      const isExpandedOut = isOut && expandedShowIds.has(show.id);
-      const isCollapsedOut = isOut && !isExpandedOut;
-
       const card = document.createElement('div');
       card.className = 'show-card';
-      if (isCollapsedOut) card.classList.add('show-card-collapsed');
 
-      // Date+venue on the left, "Just added"/collapse-toggle on the
-      // right — see buildCardTopRow. Delete lives in a separate footer
-      // row now (buildCardActionsRow, below).
-      const onCollapse = isExpandedOut
-        ? () => { expandedShowIds.delete(show.id); refresh(); }
-        : undefined;
-      card.appendChild(buildCardTopRow(show, mine, onCollapse));
+      card.appendChild(buildCardTopRow(show, mine));
 
-      // Only set in the cross-group My Shows view (see
+      // Only set in the cross-group All Shows view (see
       // renderMyShowsView) — a quiet reminder of which group this show
       // actually belongs to, since there's no single group heading
-      // doing that job here the way there is on Herd Picks.
+      // doing that job here the way there is inside a herd.
       if (show._groupName) {
         const tag = document.createElement('div');
         tag.className = 'show-group-tag';
@@ -2022,35 +1980,23 @@
         card.appendChild(tag);
       }
 
-      // The "N overlap" badge (.show-overlap/.show-card-top) that used
-      // to sit here — cut per direct feedback. Who's actually curious
-      // still shows up in the "Into it" avatar row below; this was a
-      // second, redundant count of the same thing sitting above it.
-      // overlapCount() itself stays in scripts/shows.js — small, still
-      // documented, not wired to any UI right now.
-
       const body = document.createElement('div');
       card.appendChild(body);
 
       if (isPastTab) {
         renderShowPastBody(body, show, responses);
-      } else if (isCollapsedOut) {
-        renderShowCollapsedOutBody(body, show, responses, () => {
-          expandedShowIds.add(show.id);
-          refresh();
-        });
       } else {
-        const onDecline = declineWithUndo ? handleDeclineWithUndo(show, card, body, responses, refresh) : undefined;
-        renderShowInteractiveBody(body, show, responses, refresh, onDecline);
+        const alwaysShowAvatars = effectiveMode === 'other' || effectiveMode === 'turnout';
+        renderShowInteractiveBody(body, show, responses, refresh, alwaysShowAvatars);
       }
 
-      // Delete lives inline at the end of the avatar row now — lined up
+      // Delete lives inline at the end of the avatar row — lined up
       // with the avatar dots/ghost-add circle themselves, not just the
       // row as a whole (see buildDeleteActionSlot's own comment for
-      // why that distinction needed its own wrapper). No delete at all
-      // on a collapsed "not going" card — that row stays the one tight
-      // line with nothing else added to it.
-      if (!isCollapsedOut && show.created_by === person.id) {
+      // why that distinction needed its own wrapper). Falls back to
+      // the card itself when there's no avatar row at all (an own-list
+      // card nobody's joined yet — see renderShowInteractiveBody).
+      if (show.created_by === person.id) {
         const avatarsRow = body.querySelector('.show-card-avatars');
         const target = avatarsRow || card;
         target.appendChild(buildDeleteActionSlot(show, refresh));
@@ -2077,6 +2023,7 @@
     document.getElementById('browse-view').style.display = 'none';
     document.getElementById('drawer-browse-btn').classList.remove('active');
     mainContent.style.display = '';
+    herdMemberStrip.style.display = 'none'; // no single herd's member list applies here
     await renderGroupSwitcher(myGroups);
     closeDrawer();
 
@@ -2101,12 +2048,14 @@
     });
     myShows.sort((a, b) => (a.show_date || '').localeCompare(b.show_date || ''));
 
+    // mode omitted — behaves like 'own' (avatar row hidden until 2+
+    // people are in), which is correct here since every card on this
+    // view is by definition something *you* marked curious.
     renderListView(
       myShows,
       mergedResponses,
       'No shows marked yet.',
-      () => renderMyShowsView(),
-      true
+      () => renderMyShowsView()
     );
   }
 
@@ -2268,6 +2217,7 @@
       renderGroupSwitcher(myGroups);
       groupHeadingRow.style.display = 'none';
       showTabs.style.display = 'none';
+      herdMemberStrip.style.display = 'none';
       renderZeroHerdLanding(document.getElementById('show-list-content'));
       return;
     }
@@ -2463,9 +2413,18 @@
           (r) => r.person_id === existing.created_by
         );
         const adderName = adderResponse?.people?.display_name || 'someone in your herd';
-        showToast(`Nice, ${adderName} added that too!`);
+        // Same wording either way someone ends up on this card now —
+        // whether the app auto-detected a match here or they tapped
+        // "I want in" browsing {adderName}'s own list, both are the
+        // same underlying action (see buildResponseGroup's onJoin).
+        showToast(`Nice, ${adderName} already added that — you're in!`);
       }
 
+      // Land back on your own list so the join is actually visible —
+      // otherwise you'd stay wherever the Add Show panel was opened
+      // from (which might be a friend's or Turnout's chip) and not see
+      // the result.
+      currentMemberId = person.id;
       resetAddShowPanel();
       await renderCurrentView(currentGroupId);
       return;
@@ -2475,15 +2434,14 @@
     if (show) {
       trackEvent('show_added', { group_id: show.group_id, show_id: show.id, source: source || 'manual' });
       // Adding a show is itself a "curious" signal — without this the
-      // person who just added it would see their own ghost add-slot
-      // (the tinted + circle) on a card they created themselves,
-      // which reads as if the app didn't notice they're in. Not
-      // counted toward overlap_reached here since nobody else can
-      // possibly be curious yet on a show that was just created —
+      // person who just added it wouldn't be "in" on their own show at
+      // all. Not counted toward overlap_reached here since nobody else
+      // can possibly be curious yet on a show that was just created —
       // the 1→2 transition logic in renderShowInteractiveBody only
       // applies there, not to this auto-join.
       await setResponse(show.id, person.id, 'curious');
       trackEvent('curious_tapped', { group_id: show.group_id, show_id: show.id, via: 'show_creation' });
+      currentMemberId = person.id;
       resetAddShowPanel();
       await renderCurrentView(currentGroupId);
     }

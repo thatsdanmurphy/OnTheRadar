@@ -1,8 +1,10 @@
 // On the Radar — shows + responses
 // Plain script (see supabase/client.js for why — no ES modules).
-// Only 'curious' counts toward overlap — 'out' never does, and
-// 'going' was cut entirely (see decision log: response states are
-// two-way now, curious/out).
+// 'out' was cut entirely (see decision log: personal show lists
+// replace the shared herd list, "Can't make it" removed) — 'going'
+// was cut before that. A responses row now only ever means "I'm in";
+// there's no negative state left to record, so un-joining a show is a
+// delete (see removeResponse below), not a status change.
 
 window.OTR = window.OTR || {};
 
@@ -170,6 +172,27 @@ window.OTR = window.OTR || {};
 
     if (error) {
       console.error('Failed to set response:', error);
+      return false;
+    }
+    return true;
+  };
+
+  // Un-joins a show — the inverse of setResponse now that there's no
+  // 'out' status to fall back to. Tapping your own avatar in the
+  // "Into it" row calls this (index.html, buildResponseGroup's onLeave)
+  // for anyone who isn't the show's creator; the creator's own avatar
+  // has no leave affordance (see index.html — deleting the show is
+  // their equivalent action). Safe to call on a row that's already
+  // gone (delete matching zero rows is a no-op, not an error).
+  OTR.removeResponse = async function (showId, personId) {
+    const { error } = await OTR.db
+      .from('responses')
+      .delete()
+      .eq('show_id', showId)
+      .eq('person_id', personId);
+
+    if (error) {
+      console.error('Failed to remove response:', error);
       return false;
     }
     return true;
