@@ -645,3 +645,13 @@ Followed this file's existing convention for festival `capacity`: `null` across 
 **Verified:** Full Playwright suite re-run, all existing checks pass (`.show-list-loading` isn't itself under test, but nothing downstream broke). Visual behavior itself (a static, always-present block vs. an animated one) isn't something a headless mocked-data run — which resolves near-instantly — meaningfully exercises either way.
 
 **Revisit if:** None expected.
+
+## 2026-08-26 — Herd name is now a required field on cold-start sign-up
+
+**What:** The name gate's herd-name field (shown only on a cold start — no invite link in the URL) now has the `required` attribute, same as the name field above it. A brand-new person can no longer submit that form with a blank herd name — the browser's native validation blocks it. Since the field lives inside a `display:none` row on the invite-link path, this doesn't affect that path at all: a hidden `required` input is excluded from constraint validation entirely, so someone joining via an invite link is never blocked by a field they never see.
+
+**Why:** Requested directly, as a follow-up to the required-herd change from earlier today: "can we make name and herd required on first sign up? so we dont ahve to worry about the weird automatic 'user's shows' herd situation?" Making herd creation itself unavoidable (see the "Having a herd is now required" entry above) still left a gap — a cold-start sign-up with the herd-name field left blank fell through to `ensureHerdExists()`'s auto-generated `"{name}'s Shows"` default, the same "weird automatic" herd the user was trying to get away from. Requiring the field outright closes that gap at the source: a brand-new person always types a real herd name now, and the auto-generated fallback is reserved for what it was actually meant for (leaving your last remaining herd), never a first sign-up.
+
+**Verified:** Playwright, mobile viewport, against a new stateful mock (`test/mock-identity-namegate.js`) that starts with no person at all and exercises the real name-gate form end to end (not pre-seeded like the other zero-herd fixture). Confirmed: submitting with a name but a blank herd name leaves the gate up and creates no person at all; filling in both fields and submitting creates exactly one herd, named exactly what was typed ("Backyard Shows"), not the auto-generated default; zero console/page errors throughout.
+
+**Revisit if:** None expected.

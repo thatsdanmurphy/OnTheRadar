@@ -130,9 +130,16 @@
                  terminology (nav drawer already said "Herds"/"Add a
                  herd"; this and the group modal below were the two
                  remaining spots still saying "group"). id/for stay as
-                 name-gate-group-input -- internal, not user-visible. -->
+                 name-gate-group-input -- internal, not user-visible.
+                 required now (see nameGateForm's submit handler) so a
+                 cold-start sign-up always names a real herd instead of
+                 sometimes falling through to the auto-generated
+                 "{name}'s Shows" herd — a required-but-hidden field
+                 doesn't block submission on the invite-link path,
+                 since a display:none input is excluded from
+                 constraint validation entirely. -->
             <label for="name-gate-group-input">Herd name</label>
-            <input type="text" id="name-gate-group-input" placeholder="e.g. The Usual Suspects" autocomplete="off">
+            <input type="text" id="name-gate-group-input" required placeholder="e.g. The Usual Suspects" autocomplete="off">
           </div>
           <button type="submit" class="btn-solid">Continue</button>
         </form>
@@ -2291,7 +2298,14 @@
     // straight into the app now, same as the invite-link path. The
     // group heading row's share icon and the drawer's per-group share
     // icon both still cover "grab the invite link," just not as a
-    // forced first stop.
+    // forced first stop. The field is required now (see its own
+    // comment in the markup above), so groupName is always real here —
+    // the `if` stays only as a defensive guard against a browser that
+    // somehow submitted around the constraint, not as the normal path
+    // for a blank name anymore. ensureHerdExists()'s auto-generated
+    // "{name}'s Shows" herd is reserved for actually-later situations
+    // now (leaving your last remaining herd) rather than ever being
+    // the first herd a brand-new person sees.
     const groupName = document.getElementById('name-gate-group-input').value.trim();
     if (groupName) {
       const group = await createGroup(person.id, groupName);
