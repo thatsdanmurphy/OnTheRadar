@@ -1427,7 +1427,7 @@ body.drawer-open {
   color: var(--color-text);
   opacity: 0.7;
   text-align: center;
-  margin: var(--space-8) auto var(--space-24);
+  margin: var(--space-16) auto var(--space-32);
   max-width: 40ch;
 }
 
@@ -1444,11 +1444,11 @@ body.drawer-open {
    is-cold-start class init() sets, not two separate conditions that
    could drift out of sync. */
 .name-gate-preview { display: none; }
-/* Same margin as .name-gate-tagline below (--space-8 top, --space-24
+/* Same margin as .name-gate-tagline below (--space-16 top, --space-32
    bottom) — the two are mutually exclusive replacements for each
    other, so they carry identical spacing rather than drifting apart
    as separate one-off values. */
-#name-gate-step-name.is-cold-start .name-gate-preview { display: block; margin: var(--space-8) auto var(--space-24); max-width: 400px; }
+#name-gate-step-name.is-cold-start .name-gate-preview { display: block; margin: var(--space-16) auto var(--space-32); max-width: 400px; }
 #name-gate-step-name.is-cold-start .name-gate-tagline { display: none; }
 
 @media (max-height: 640px) {
@@ -1570,18 +1570,18 @@ body.drawer-open {
 
 /* Sits above the card now, not below it — a headline introducing
    what the card shows, per direct feedback ("the text should be
-   flipped with the card previews"). --space-8 to the card below it,
-   same small "these belong together" gap the dots use on the card's
-   other side, so the whole preview reads as one evenly-spaced stack
-   (caption, --space-8, card, --space-8, dots) instead of the
-   uneven 16-then-8 rhythm this had before. */
+   flipped with the card previews"). --space-16 down to the card
+   below it (bumped from --space-8 per direct feedback wanting more
+   air between the text and the card); dots keep their own smaller
+   --space-8 gap up to the card, since they're reading as pagination
+   attached to it rather than a separate block. */
 .preview-caption {
   text-align: center;
   font-size: var(--text-control-size);
   line-height: var(--text-control-lh);
   opacity: 0.8;
   height: var(--space-16);
-  margin-bottom: var(--space-8);
+  margin-bottom: var(--space-16);
 }
 
 .preview-dots { display: flex; justify-content: center; gap: 6px; margin-top: var(--space-8); }
@@ -2409,68 +2409,29 @@ body.drawer-open {
   outline-offset: -1px;
 }
 
-/* Herd-name suggestion pill — see index.html's own comment above
-   #name-suggest-row for the full reasoning. Quiet by design: sits
-   right under the field it feeds, no accent color (a suggestion
-   isn't an overlap signal, same reasoning that keeps pink off every
-   other chip in this app) — an assist, not a second call to action
-   competing with Continue below it. Quiet comes from weight/color
-   restraint, not from undersizing type or shrinking the tap target —
-   label and pill both read at --text-control-size, the same size
-   every other chip/button in the app uses. */
-.name-suggest-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-8);
-  margin-top: var(--space-8);
+/* Herd-name field: the suggestion IS the field now, not a separate
+   pill below it — see index.html's own comment above
+   #name-gate-group-field for the full reasoning. Relative wrapper
+   just to host the shuffle icon inside the field's own right edge,
+   same "recessed dark slot" fill as every other input (.form-row
+   input above); the input itself gets right padding so typed/
+   suggested text never runs under the icon. */
+.name-gate-group-field {
+  position: relative;
+}
+.name-gate-group-field input {
+  padding-right: var(--space-40);
 }
 
-.name-suggest-label {
-  font-family: var(--font-body);
-  font-size: var(--text-control-size);
-  line-height: var(--text-control-lh);
-  opacity: 0.5;
-  flex-shrink: 0;
-}
-
-/* Same pill shape, border language, type size and padding as
-   .chip-strip-item (browse.css) — this is a chip, just an unselected
-   one, so it should measure the same as every other chip in the app
-   rather than inventing a smaller scale. (Previously padded with a
-   nonexistent --space-12 token, which silently voided the whole
-   padding declaration and left the pill nearly flat — fixed by
-   reusing real tokens.) Truncates rather than wrapping if a longer
-   idea comes up, so the row never grows past one line regardless of
-   which name lands in it. */
-.name-suggest-pill {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  text-align: left;
-  font-family: var(--font-body);
-  font-weight: 600;
-  font-size: var(--text-control-size);
-  line-height: var(--text-control-lh);
-  background: var(--color-fill-dim);
-  color: var(--color-text);
-  border: 1px solid var(--color-border);
-  border-radius: 999px;
-  padding: var(--space-8) var(--space-16);
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-
-.name-suggest-pill:hover {
-  background: var(--tint-active);
-}
-
-/* Plain icon-only twin of .drawer-group-share's own circle shape —
-   cycles the pill's suggestion without touching the field, a distinct
-   action from tapping the pill itself (which fills the field). */
-.name-suggest-refresh {
-  flex-shrink: 0;
+/* Icon-only, no fill/border of its own — sits inside the field like
+   a clear-button would, not a second control competing with the
+   field itself. Same circle-icon-button language as
+   .drawer-group-share. */
+.name-gate-shuffle-btn {
+  position: absolute;
+  top: 50%;
+  right: var(--space-4);
+  transform: translateY(-50%);
   width: var(--space-32);
   height: var(--space-32);
   display: flex;
@@ -2483,15 +2444,15 @@ body.drawer-open {
   opacity: 0.6;
   padding: 0;
   cursor: pointer;
-  transition: background 0.15s ease, opacity 0.15s ease, transform 0.3s ease;
+  transition: background 0.15s ease, opacity 0.15s ease;
 }
 
-.name-suggest-refresh svg {
+.name-gate-shuffle-btn svg {
   width: 16px;
   height: 16px;
 }
 
-.name-suggest-refresh:hover {
+.name-gate-shuffle-btn:hover {
   background: var(--tint-active);
   opacity: 1;
 }
@@ -2499,20 +2460,28 @@ body.drawer-open {
 /* A little spin on tap — the one place in this feature that moves at
    all, and purely decorative (the click already registers instantly;
    this just makes "getting a new one" feel like it did something). */
-.name-suggest-refresh:active svg {
+.name-gate-shuffle-btn:active svg {
   transform: rotate(180deg);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .name-suggest-refresh:active svg {
+  .name-gate-shuffle-btn:active svg {
     transform: none;
   }
 }
 
-.name-suggest-pill:focus-visible,
-.name-suggest-refresh:focus-visible {
+.name-gate-shuffle-btn:focus-visible {
   outline: 2px solid var(--color-focus-ring);
   outline-offset: 2px;
+}
+
+/* A little more air in the name-gate's own form specifically — per
+   direct feedback wanting more breathing room between the fields and
+   the Continue button. Scoped to .name-gate-box rather than bumping
+   .form-row app-wide, since other forms (Add Show, etc.) share that
+   same class and weren't part of the ask. */
+.name-gate-box .form-row {
+  margin-bottom: var(--space-24);
 }
 
 .form-actions {

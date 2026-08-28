@@ -217,21 +217,25 @@
                  since a display:none input is excluded from
                  constraint validation entirely. -->
             <label for="name-gate-group-input">Herd name</label>
-            <input type="text" id="name-gate-group-input" required placeholder="e.g. The Usual Suspects" autocomplete="off">
             <!-- Naming a brand-new group is a real blank-page moment —
                  doubly so now that this field is required (see the
-                 comment above). A quiet way out: one random idea from
-                 a big bank of them (see HERD_NAME_IDEAS/renderNameSuggestion
-                 in the script below), shown as a pill you can tap to
-                 drop straight into the field, plus a separate refresh
-                 icon if that one doesn't land — cycles the pill without
-                 touching whatever's already typed. Entirely optional;
-                 typing your own name and ignoring this works exactly
-                 as before. -->
-            <div class="name-suggest-row" id="name-suggest-row">
-              <span class="name-suggest-label">Stuck? Try:</span>
-              <button type="button" class="name-suggest-pill" id="name-suggest-pill"></button>
-              <button type="button" class="name-suggest-refresh" id="name-suggest-refresh" aria-label="Show another herd name idea">
+                 comment above). Used to be a separate "Stuck? Try:"
+                 pill below the field; per direct feedback, the
+                 suggestion now IS the field — pre-filled with one
+                 random idea from a big bank of them (HERD_NAME_IDEAS/
+                 rollGroupNameSuggestion in the script below) the
+                 moment the field appears, with a shuffle icon inside
+                 the field to roll another. Nothing extra to tap: type
+                 your own name and it's overwritten exactly like any
+                 other pre-filled field (focusing the input selects the
+                 suggestion so the first keystroke replaces it
+                 outright), or leave it and hit Continue with whatever
+                 idea landed. Placeholder is just a same-instant-load
+                 fallback — the field is populated before you can see
+                 it empty. -->
+            <div class="name-gate-group-field">
+              <input type="text" id="name-gate-group-input" required placeholder="e.g. The Usual Suspects" autocomplete="off">
+              <button type="button" class="name-gate-shuffle-btn" id="name-gate-shuffle-btn" aria-label="Shuffle to another herd name idea">
                 <i data-lucide="refresh-cw"></i>
               </button>
             </div>
@@ -862,27 +866,36 @@
     'Perpetually Front Row', 'The Encore Extorters',
   ];
 
-  const nameSuggestPill = document.getElementById('name-suggest-pill');
-  const nameSuggestRefresh = document.getElementById('name-suggest-refresh');
+  const nameGateGroupInput = document.getElementById('name-gate-group-input');
+  const nameGateShuffleBtn = document.getElementById('name-gate-shuffle-btn');
   let currentNameSuggestion = null;
 
-  // Never repeats the pill's current text back-to-back — a refresh
-  // that lands on the exact same idea would read as broken, not random.
-  function renderNameSuggestion() {
+  // Drops a fresh idea straight into the field's actual value — never
+  // the same one twice in a row, since a shuffle that lands on the
+  // exact same idea would read as broken, not random.
+  function rollGroupNameSuggestion() {
     let next = currentNameSuggestion;
     while (next === currentNameSuggestion) {
       next = HERD_NAME_IDEAS[Math.floor(Math.random() * HERD_NAME_IDEAS.length)];
     }
     currentNameSuggestion = next;
-    nameSuggestPill.textContent = next;
+    nameGateGroupInput.value = next;
   }
 
-  nameSuggestPill.addEventListener('click', () => {
-    document.getElementById('name-gate-group-input').value = currentNameSuggestion;
-    renderNameSuggestion();
+  nameGateShuffleBtn.addEventListener('click', () => {
+    rollGroupNameSuggestion();
+    // Re-select so the very next keystroke overwrites the new
+    // suggestion outright, same as focusing the field directly below.
+    nameGateGroupInput.focus();
+    nameGateGroupInput.select();
   });
-  nameSuggestRefresh.addEventListener('click', renderNameSuggestion);
-  renderNameSuggestion();
+  // Any time the field gets focus — tabbing in, clicking in, or right
+  // after a shuffle above — the whole value is selected, so typing
+  // immediately replaces the suggestion instead of inserting into the
+  // middle of it. Standard "pre-filled, meant to be overwritten" field
+  // behavior; doesn't fire on every keystroke, just on focus.
+  nameGateGroupInput.addEventListener('focus', () => nameGateGroupInput.select());
+  rollGroupNameSuggestion();
 
   // Name-gate 3-screen preview — see #name-gate-preview's own comment
   // above for what each screen is and why. Runs unconditionally (the
