@@ -2248,10 +2248,13 @@ body.drawer-open {
 
 /* Herd-name suggestion pill — see index.html's own comment above
    #name-suggest-row for the full reasoning. Quiet by design: sits
-   right under the field it feeds, small text, no accent color (a
-   suggestion isn't an overlap signal, same reasoning that keeps pink
-   off every other chip in this app) — an assist, not a second call to
-   action competing with Continue below it. */
+   right under the field it feeds, no accent color (a suggestion
+   isn't an overlap signal, same reasoning that keeps pink off every
+   other chip in this app) — an assist, not a second call to action
+   competing with Continue below it. Quiet comes from weight/color
+   restraint, not from undersizing type or shrinking the tap target —
+   label and pill both read at --text-control-size, the same size
+   every other chip/button in the app uses. */
 .name-suggest-row {
   display: flex;
   align-items: center;
@@ -2261,17 +2264,21 @@ body.drawer-open {
 
 .name-suggest-label {
   font-family: var(--font-body);
-  font-size: var(--text-meta-size);
+  font-size: var(--text-control-size);
+  line-height: var(--text-control-lh);
   opacity: 0.5;
   flex-shrink: 0;
 }
 
-/* Same pill shape/border language as .chip-strip-item (browse.css),
-   scaled down a step — --text-meta-size instead of --text-control-size
-   and tighter padding — since this sits underneath a field as a quiet
-   assist, not as a primary filter/nav chip. Truncates rather than
-   wrapping if a longer idea comes up, so the row never grows past one
-   line regardless of which name lands in it. */
+/* Same pill shape, border language, type size and padding as
+   .chip-strip-item (browse.css) — this is a chip, just an unselected
+   one, so it should measure the same as every other chip in the app
+   rather than inventing a smaller scale. (Previously padded with a
+   nonexistent --space-12 token, which silently voided the whole
+   padding declaration and left the pill nearly flat — fixed by
+   reusing real tokens.) Truncates rather than wrapping if a longer
+   idea comes up, so the row never grows past one line regardless of
+   which name lands in it. */
 .name-suggest-pill {
   flex: 1;
   min-width: 0;
@@ -2281,12 +2288,13 @@ body.drawer-open {
   text-align: left;
   font-family: var(--font-body);
   font-weight: 600;
-  font-size: var(--text-meta-size);
+  font-size: var(--text-control-size);
+  line-height: var(--text-control-lh);
   background: var(--color-fill-dim);
   color: var(--color-text);
   border: 1px solid var(--color-border);
   border-radius: 999px;
-  padding: var(--space-4) var(--space-12);
+  padding: var(--space-8) var(--space-16);
   cursor: pointer;
   transition: background 0.15s ease;
 }

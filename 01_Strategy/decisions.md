@@ -685,3 +685,31 @@ Followed this file's existing convention for festival `capacity`: `null` across 
 **Verified:** Playwright, mobile viewport. Two-herd fixture: View icon opens the modal with both Invite and Leave visible for a real herd; leaving via the modal's Leave button removes that herd's row from the drawer and lands on the one remaining (now-solo) herd. Zero-herd-then-recreated fixture: View icon is confirmed visible even while solo; opening it shows Invite and the Members label both hidden, Leave still reachable; leaving via Leave removes the herd for real and lands back on the three-tile zero-herd landing. Full suite re-run, all 39 checks pass.
 
 **Revisit if:** None expected.
+
+## 2026-08-26 — Herd-name suggestion pill on the sign-up name gate
+
+**What:** Added a tap-to-fill pill under the "Herd name" field on
+cold-start sign-up, seeded from a bank of ~60 clever concert-herd
+name ideas (e.g. "The Encore Committee", "Front Row or Bust", "Will
+Call Crew"), with a refresh icon to roll another idea. Clicking the
+pill fills the field with that suggestion and rolls a new one so it
+doesn't repeat; refresh rolls a new suggestion without touching
+whatever's already typed.
+
+**Why:** User feedback on the sign-in page: "i wonder about having
+a big bank of name ideas to serve up randome ones and suggest in a
+way, maybe under the field with a pill and a refresh icon? so they
+can click that to fill the field ... just a big bank of clever
+concert finding group names." Confirmed with "yep agree" alongside
+a separate, not-yet-built 3-screen sign-in preview concept — this
+pill was the piece we agreed to build directly into the live app,
+the preview gets mocked up separately for review first.
+
+**Verified:** Playwright — a suggestion populates on load, clicking
+the pill fills the herd-name field and rolls a new suggestion
+(never an immediate repeat), refresh rolls a new suggestion without
+touching the typed value. All 45 checks pass.
+
+**Revisit if:** the idea bank starts feeling stale or repetitive
+with real usage, or if people want suggestions tailored to their
+actual name/location rather than generic.
