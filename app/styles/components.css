@@ -2246,6 +2246,104 @@ body.drawer-open {
   outline-offset: -1px;
 }
 
+/* Herd-name suggestion pill — see index.html's own comment above
+   #name-suggest-row for the full reasoning. Quiet by design: sits
+   right under the field it feeds, small text, no accent color (a
+   suggestion isn't an overlap signal, same reasoning that keeps pink
+   off every other chip in this app) — an assist, not a second call to
+   action competing with Continue below it. */
+.name-suggest-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  margin-top: var(--space-8);
+}
+
+.name-suggest-label {
+  font-family: var(--font-body);
+  font-size: var(--text-meta-size);
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+
+/* Same pill shape/border language as .chip-strip-item (browse.css),
+   scaled down a step — --text-meta-size instead of --text-control-size
+   and tighter padding — since this sits underneath a field as a quiet
+   assist, not as a primary filter/nav chip. Truncates rather than
+   wrapping if a longer idea comes up, so the row never grows past one
+   line regardless of which name lands in it. */
+.name-suggest-pill {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: var(--text-meta-size);
+  background: var(--color-fill-dim);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: var(--space-4) var(--space-12);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.name-suggest-pill:hover {
+  background: var(--tint-active);
+}
+
+/* Plain icon-only twin of .drawer-group-share's own circle shape —
+   cycles the pill's suggestion without touching the field, a distinct
+   action from tapping the pill itself (which fills the field). */
+.name-suggest-refresh {
+  flex-shrink: 0;
+  width: var(--space-32);
+  height: var(--space-32);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: none;
+  border: none;
+  color: var(--color-surface-text);
+  opacity: 0.6;
+  padding: 0;
+  cursor: pointer;
+  transition: background 0.15s ease, opacity 0.15s ease, transform 0.3s ease;
+}
+
+.name-suggest-refresh svg {
+  width: 16px;
+  height: 16px;
+}
+
+.name-suggest-refresh:hover {
+  background: var(--tint-active);
+  opacity: 1;
+}
+
+/* A little spin on tap — the one place in this feature that moves at
+   all, and purely decorative (the click already registers instantly;
+   this just makes "getting a new one" feel like it did something). */
+.name-suggest-refresh:active svg {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .name-suggest-refresh:active svg {
+    transform: none;
+  }
+}
+
+.name-suggest-pill:focus-visible,
+.name-suggest-refresh:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
 .form-actions {
   display: flex;
   gap: var(--space-8);

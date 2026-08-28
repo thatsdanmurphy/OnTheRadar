@@ -140,6 +140,23 @@
                  constraint validation entirely. -->
             <label for="name-gate-group-input">Herd name</label>
             <input type="text" id="name-gate-group-input" required placeholder="e.g. The Usual Suspects" autocomplete="off">
+            <!-- Naming a brand-new group is a real blank-page moment —
+                 doubly so now that this field is required (see the
+                 comment above). A quiet way out: one random idea from
+                 a big bank of them (see HERD_NAME_IDEAS/renderNameSuggestion
+                 in the script below), shown as a pill you can tap to
+                 drop straight into the field, plus a separate refresh
+                 icon if that one doesn't land — cycles the pill without
+                 touching whatever's already typed. Entirely optional;
+                 typing your own name and ignoring this works exactly
+                 as before. -->
+            <div class="name-suggest-row" id="name-suggest-row">
+              <span class="name-suggest-label">Stuck? Try:</span>
+              <button type="button" class="name-suggest-pill" id="name-suggest-pill"></button>
+              <button type="button" class="name-suggest-refresh" id="name-suggest-refresh" aria-label="Show another herd name idea">
+                <i data-lucide="refresh-cw"></i>
+              </button>
+            </div>
           </div>
           <button type="submit" class="btn-solid">Continue</button>
         </form>
@@ -735,6 +752,59 @@
   const nameGateForm = document.getElementById('name-gate-form');
   const nameGateStepName = document.getElementById('name-gate-step-name');
   const nameGateGroupRow = document.getElementById('name-gate-group-row');
+
+  // Herd-name suggestion pill — see the HTML comment above
+  // #name-suggest-row for why this exists. A genuinely big bank (60,
+  // not 15) so it doesn't start repeating on a second visit; tone
+  // matches the app's own ticket-stub/concert-culture voice rather
+  // than generic "clever" filler. Deliberately not band names or
+  // anything that reads as a real venue/artist — these are meant to
+  // read as a *group of friends*, the herd itself, not a show.
+  const HERD_NAME_IDEAS = [
+    'The Encore Committee', 'Front Row or Bust', 'Will Call Crew',
+    'Setlist Somebodies', 'Balcony Bandits', 'The Nosebleed Section',
+    'Sold Out Anyway', 'General Admission Gang', 'The Opener Skippers',
+    'Standing Room Only', 'Lanyard Legends', 'The Pit Crew',
+    'Merch Table Regulars', 'Last Call Lineup', 'The Ticket Stubs',
+    'Ears Still Ringing', 'Parking Lot Prophets', 'The Encore or Riot',
+    'Ride or Die Row', 'The Setlist Snitches', 'Overpriced Beer Club',
+    'The Sweaty Front Row', 'Doors at Eight Crew', 'The Guest List (Not Really)',
+    'Feedback Loop', 'The Loudness Committee', 'Aftershow Wanderers',
+    'The Ticket Hoarders', 'Sound Check Squad', 'The Second Encore',
+    'Venue Regulars', 'The Mosh Pit Elders', 'One More Song Please',
+    'The Chant for Encore', 'Cheap Seats Crew', 'The Vinyl Verdicts',
+    'Deep Cuts Devotees', 'The Show Must Go On(s)', 'Back-to-Back Shows',
+    'The Amp Worshippers', 'Curfew Breakers', 'The Setlist Stealers',
+    'Trading Setlists', 'The B-Stage Believers', 'Sticky Floor Society',
+    'The Reverb Chasers', 'Line-Up-Early Crew', 'The Encore Enthusiasts',
+    'Fashionably Late (Again)', 'The Between-Set Wanderers', 'Loud and Proud Row',
+    'The Playlist Prophets', 'Just One More Show', 'The Headliner Hunters',
+    'Ticket Stub Collectors', 'The Warmup Act Fans', 'Full Volume Only',
+    'The Show Hoppers', 'Ears Ringing Til Tuesday', 'The Setlist Superfans',
+    'Perpetually Front Row', 'The Encore Extorters',
+  ];
+
+  const nameSuggestPill = document.getElementById('name-suggest-pill');
+  const nameSuggestRefresh = document.getElementById('name-suggest-refresh');
+  let currentNameSuggestion = null;
+
+  // Never repeats the pill's current text back-to-back — a refresh
+  // that lands on the exact same idea would read as broken, not random.
+  function renderNameSuggestion() {
+    let next = currentNameSuggestion;
+    while (next === currentNameSuggestion) {
+      next = HERD_NAME_IDEAS[Math.floor(Math.random() * HERD_NAME_IDEAS.length)];
+    }
+    currentNameSuggestion = next;
+    nameSuggestPill.textContent = next;
+  }
+
+  nameSuggestPill.addEventListener('click', () => {
+    document.getElementById('name-gate-group-input').value = currentNameSuggestion;
+    renderNameSuggestion();
+  });
+  nameSuggestRefresh.addEventListener('click', renderNameSuggestion);
+  renderNameSuggestion();
 
   // Captured once at load, before handleGroupJoinFromUrl strips the
   // ?g= param — decides which name-gate path to show (joining a
