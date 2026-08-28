@@ -107,12 +107,86 @@
     <div class="name-gate-box">
       <div class="wordmark" style="display: block;"><span class="wordmark-gig">Gig</span><span class="wordmark-herd">Herd</span></div>
 
-      <!-- Step 1: always shown first, same tagline either way. A
-           second field (group name) appears only for a cold start —
-           no ?g=<slug> in the URL, meaning there's no group to join
-           yet, so it's collected in the same form rather than as a
-           separate step. -->
+      <!-- Step 1: always shown first. A second field (group name)
+           appears only for a cold start — no ?g=<slug> in the URL,
+           meaning there's no group to join yet, so it's collected in
+           the same form rather than as a separate step. The
+           #name-gate-step-name.is-cold-start class (set in init(),
+           same condition as name-gate-group-row below) is what swaps
+           the static tagline for the 3-screen preview — see the
+           preview's own comment and the CSS for both in
+           components.css. An invite-link visitor already has a
+           specific herd to join, so they keep the plain tagline
+           instead; the preview is a cold-start-only "here's what this
+           app does" moment. -->
       <div id="name-gate-step-name">
+        <!-- Cold-start only (hidden entirely for invite-link visitors
+             and swapped back out for the plain tagline below ~640px
+             of viewport height — see components.css). Three real app
+             moments, not marketing screens: browsing a venue (an
+             outbound link to their own calendar, not a live GigHerd
+             show feed — GigHerd never claims to know what's playing
+             anywhere), tracking a show for yourself alone, then
+             planning it with real people. Auto-advances every 2.8s;
+             tapping a dot or swiping the card both jump to that
+             screen and reset the timer. Never blocks the form below
+             it — no overlay, nothing to dismiss. -->
+        <div class="name-gate-preview" id="name-gate-preview">
+          <div class="preview-frame">
+            <div class="preview-screen is-active" data-screen="0">
+              <div class="mini-card">
+                <div class="mini-card-row">
+                  <div class="mini-card-left">
+                    <span class="mini-icon-badge"><i data-lucide="map-pin"></i></span>
+                    <div>
+                      <div class="mini-card-title">The Sinclair</div>
+                      <div class="mini-card-meta">Cambridge, MA</div>
+                    </div>
+                  </div>
+                  <span class="mini-link-badge"><i data-lucide="arrow-up-right"></i></span>
+                </div>
+              </div>
+            </div>
+            <div class="preview-screen" data-screen="1">
+              <div class="mini-card">
+                <div class="mini-card-row">
+                  <div class="mini-card-left">
+                    <span class="mini-icon-badge"><i data-lucide="music"></i></span>
+                    <div>
+                      <div class="mini-card-title">The Beths</div>
+                      <div class="mini-card-meta">Thu · The Sinclair</div>
+                    </div>
+                  </div>
+                  <span class="mini-check-badge"><i data-lucide="check"></i></span>
+                </div>
+              </div>
+            </div>
+            <div class="preview-screen" data-screen="2">
+              <div class="mini-card">
+                <div class="mini-card-row">
+                  <div class="mini-card-left">
+                    <span class="mini-icon-badge"><i data-lucide="users"></i></span>
+                    <div>
+                      <div class="mini-card-title">The Beths</div>
+                      <div class="mini-card-meta">You + 2 friends are in</div>
+                    </div>
+                  </div>
+                  <div class="mini-avatar-dots">
+                    <div class="mini-avatar-dot" style="background:#f3596e">D</div>
+                    <div class="mini-avatar-dot" style="background:#3d6fd9">S</div>
+                    <div class="mini-avatar-dot" style="background:#8dc63f;color:#171512;">J</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="preview-caption" id="name-gate-preview-caption"></div>
+          <div class="preview-dots">
+            <button type="button" class="preview-dot is-active" data-dot="0" aria-label="Screen 1"></button>
+            <button type="button" class="preview-dot" data-dot="1" aria-label="Screen 2"></button>
+            <button type="button" class="preview-dot" data-dot="2" aria-label="Screen 3"></button>
+          </div>
+        </div>
         <p class="name-gate-tagline" id="name-gate-tagline">Line up shows with your pals.</p>
         <!-- Invite-link visitors only — the brand tagline above stays put
              either way, this adds the specific "here's what you're
@@ -805,6 +879,56 @@
   });
   nameSuggestRefresh.addEventListener('click', renderNameSuggestion);
   renderNameSuggestion();
+
+  // Name-gate 3-screen preview — see #name-gate-preview's own comment
+  // above for what each screen is and why. Runs unconditionally (the
+  // element just sits invisible via CSS when it's not a cold start),
+  // same pattern as the herd-name suggestion pill above: cheap to set
+  // up once at load, no reason to gate it behind hasInviteSlug here
+  // too when the CSS already does that job.
+  const PREVIEW_CAPTIONS = [
+    'Browse venue calendars near you',
+    'Track shows for yourself',
+    'Then plan with your herd',
+  ];
+  const previewScreens = document.querySelectorAll('#name-gate-preview .preview-screen');
+  const previewDots = document.querySelectorAll('#name-gate-preview .preview-dot');
+  const previewCaption = document.getElementById('name-gate-preview-caption');
+  let previewActive = 0;
+  let previewTimer = null;
+
+  function showPreviewScreen(i) {
+    previewActive = i;
+    previewScreens.forEach((s, idx) => s.classList.toggle('is-active', idx === i));
+    previewDots.forEach((d, idx) => d.classList.toggle('is-active', idx === i));
+    previewCaption.textContent = PREVIEW_CAPTIONS[i];
+  }
+  function previewNext() { showPreviewScreen((previewActive + 1) % previewScreens.length); }
+  function startPreviewAutoplay() { clearInterval(previewTimer); previewTimer = setInterval(previewNext, 2800); }
+  function stopPreviewAutoplay() { clearInterval(previewTimer); }
+
+  previewDots.forEach((d) => {
+    d.addEventListener('click', () => {
+      showPreviewScreen(Number(d.dataset.dot));
+      startPreviewAutoplay(); // resets the clock rather than freezing forever on a manual tap
+    });
+  });
+
+  const previewFrame = document.querySelector('#name-gate-preview .preview-frame');
+  let previewTouchStartX = null;
+  previewFrame.addEventListener('pointerdown', (e) => { previewTouchStartX = e.clientX; stopPreviewAutoplay(); });
+  previewFrame.addEventListener('pointerup', (e) => {
+    if (previewTouchStartX === null) return;
+    const dx = e.clientX - previewTouchStartX;
+    if (Math.abs(dx) > 30) {
+      showPreviewScreen((previewActive + (dx < 0 ? 1 : previewScreens.length - 1)) % previewScreens.length);
+    }
+    previewTouchStartX = null;
+    startPreviewAutoplay();
+  });
+
+  showPreviewScreen(0);
+  startPreviewAutoplay();
 
   // Captured once at load, before handleGroupJoinFromUrl strips the
   // ?g= param — decides which name-gate path to show (joining a
@@ -2430,6 +2554,10 @@
       mainContent.style.display = 'none';
       nameGate.style.display = 'block';
       nameGateGroupRow.style.display = hasInviteSlug ? 'none' : 'block';
+      // Same condition as the herd-name field above — swaps the plain
+      // tagline for the 3-screen preview (see the CSS on both
+      // .name-gate-preview/.name-gate-tagline in components.css).
+      nameGateStepName.classList.toggle('is-cold-start', !hasInviteSlug);
 
       // Invite-link visitor: name the actual group they're about to
       // join, as a second line under the brand tagline (not a
